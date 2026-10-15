@@ -222,7 +222,7 @@ window.PM_TOOLS = [
     name: 'Keyword Focus & Intent Check',
     group: 'techniek',
     kind: 'web',
-    href: 'https://keyword-focus-intent-check.vercel.app/',
+    href: 'https://focus-keyword-tool.vercel.app/',
     description: 'Past je pagina bij het focuszoekwoord en de zoekintentie? En wat mist er dan nog?',
     exports: ['intentcheck', 'contentbriefing', 'PDF', 'markdown'],
     status: 'nieuw',
