@@ -7,7 +7,14 @@ Daarnaast vier technische tools voor websites, ads en SEO; zie
 [Techniek & analyse](#techniek--analyse).
 Plain HTML, CSS en JavaScript: geen framework, geen buildstap.
 
-**Live:** https://jelger1.github.io/Pure-Minds-Tool-Hub/
+**Live:** https://puremindsmarketinggroup.github.io/Pure-Minds-Tool-Hub/
+
+> **Verhuisd (oktober 2026)** van `github.com/Jelger1/Pure-Minds-Tool-Hub` naar
+> `github.com/PureMindsMarketingGroup/Pure-Minds-Tool-Hub`. De oude repo en
+> site (`jelger1.github.io/Pure-Minds-Tool-Hub`) blijven bestaan: de
+> e-mailhandtekeningen in verstuurde mails laden hun foto's en iconen nog van
+> dat adres (`assets/handtekeningen/`). Verwijder of hernoem de oude repo dus
+> niet, en zet hem niet op privé.
 
 | Tool | Wat | Export |
 |---|---|---|
