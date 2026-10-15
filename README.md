@@ -10,11 +10,14 @@ Plain HTML, CSS en JavaScript: geen framework, geen buildstap.
 **Live:** https://puremindsmarketinggroup.github.io/Pure-Minds-Tool-Hub/
 
 > **Verhuisd (oktober 2026)** van `github.com/Jelger1/Pure-Minds-Tool-Hub` naar
-> `github.com/PureMindsMarketingGroup/Pure-Minds-Tool-Hub`. De oude repo en
-> site (`jelger1.github.io/Pure-Minds-Tool-Hub`) blijven bestaan: de
-> e-mailhandtekeningen in verstuurde mails laden hun foto's en iconen nog van
-> dat adres (`assets/handtekeningen/`). Verwijder of hernoem de oude repo dus
-> niet, en zet hem niet op privé.
+> `github.com/PureMindsMarketingGroup/Pure-Minds-Tool-Hub`, het account van
+> Pure Minds zelf. Alles draait vanaf hier, ook de
+> [e-mailhandtekeningen](#e-mailhandtekeningen): die laden hun foto's en
+> iconen van dit adres. **Hernoem dit account of deze repo dus niet, en zet de
+> repo niet op privé**: dan verdwijnen de plaatjes uit alle handtekeningen.
+> Het oude adres (`jelger1.github.io/Pure-Minds-Tool-Hub`) stuurt door naar
+> hier en bewaart alleen nog de plaatjes voor e-mails die vóór de verhuizing
+> zijn verstuurd.
 
 | Tool | Wat | Export |
 |---|---|---|
@@ -53,6 +56,8 @@ zodat de browser de export niet blokkeert.
 ```
 index.html                    de hub: maken (een kaart per tool) en checken (de technische tools),
                               en de uitleg bij de Consent Check (<dialog>)
+handtekeningen/                de e-mailhandtekeningen: index.html (kies je naam) en
+                              een pagina per collega; plaatjes in assets/handtekeningen/
 tools/
   insta.html                  Insta Post Maker
   document.html               Document Maker
@@ -1152,6 +1157,29 @@ jsPDF 4.2.1, svg2pdf.js 2.8.1, docx 9.7.1 (Word), JSZip 3.10.1
 (PowerPoint, zips) en pdf-lib 1.17.1 (de lagen in het brandbook) komen van
 jsDelivr, met een vaste versie en SRI-hash (`js/shared/core.js`). Ze worden
 pas geladen bij de eerste export, dus bewerken werkt ook zonder internet.
+
+## E-mailhandtekeningen
+
+De handtekeningen van alle collega's staan in `handtekeningen/`, online op
+https://puremindsmarketinggroup.github.io/Pure-Minds-Tool-Hub/handtekeningen/.
+Daar klikt een collega op zijn of haar naam, kopieert de handtekening (Ctrl + A,
+Ctrl + C) en plakt hem in Gmail of Outlook; de stappen staan op de pagina. De
+foto, de iconen, het logo en de Emerce-badge laden van dit adres
+(`assets/handtekeningen/`), omdat Gmail geen plaatjes uit een map op je computer
+kan gebruiken. Zoekmachines slaan de pagina's over (`noindex`).
+
+- **Alles in de body gaat mee bij het kopiëren.** Zet in een handtekening dus
+  niets extra's (geen knop, geen uitleg); alleen de `<head>` blijft achter.
+- **Een collega erbij:** kopieer een bestaande pagina (bijvoorbeeld
+  `jim-vleugels.html`) naar `voornaam-achternaam.html` en pas naam, e-mail,
+  dagen en de `utm_source` (`mailvoornaam`) aan. Zet de foto als PNG van
+  318 × 360 px in `assets/handtekeningen/foto-voornaam.png` (wordt getoond op
+  106 × 120) en voeg de naam toe aan de lijst in `handtekeningen/index.html`.
+- **Een plaatje vervangen:** Gmail bewaart plaatjes lang. Verhoog dan het getal
+  achter `?v=` in de handtekeningen, zodat het nieuwe plaatje laadt, en laat
+  de collega's de handtekening opnieuw plakken.
+- **Een collega weg:** haal de pagina en de naam uit de lijst, maar laat de
+  foto in `assets/handtekeningen/` staan: verstuurde e-mails tonen hem nog.
 
 ## Opslag
 
