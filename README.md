@@ -1069,7 +1069,7 @@ makers.
 
 | Tool | Wat | Draait |
 |---|---|---|
-| [Consent Check](https://github.com/Jelger1/consent-check) | Meet per website welke cookies en trackers er vóór en ná het cookie-akkoord laden | lokaal: downloaden (zip) en starten op je eigen Mac of Windows-pc |
+| [Consent Check](https://github.com/PureMindsMarketingGroup/consent-check) | Meet per website welke cookies en trackers er vóór en ná het cookie-akkoord laden | lokaal: downloaden (zip) en starten op je eigen Mac of Windows-pc |
 | [Landingpage & Ads Optimizer](https://landingpage-ads-optimizer-qr13.vercel.app/) | Checkt of Google Ads-advertentie en landingspagina op elkaar aansluiten, met een CRO-briefing | web-app, opent in een nieuw tabblad |
 | [SEO Content Gap Analyzer](https://seo-content-gap-analyzer-1yxm.vercel.app/) | Zet een pagina naast de Google-top 10: ontbrekende koppen, termen en vragen | web-app, opent in een nieuw tabblad |
 | [Keyword Focus & Intent Check](https://keyword-focus-intent-check.vercel.app/) | Past een pagina bij het focuszoekwoord en de zoekintentie, en wat mist er nog: intentcheck, keyword mapping en contentbriefing (PDF of markdown) | web-app, opent in een nieuw tabblad |
