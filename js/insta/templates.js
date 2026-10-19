@@ -36,9 +36,11 @@
     drawPhoto, drawContain, hexEcho, prepare, finish,
   } = global.PMCanvas;
 
+  // Liggend is 1,91:1: de liggende foto op Instagram (1080 × 566) en LinkedIn (1200 × 627)
   const FORMATS = {
     portrait: { w: 1080, h: 1350, ratio: '4:5', label: 'portret' },
     story: { w: 1080, h: 1920, ratio: '9:16', label: 'story' },
+    landscape: { w: 1080, h: 566, ratio: '1,91:1', label: 'liggend' },
   };
 
   const GRID = {
@@ -54,6 +56,17 @@
     footerGap: 56,            // van inhoud tot logo-rij
     footerSize: 24,
     storySafe: 250,           // boven en onder in een story zit de Instagram-interface
+  };
+
+  // Liggend: even breed in de feed als een staande post, dus de letters blijven even groot;
+  // alleen de hoogte is krap. Daarom kleinere marges, logo en tussenruimtes.
+  const GRID_LANDSCAPE = {
+    margin: 60,
+    logoW: 84,
+    labelSize: 20,
+    labelGap: 40,
+    footerGap: 28,
+    footerSize: 20,
   };
 
   // Typografische stijlen, gedeeld door alle templates
@@ -131,12 +144,16 @@
 
   function frame(format) {
     const f = FORMATS[format] || FORMATS.portrait;
-    const m = GRID.margin;
+    const landscape = f.w / f.h > 1.2;
+    const g = landscape ? { ...GRID, ...GRID_LANDSCAPE } : GRID;
+    const m = g.margin;
     const story = f.h / f.w > 1.5;
-    const v = story ? GRID.storySafe : m;  // verticale marge
-    const logo = { x: f.w - m - GRID.logoW, y: f.h - v - GRID.logoH, w: GRID.logoW, h: GRID.logoH };
+    const v = story ? g.storySafe : m;  // verticale marge
+    const logoH = g.logoW * GRID.logoH / GRID.logoW;
+    const badgeH = logoH * 0.45;
+    const logo = { x: f.w - m - g.logoW, y: f.h - v - logoH, w: g.logoW, h: logoH };
     // Badge linksonder, even ver van de rand als het logo rechts
-    const badge = { x: m, y: logo.y + (logo.h - GRID.badgeH) / 2, w: GRID.badgeH * GRID.badgeRatio, h: GRID.badgeH };
+    const badge = { x: m, y: logo.y + (logo.h - badgeH) / 2, w: badgeH * GRID.badgeRatio, h: badgeH };
     return {
       w: f.w,
       h: f.h,
@@ -146,11 +163,13 @@
       badge,
       story,
       portrait: f.h > f.w,
+      landscape,
+      s: landscape ? 0.7 : 1,   // schaal voor vormen (zeshoeken, verlopen), niet voor letters
       labelTop: v,
-      labelSize: GRID.labelSize,
-      footerSize: GRID.footerSize,
-      contentTop: v + GRID.labelSize * CAP + GRID.labelGap,
-      contentBottom: logo.y - GRID.footerGap,
+      labelSize: g.labelSize,
+      footerSize: g.footerSize,
+      contentTop: v + g.labelSize * CAP + g.labelGap,
+      contentBottom: logo.y - g.footerGap,
       contentW: f.w - 2 * m,
       footerY: logo.y + logo.h / 2,
     };
@@ -181,38 +200,39 @@
       }
       x += 18;
     } else if (total > 10) {
-      setFont(ctx, 800, GRID.footerSize, 0.02);
+      setFont(ctx, 800, fr.footerSize, 0.02);
       const counter = `${String(index + 1).padStart(2, '0')}/${String(total).padStart(2, '0')}`;
       ctx.fillStyle = COLORS.cyan;
-      ctx.fillText(counter, x, y + (GRID.footerSize * CAP) / 2);
+      ctx.fillText(counter, x, y + (fr.footerSize * CAP) / 2);
       x += ctx.measureText(counter).width + 18;
     }
-    setFont(ctx, 700, GRID.footerSize, 0.02);
+    setFont(ctx, 700, fr.footerSize, 0.02);
     ctx.fillStyle = pal.text;
-    ctx.fillText('swipe', x, y + (GRID.footerSize * CAP) / 2);
+    ctx.fillText('swipe', x, y + (fr.footerSize * CAP) / 2);
     x += ctx.measureText('swipe').width + 16;
     drawArrow(ctx, x, y, 48, COLORS.cyan, 4);
   }
 
   // Halve cyaan zeshoek aan de rechterrand: "hier gaat het verder"
   function drawEdgeCue(ctx, fr) {
-    const r = 72;
-    const visible = 60;
+    const r = 72 * fr.s;
+    const visible = 60 * fr.s;
     const cx = fr.w - visible + (r * SQRT3) / 2;
     const cy = fr.h / 2;
     hexPath(ctx, cx, cy, r);
     ctx.fillStyle = COLORS.cyan;
     ctx.fill();
-    const ax = fr.w - visible / 2 + 2;
+    const ax = fr.w - visible / 2 + 2 * fr.s;
+    const a = fr.s;
     ctx.save();
     ctx.strokeStyle = COLORS.ink;
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 5 * a;
     ctx.lineCap = 'butt';
     ctx.lineJoin = 'miter';
     ctx.beginPath();
-    ctx.moveTo(ax - 8, cy - 15);
-    ctx.lineTo(ax + 7, cy);
-    ctx.lineTo(ax - 8, cy + 15);
+    ctx.moveTo(ax - 8 * a, cy - 15 * a);
+    ctx.lineTo(ax + 7 * a, cy);
+    ctx.lineTo(ax - 8 * a, cy + 15 * a);
     ctx.stroke();
     ctx.restore();
   }
@@ -225,8 +245,8 @@
   function tplPhoto(ctx, fr, d, env) {
     if (d.style === 'hex') {
       paintBackground(ctx, fr);
-      const top = fr.labelTop + GRID.labelSize * CAP + 44;
-      const bottom = fr.logo.y - 30;
+      const top = fr.labelTop + fr.labelSize * CAP + 44 * fr.s;
+      const bottom = fr.landscape ? fr.h - fr.v : fr.logo.y - 30 * fr.s;
       const r = Math.min((bottom - top) / 2, fr.contentW / SQRT3);
       const cx = fr.w / 2 + r * 0.08;
       const cy = (top + bottom) / 2 - r * 0.07;
@@ -249,19 +269,28 @@
   // Rustige verlopen onder het label en het logo, zodat die leesbaar blijven
   // (een foto zonder tekst: Standaard foto, of Foto met tekst met lege velden)
   function softEdges(ctx, fr, label) {
-    const bottom = ctx.createLinearGradient(0, fr.logo.y - 220, 0, fr.h);
+    const band = 220 * fr.s;
+    const bottom = ctx.createLinearGradient(0, fr.logo.y - band, 0, fr.h);
     bottom.addColorStop(0, rgba(COLORS.navy, 0));
     bottom.addColorStop(1, rgba(COLORS.navy, 0.62));
     ctx.fillStyle = bottom;
-    ctx.fillRect(0, fr.logo.y - 220, fr.w, fr.h);
+    ctx.fillRect(0, fr.logo.y - band, fr.w, fr.h);
     if (String(label || '').trim()) {
-      const topGrad = ctx.createLinearGradient(0, 0, 0, fr.labelTop + 190);
+      const top = fr.labelTop + 190 * fr.s;
+      const topGrad = ctx.createLinearGradient(0, 0, 0, top);
       topGrad.addColorStop(0, rgba(COLORS.navy, 0.55));
       topGrad.addColorStop(1, rgba(COLORS.navy, 0));
       ctx.fillStyle = topGrad;
-      ctx.fillRect(0, 0, fr.w, fr.labelTop + 190);
+      ctx.fillRect(0, 0, fr.w, top);
     }
   }
+
+  // Liggend: het logo staat alleen in de hoek rechtsonder. Een tekstkolom links die niet
+  // onder het logo komt, loopt daarom door tot de ondermarge, behalve als de badge
+  // linksonder staat (fr.badgeOn, gezet door renderPost)
+  const textBottom = (fr) => (fr.landscape && !fr.badgeOn ? fr.h - fr.v : fr.contentBottom);
+  // Liggend: een zeshoek rechtsboven (over de rand) die met zijn echo boven het logo blijft
+  const sideHexR = (fr) => Math.floor((fr.logo.y - 16 - fr.labelTop + 44 * fr.s) / 2.15);
 
   // Staat er tekst op de post? Alleen dan het donkere verloop van Foto met tekst
   const hasText = (...values) => values.some((v) => String(v || '').replace(/\*\*/g, '').trim());
@@ -295,25 +324,48 @@
       hexPattern(ctx, fr, { color: '#ffffff', alpha: 0.1, x0: 0, y0: fr.h, x1: 0, y1: fr.h * 0.4 });
     }
 
-    if (d.decor !== false) {
-      hexPath(ctx, fr.w - 64, fr.labelTop + 96, 232);
+    const decor = d.decor !== false;
+    const decorR = 232 * fr.s;
+    const decorX = fr.w - 64 * fr.s;
+    const decorY = fr.labelTop + 96 * fr.s;
+    if (decor) {
+      hexPath(ctx, decorX, decorY, decorR);
       ctx.strokeStyle = COLORS.cyan;
-      ctx.lineWidth = 10;
+      ctx.lineWidth = 10 * fr.s;
       ctx.stroke();
-      const dx = fr.w - 64 - 232 * (SQRT3 / 2);
-      region('decor', dx, fr.labelTop + 96 - 232, fr.w - dx, 464);
+      const dx = decorX - decorR * (SQRT3 / 2);
+      region('decor', dx, decorY - decorR, fr.w - dx, decorR * 2);
     }
 
     drawLabel(ctx, fr, d.label, PAL, fr.contentW - 220);
     labelRegion(ctx, fr, d.label, fr.contentW - 220);
 
-    const maxW = fr.contentW - 40;
-    const areaH = fr.contentBottom - fr.contentTop;
-    const sub = fit('subtitle', ctx, runsFrom(d.subtitle), maxW, 190, TYPE.body, { min: 26, maxLines: 4 });
-    const gap = sub.lines.length ? 34 : 0;
-    const title = fit('title', ctx, runsFrom(d.title, { dot: d.dot }), maxW, areaH - sub.height - gap, { ...TYPE.title, size: titleSize(TYPE.title.size, d) }, { min: TITLE_MIN });
-    const total = title.height + gap + sub.height;
-    const top = middle ? fr.contentTop + (areaH - total) / 2 : fr.contentBottom - total;
+    // Liggend: de tekst loopt door tot de ondermarge en blijft links van het logo. Past hij
+    // onder de cyaan zeshoek, dan krijgt hij die breedte ook; anders blijft hij ernaast
+    const bottom = textBottom(fr);
+    const areaH = bottom - fr.contentTop;
+    const layout = (maxW) => {
+      const sub = fit('subtitle', ctx, runsFrom(d.subtitle), maxW, 190, TYPE.body, { min: 26, maxLines: 4 });
+      const gap = sub.lines.length ? 34 : 0;
+      const title = fit('title', ctx, runsFrom(d.title, { dot: d.dot }), maxW, areaH - sub.height - gap, { ...TYPE.title, size: titleSize(TYPE.title.size, d) }, { min: TITLE_MIN });
+      const total = title.height + gap + sub.height;
+      const top = middle ? fr.contentTop + (areaH - total) / 2 : bottom - total;
+      return { sub, gap, title, total, top };
+    };
+    let L;
+    if (fr.landscape) {
+      const besideLogo = Math.min(fr.contentW - 40, fr.logo.x - 48 - fr.m);
+      const besideDecor = Math.min(besideLogo, decorX - decorR * (SQRT3 / 2) - 48 - fr.m);
+      const keep = over.length;
+      L = layout(besideLogo);
+      if (decor && L.top < decorY + decorR + 24) {
+        over.length = keep;   // de brede proef telt niet mee als "te lang"
+        L = layout(besideDecor);
+      }
+    } else {
+      L = layout(fr.contentW - 40);
+    }
+    const { sub, gap, title, top } = L;
 
     drawText(ctx, title, fr.m, top, { color: '#ffffff', em: COLORS.cyan });
     drawText(ctx, sub, fr.m, top + title.height + gap, { color: 'rgba(255,255,255,.9)', em: '#ffffff' });
@@ -327,9 +379,9 @@
     const pal = PAL;
     paintBackground(ctx, fr);
 
-    const r = fr.story ? 300 : fr.portrait ? 272 : 230;
+    const r = fr.landscape ? sideHexR(fr) : fr.story ? 300 : fr.portrait ? 272 : 230;
     const cx = fr.w + 34 - (r * SQRT3) / 2;
-    const cy = fr.labelTop - 44 + r;
+    const cy = fr.labelTop - 44 * fr.s + r;
     hexEcho(ctx, cx, cy, r);
     const photo = drawPhoto(ctx, env.photo, { x: cx - (r * SQRT3) / 2, y: cy - r, w: r * SQRT3, h: r * 2, hex: { cx, cy, r } }, env.crop);
     region('photo', cx - (r * SQRT3) / 2, cy - r, Math.min(r * SQRT3, fr.w - (cx - (r * SQRT3) / 2)), r * 2);
@@ -340,11 +392,42 @@
     labelRegion(ctx, fr, d.label, colW);
 
     // Onderin: zin met het onderwerp + magenta cta-blok (geen knop: zonder pijl)
-    const block = planCta(ctx, d.button);
+    const block = planCta(ctx, d.button, fr.landscape ? 0.85 : 1);
     const topic = String(d.topic || '').trim();
     const ctaText = String(d.cta || '').replace(/\{onderwerp\}/gi, topic ? `**${topic}**` : '…');
+    if (fr.landscape) {
+      // Liggend is de hoogte krap (zeker met de badge linksonder): titel en zin krimpen samen
+      // tot ze tussen label en blok passen, zoals in de carousel. Nooit over elkaar heen
+      const blockY = textBottom(fr) - block.h;
+      const room = blockY - fr.contentTop;
+      const titleRuns = runsFrom(d.title, { dot: d.dot });
+      const ctaRuns = runsFrom(ctaText);
+      let title;
+      let cta;
+      let gapTitle;
+      let gapCta;
+      for (let k = 1; k >= 0.55; k -= 0.05) {
+        title = layoutText(ctx, titleRuns, colW, { ...TYPE.title, size: Math.round(titleSize(72, d) * k) });
+        cta = layoutText(ctx, ctaRuns, colW, { ...TYPE.body, size: Math.max(22, Math.round(32 * k)) });
+        gapCta = cta.lines.length ? Math.round(28 * k) : 0;
+        gapTitle = cta.lines.length ? Math.round(36 * k) : 0;
+        if (title.height + gapTitle + cta.height + gapCta <= room && !title.broken) break;
+        if (k - 0.05 < 0.55) {
+          flags.overflow = true;
+          over.push('cta');
+        }
+      }
+      const ctaTop = blockY - gapCta - cta.height;
+      drawText(ctx, title, fr.m, fr.contentTop, { color: pal.text, em: pal.em });
+      drawText(ctx, cta, fr.m, ctaTop, { color: pal.body, em: pal.text });
+      block.draw(fr.m, blockY);
+      textRegion('title', title, fr.m, fr.contentTop);
+      textRegion('cta', cta, fr.m, ctaTop);
+      region('button', fr.m, blockY, block.w, block.h);
+      return { photo };
+    }
     const cta = fit('cta', ctx, runsFrom(ctaText), fr.contentW, 150, { ...TYPE.body, size: 32 }, { min: BODY_MIN, maxLines: 3 });
-    const blockY = fr.contentBottom - block.h;
+    const blockY = textBottom(fr) - block.h;
     const ctaTop = cta.lines.length ? blockY - 34 - cta.height : blockY;
 
     // Titel bovenin de linkerkolom, naast de zeshoek
@@ -361,22 +444,22 @@
   }
 
   // Resultaat-tegel voor de case, in de stijl van .score-tile uit de tools
-  function planResult(ctx, fr, d, pal) {
+  function planResult(ctx, fr, d, pal, width = fr.contentW, k = 1) {
     const value = String(d.resultValue || '').trim();
     const label = String(d.resultLabel || '').trim();
     if (!value && !label) return null;
 
-    const pad = 36;
+    const pad = 36 * k;
     const bar = 10;
     const x = fr.m;
-    const w = fr.contentW;
-    const valueSize = 100;
+    const w = width;
+    const valueSize = 100 * k;
     const headSize = 20;
     setFont(ctx, 800, valueSize, -0.02);
     const valueW = value ? ctx.measureText(value).width : 0;
     const descX = x + bar + pad + (value ? valueW + 36 : 0);
     const descW = x + w - pad - descX;
-    const desc = fit('result', ctx, runsFrom(label), descW, 150, { ...TYPE.body, size: 32, lh: 1.35 }, { min: BODY_MIN, maxLines: 3 });
+    const desc = fit('result', ctx, runsFrom(label), descW, 150 * k, { ...TYPE.body, size: Math.round(32 * k), lh: 1.35 }, { min: BODY_MIN, maxLines: 3 });
     const valueH = value ? valueSize * CAP : 0;
     const descH = desc.lines.length ? desc.height - desc.st.size * DESC : 0;
     const rowH = Math.max(valueH, descH);
@@ -423,7 +506,7 @@
     }
 
     // Klant in een witte zeshoek rechtsboven
-    const r = fr.story ? 140 : fr.portrait ? 134 : 120;
+    const r = fr.landscape ? 110 : fr.story ? 140 : fr.portrait ? 134 : 120;
     const hx = fr.w - fr.m - (r * SQRT3) / 2;
     const hy = fr.labelTop + r;
     hexEcho(ctx, hx, hy, r);
@@ -453,16 +536,20 @@
       .replace(/\{klant\}/gi, client || 'deze klant')
       .replace(/\{diensten\}/gi, joined);
 
-    const result = planResult(ctx, fr, d, pal);
-    const resultY = result ? fr.contentBottom - result.h : fr.contentBottom;
-    const titleMaxH = Math.max(80, resultY - 52 - fr.contentTop);
-    const title = fit('title', ctx, runsFrom(sentence, { dot: d.dot }), colW, titleMaxH, { ...TYPE.title, size: titleSize(68, d) }, { min: 38 });
+    // Liggend: het resultaat in de kolom onder de zin, naast de klant-zeshoek
+    const resultW = fr.landscape ? colW : fr.contentW;
+    const result = planResult(ctx, fr, d, pal, resultW, fr.landscape ? 0.8 : 1);
+    const bottom = textBottom(fr);
+    const resultY = result ? bottom - result.h : bottom;
+    // Liggend geen ondergrens: de zin past erboven of de tool meldt dat hij te lang is
+    const titleMaxH = fr.landscape ? resultY - 28 - fr.contentTop : Math.max(80, resultY - 52 - fr.contentTop);
+    const title = fit('title', ctx, runsFrom(sentence, { dot: d.dot }), colW, titleMaxH, { ...TYPE.title, size: titleSize(68, d) }, { min: fr.landscape ? 30 : 38 });
     drawText(ctx, title, fr.m, fr.contentTop, { color: pal.text, em: pal.em });
     textRegion('title', title, fr.m, fr.contentTop);
 
     if (result) {
       result.draw(resultY);
-      region('result', fr.m, resultY, fr.contentW, result.h);
+      region('result', fr.m, resultY, resultW, result.h);
     }
     return { photo };
   }
@@ -501,14 +588,15 @@
       paintBackground(ctx, fr);
     }
     if (mode === 'hex') {
-      const r = fr.story ? 290 : 250;
+      const r = fr.landscape ? sideHexR(fr) : fr.story ? 290 : 250;
       const cx = fr.w + 34 - (r * SQRT3) / 2;
-      const cy = fr.labelTop - 44 + r;
+      const cy = fr.labelTop - 44 * fr.s + r;
       hexEcho(ctx, cx, cy, r);
       photo = drawPhoto(ctx, img, { x: cx - (r * SQRT3) / 2, y: cy - r, w: r * SQRT3, h: r * 2, hex: { cx, cy, r } }, slide.crop);
       region('photo', cx - (r * SQRT3) / 2, cy - r, Math.min(r * SQRT3, fr.w - (cx - (r * SQRT3) / 2)), r * 2);
       colW = cx - r * 0.17 - (r * SQRT3) / 2 - fr.m - 44;
-      hexBottom = cy + r * 1.15;
+      // Liggend staat de zeshoek naast de hele kolom: ook de tekst blijft ernaast
+      hexBottom = fr.landscape ? 0 : cy + r * 1.15;
     }
 
     drawLabel(ctx, fr, d.label, pal, colW);
@@ -516,6 +604,7 @@
 
     const numbered = slide.numbered !== false;
     let top = fr.contentTop;
+    let tx = fr.m;   // linkerkant van titel en tekst
     if (numbered) {
       // Slidenummer in een cyaan zeshoek, zoals de kernwaarden in het brandbook
       const r = 46;
@@ -530,11 +619,15 @@
       ctx.fillStyle = COLORS.ink;
       ctx.fillText(num, bx - ctx.measureText(num).width / 2, by + (32 * CAP) / 2);
       region('slide', bx - (r * SQRT3) / 2, by - r, r * SQRT3, r * 2);
-      top = by + r + 48;
+      // Liggend is de hoogte krap: het nummer staat naast de titel, anders erboven
+      if (fr.landscape) tx = fr.m + r * SQRT3 + 36;
+      else top = by + r + 48;
     }
     const areaH = fr.contentBottom - top;
-    const maxW = fr.contentW - 16;
-    const titleW = mode === 'hex' ? colW : maxW;
+    const indent = tx - fr.m;
+    const fullW = fr.contentW - 16 - indent;
+    const titleW = mode === 'hex' ? colW - indent : fullW;
+    const maxW = mode === 'hex' && fr.landscape ? colW - indent : fullW;
     const titleRuns = runsFrom(slide.title, { dot: d.dot });
 
     // Titel en tekst samen verkleinen tot ze passen, in dezelfde verhouding.
@@ -562,15 +655,16 @@
 
     // Zonder nummer: iets boven het midden, daar valt het oog eerst (niet naast een zeshoek)
     if (!numbered && mode !== 'hex') top += Math.max(0, Math.round((areaH - (bodyOffset + body.height)) * 0.42));
-    drawText(ctx, title, fr.m, top, { color: pal.text, em: pal.em });
-    drawBody(ctx, body, fr.m, top + bodyOffset, { color: pal.body, em: pal.text });
-    textRegion('title', title, fr.m, top);
-    region('body', fr.m, top + bodyOffset, maxW, body.height);
+    drawText(ctx, title, tx, top, { color: pal.text, em: pal.em });
+    drawBody(ctx, body, tx, top + bodyOffset, { color: pal.body, em: pal.text });
+    textRegion('title', title, tx, top);
+    region('body', tx, top + bodyOffset, maxW, body.height);
 
-    // De laatste slide nodigt niet uit om door te swipen
+    // De laatste slide nodigt niet uit om door te swipen. Liggend staat een fotozeshoek
+    // op de plek van de halve zeshoek aan de rand: dan alleen de swipe-regel
     if (!last) {
       drawSwipe(ctx, fr, index, slides.length, pal);
-      drawEdgeCue(ctx, fr);
+      if (!(fr.landscape && mode === 'hex')) drawEdgeCue(ctx, fr);
     }
     // Badge alleen op de laatste slide: daar is linksonder vrij en staat de
     // afsluiter; op elke slide zou het een watermerk worden
@@ -597,6 +691,7 @@
    */
   function renderPost(canvas, state, env, opts = {}) {
     const fr = frame(state.format);
+    fr.badgeOn = !!state.badge;   // liggend: dan blijft de tekst boven de voetregel
     const ctx = prepare(canvas, fr.w, fr.h, opts.scale || 1);
     regions = [];
     over = [];

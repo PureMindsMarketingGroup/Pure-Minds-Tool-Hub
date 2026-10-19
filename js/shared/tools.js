@@ -82,7 +82,7 @@ window.PM_TOOLS = [
       key: 'pm-postmaker-v1',
       summary(s) {
         const names = { photo: 'foto', overlay: 'foto met tekst', blog: 'blogpost', case: 'casepost', carousel: 'carousel' };
-        const formats = { portrait: ['4:5', '4 / 5'], story: ['9:16', '9 / 16'] };
+        const formats = { portrait: ['4:5', '4 / 5'], story: ['9:16', '9 / 16'], landscape: ['1,91:1', '1.91 / 1'] };
         const d = (s.data && s.data[s.template]) || {};
         const title = s.template === 'carousel' ? d.slides && d.slides[0] && d.slides[0].title : d.title || d.client || d.label;
         const f = formats[s.format] || formats.portrait;

@@ -444,8 +444,12 @@ en `safeZone('story')`.
 
 Vijf templates: standaard foto, foto met tekst, Pure blog post, Pure case post en een
 informatieve carousel met swipe-indicator (de laatste slide krijgt er vanzelf
-geen). Formaten 4:5 (feed) en 9:16 (story); een
-ouder 1:1-concept opent als 4:5. Alle posts zijn donker. De editor
+geen). Formaten 4:5 (feed), 9:16 (story) en 1,91:1 (liggend, Instagram en
+LinkedIn); een ouder 1:1-concept opent als 4:5. Liggend is even breed als een
+staande post, dus de letters blijven even groot: alleen marges, logo en
+tussenruimtes zijn kleiner, de tekst staat naast het logo (en naast een
+fotozeshoek) in plaats van erboven, en een slidenummer staat naast de titel.
+Staat de Emerce-badge aan, dan blijft de tekst boven de voetregel. Alle posts zijn donker. De editor
 gebruikt de [editor-bouwstenen](#editor-bouwstenen).
 
 - **Rail:** *Template* (template en formaat, en *alles wissen*), *Foto*,
@@ -517,6 +521,7 @@ gebruikt de [editor-bouwstenen](#editor-bouwstenen).
 |---|---|---|---|
 | 4:5 | 1080 × 1350 | 1200 × 1500 | 2160 × 2700 |
 | 9:16 (story) | 1080 × 1920 | 1200 × 2133 | 2160 × 3840 |
+| 1,91:1 (liggend) | 1080 × 566 | 1200 × 629 | 2160 × 1132 |
 
 ## Document Maker
 

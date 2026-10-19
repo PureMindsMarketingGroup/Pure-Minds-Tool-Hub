@@ -70,7 +70,8 @@ test('typeschaal: normaal laat elke kop in de post-templates exact gelijk (pixel
   const js = read('js/insta/templates.js');
   // De basisgroottes die de templates aan titleSize() geven
   const bases = Array.from(js.matchAll(/titleSize\((\d+|TYPE\.title\.size), d\)/g), (m) => (m[1] === 'TYPE.title.size' ? brand.TYPE.post.title.size : Number(m[1])));
-  assert.deepEqual(bases.sort((a, b) => a - b), [68, 72, 72, 80, 88]);
+  // 72 drie keer: blog (staand en liggend) en carousel
+  assert.deepEqual(bases.sort((a, b) => a - b), [68, 72, 72, 72, 80, 88]);
   for (const b of bases) {
     assert.equal(brand.sizeFor(b, 'normaal'), b, `normaal op ${b}`);
     assert.ok(brand.sizeFor(b, 'groot') > b && brand.sizeFor(b, 'klein') < b, `stappen rond ${b}`);

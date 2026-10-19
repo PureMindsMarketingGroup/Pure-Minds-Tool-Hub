@@ -7,11 +7,19 @@ const { plan, pdfPage } = require('../js/insta/export.js');
 
 const PORTRAIT = { w: 1080, h: 1350 };
 const STORY = { w: 1080, h: 1920 };
+const LANDSCAPE = { w: 1080, h: 566 };
 
 test('een losse post: PNG of JPG op de exportmaat', () => {
   assert.deepEqual(plan({ fmt: PORTRAIT }), { kind: 'png', type: 'png', pages: 1, linkedin: false, summary: '1 PNG · 1080 × 1350 px', note: 'Instagram: PNG op de maat van het kanaal.' });
   assert.equal(plan({ fmt: STORY, width: 1200, type: 'jpg' }).summary, '1 JPG · 1200 × 2133 px');
   assert.equal(plan({ fmt: PORTRAIT, width: 2160 }).summary, '1 PNG · 2160 × 2700 px');
+});
+
+test('liggend (1,91:1): de liggende maat van Instagram en LinkedIn', () => {
+  assert.equal(plan({ fmt: LANDSCAPE }).summary, '1 PNG · 1080 × 566 px');
+  assert.equal(plan({ fmt: LANDSCAPE, width: 1200 }).summary, '1 PNG · 1200 × 629 px');
+  assert.equal(plan({ fmt: LANDSCAPE, width: 2160, type: 'jpg' }).summary, '1 JPG · 2160 × 1132 px');
+  assert.deepEqual(pdfPage(LANDSCAPE), { w: 810, h: 424.5 });
 });
 
 test('een losse post als PDF: één pagina, bewerkbaar in Canva', () => {

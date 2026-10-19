@@ -41,7 +41,7 @@
     // Template en formaat
     'formaat': {
       title: 'Formaat',
-      text: '4:5 is de feedpost: hij staat rechtop en vult in de feed het meeste scherm. 9:16 is een story: label en logo blijven 250 px van boven en onder, buiten de balken van Instagram.',
+      text: '4:5 is de feedpost: hij staat rechtop en vult in de feed het meeste scherm. 9:16 is een story, met label en logo buiten de balken van Instagram. 1,91:1 is liggend: een foto in de breedte, op Instagram en LinkedIn.',
     },
 
     // Foto
