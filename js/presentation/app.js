@@ -527,7 +527,10 @@
   function render() {
     cancelAnimationFrame(frameRequest);
     frameRequest = requestAnimationFrame(() => {
-      lastInfo = S.renderSlide(el.canvas, state, state.active, slideEnv(state.active));
+      // Scherp op elk scherm: zoveel canvaspixels als het scherm laat zien (ook bij 150% of retina)
+      lastInfo = S.renderSlide(el.canvas, state, state.active, slideEnv(state.active), { scale: PM.previewScale(el.canvas, S.W) });
+      el.canvas.dataset.designW = String(S.W);
+      el.canvas.dataset.designH = String(S.H);
       el.canvas.classList.toggle('can-pan', !!lastInfo.photo);
       syncPhotoPrompt();
       syncRegions();
@@ -2253,7 +2256,7 @@
   });
   el.canvas.addEventListener('pointermove', (e) => {
     if (!pan || !lastInfo.photo) return;
-    const k = el.canvas.width / el.canvas.getBoundingClientRect().width;
+    const k = S.W / el.canvas.getBoundingClientRect().width;   // ontwerppixels per schermpixel
     const { overflowX, overflowY } = lastInfo.photo;
     const c = current().crop;
     if (overflowX > 0.5) c.fx = Math.min(1, Math.max(0, pan.fx - ((e.clientX - pan.x) * k) / overflowX));
@@ -2680,6 +2683,8 @@
     startType = null;
   }
   render();
+  // Andere maat of pixeldichtheid (venster, paneel, zoomen, ander scherm): opnieuw tekenen, scherp
+  PM.watchPreview(el.canvas, render);
   PM.fontsReady.then(() => {
     drawEpoch += 1;
     render();

@@ -58,11 +58,11 @@
     storySafe: 250,           // boven en onder in een story zit de Instagram-interface
   };
 
-  // Liggend: even breed in de feed als een staande post, dus de letters blijven even groot;
-  // alleen de hoogte is krap. Daarom kleinere marges, logo en tussenruimtes.
+  // Liggend: even breed in de feed als een staande post, dus de letters en het logo blijven
+  // even groot (het logo nooit onder de 112: kleiner wordt "marketing group" onleesbaar);
+  // alleen de hoogte is krap. Daarom kleinere marges en tussenruimtes.
   const GRID_LANDSCAPE = {
     margin: 60,
-    logoW: 84,
     labelSize: 20,
     labelGap: 40,
     footerGap: 28,
@@ -286,9 +286,23 @@
   }
 
   // Liggend: het logo staat alleen in de hoek rechtsonder. Een tekstkolom links die niet
-  // onder het logo komt, loopt daarom door tot de ondermarge, behalve als de badge
-  // linksonder staat (fr.badgeOn, gezet door renderPost)
-  const textBottom = (fr) => (fr.landscape && !fr.badgeOn ? fr.h - fr.v : fr.contentBottom);
+  // onder het logo komt, loopt daarom door tot de ondermarge; staat de badge linksonder
+  // (fr.badgeOn, gezet door renderPost), dan tot net boven de badge
+  const textBottom = (fr) => {
+    if (!fr.landscape) return fr.contentBottom;
+    return fr.badgeOn ? fr.badge.y - 28 : fr.h - fr.v;
+  };
+  // Liggend, blog en case: de badge naast het logo (buiten de clear space van een kwart
+  // logobreedte), zodat de kolom links zijn volle hoogte houdt. Geeft de breedte terug die
+  // onderin de kolom (zin, knop, resultaat) links van de badge vrij blijft
+  function badgeBesideLogo(fr, colW) {
+    if (!fr.landscape || !fr.badgeOn) return colW;
+    const gap = Math.ceil(fr.logo.w / 4);
+    fr.badge = { ...fr.badge, x: fr.logo.x - gap - fr.badge.w };
+    return Math.min(colW, fr.badge.x - 32 - fr.m);
+  }
+  const bottomBesideBadge = (fr) => (fr.landscape ? fr.h - fr.v : fr.contentBottom);
+
   // Liggend: een zeshoek rechtsboven (over de rand) die met zijn echo boven het logo blijft
   const sideHexR = (fr) => Math.floor((fr.logo.y - 16 - fr.labelTop + 44 * fr.s) / 2.15);
 
@@ -396,9 +410,10 @@
     const topic = String(d.topic || '').trim();
     const ctaText = String(d.cta || '').replace(/\{onderwerp\}/gi, topic ? `**${topic}**` : '…');
     if (fr.landscape) {
-      // Liggend is de hoogte krap (zeker met de badge linksonder): titel en zin krimpen samen
-      // tot ze tussen label en blok passen, zoals in de carousel. Nooit over elkaar heen
-      const blockY = textBottom(fr) - block.h;
+      // Liggend is de hoogte krap: titel en zin krimpen samen tot ze tussen label en blok
+      // passen, zoals in de carousel. Nooit over elkaar heen. De badge staat naast het logo
+      const lowW = badgeBesideLogo(fr, colW);
+      const blockY = bottomBesideBadge(fr) - block.h;
       const room = blockY - fr.contentTop;
       const titleRuns = runsFrom(d.title, { dot: d.dot });
       const ctaRuns = runsFrom(ctaText);
@@ -408,7 +423,7 @@
       let gapCta;
       for (let k = 1; k >= 0.55; k -= 0.05) {
         title = layoutText(ctx, titleRuns, colW, { ...TYPE.title, size: Math.round(titleSize(72, d) * k) });
-        cta = layoutText(ctx, ctaRuns, colW, { ...TYPE.body, size: Math.max(22, Math.round(32 * k)) });
+        cta = layoutText(ctx, ctaRuns, lowW, { ...TYPE.body, size: Math.max(22, Math.round(32 * k)) });
         gapCta = cta.lines.length ? Math.round(28 * k) : 0;
         gapTitle = cta.lines.length ? Math.round(36 * k) : 0;
         if (title.height + gapTitle + cta.height + gapCta <= room && !title.broken) break;
@@ -536,10 +551,10 @@
       .replace(/\{klant\}/gi, client || 'deze klant')
       .replace(/\{diensten\}/gi, joined);
 
-    // Liggend: het resultaat in de kolom onder de zin, naast de klant-zeshoek
-    const resultW = fr.landscape ? colW : fr.contentW;
+    // Liggend: het resultaat in de kolom onder de zin, naast de klant-zeshoek; de badge naast het logo
+    const resultW = fr.landscape ? badgeBesideLogo(fr, colW) : fr.contentW;
     const result = planResult(ctx, fr, d, pal, resultW, fr.landscape ? 0.8 : 1);
-    const bottom = textBottom(fr);
+    const bottom = fr.landscape ? bottomBesideBadge(fr) : textBottom(fr);
     const resultY = result ? bottom - result.h : bottom;
     // Liggend geen ondergrens: de zin past erboven of de tool meldt dat hij te lang is
     const titleMaxH = fr.landscape ? resultY - 28 - fr.contentTop : Math.max(80, resultY - 52 - fr.contentTop);

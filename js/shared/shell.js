@@ -461,7 +461,10 @@
       host.appendChild(hover);
       const st = { regions: [], onPick: null, hit: null, down: null };
 
-      const pointAt = (e) => toCanvasPoint(e.clientX, e.clientY, canvas.getBoundingClientRect(), canvas.width, canvas.height);
+      // Regio's staan in ontwerppixels; een scherpe preview heeft meer canvaspixels (dataset.designW)
+      const designW = () => Number(canvas.dataset.designW) || canvas.width;
+      const designH = () => Number(canvas.dataset.designH) || canvas.height;
+      const pointAt = (e) => toCanvasPoint(e.clientX, e.clientY, canvas.getBoundingClientRect(), designW(), designH());
 
       function show(hit) {
         st.hit = hit;
@@ -470,7 +473,7 @@
           hover.hidden = true;
           return;
         }
-        const k = canvas.clientWidth / canvas.width;
+        const k = canvas.clientWidth / designW();
         const b = hit.rect;
         hover.style.left = `${canvas.offsetLeft + canvas.clientLeft + b.x * k}px`;
         hover.style.top = `${canvas.offsetTop + canvas.clientTop + b.y * k}px`;

@@ -329,9 +329,12 @@
   function render() {
     cancelAnimationFrame(frameRequest);
     frameRequest = requestAnimationFrame(() => {
-      lastInfo = T.renderPost(el.canvas, state, renderEnv());
       const fmt = T.FORMATS[state.format];
       el.design.style.setProperty('--ar', String(fmt.w / fmt.h));
+      // Scherp op elk scherm: zoveel canvaspixels als het scherm laat zien (ook bij 150% of retina)
+      lastInfo = T.renderPost(el.canvas, state, renderEnv(), { scale: PM.previewScale(el.canvas, fmt.w) });
+      el.canvas.dataset.designW = String(lastInfo.width);
+      el.canvas.dataset.designH = String(lastInfo.height);
       $$('[data-for-format]').forEach((n) => { n.hidden = n.dataset.forFormat !== state.format; });
       el.canvas.classList.toggle('can-pan', !!lastInfo.photo);
       const w = Number(state.exportWidth) || 1080;
@@ -356,8 +359,12 @@
   const thumbBuffer = document.createElement('canvas');
   function renderThumbs() {
     const fmt = T.FORMATS[state.format];
-    const scale = Math.min(240 / fmt.w, 240 / fmt.h);
+    const dpr = window.devicePixelRatio || 1;
     for (const canvas of $$('[data-thumb]')) {
+      // Vierkant vakje, scherp op dit scherm (minstens 240 px)
+      const size = Math.max(240, Math.round(canvas.getBoundingClientRect().width * dpr));
+      if (canvas.width !== size) { canvas.width = size; canvas.height = size; }
+      const scale = Math.min(size / fmt.w, size / fmt.h);
       T.renderPost(thumbBuffer, { ...state, template: canvas.dataset.thumb, badge: false }, renderEnv(), { scale });
       const ctx = canvas.getContext('2d');
       ctx.fillStyle = '#edf3f7';
@@ -384,7 +391,9 @@
       btn.dataset.index = String(i);
       btn.setAttribute('aria-label', `Slide ${i + 1}`);
       btn.setAttribute('aria-current', String(i === carousel().active));
-      T.renderPost(btn.firstChild, { ...state, template: 'carousel' }, renderEnv({ slideIndex: i }), { scale: 144 / fmt.w });
+      // Scherp op dit scherm: 4,5rem breed keer de pixeldichtheid (minstens 144 px)
+      const px = Math.max(144, Math.round(72 * (window.devicePixelRatio || 1)));
+      T.renderPost(btn.firstChild, { ...state, template: 'carousel' }, renderEnv({ slideIndex: i }), { scale: px / fmt.w });
     });
     items.slice(slides.length).forEach((b) => b.remove());
   }
@@ -984,7 +993,7 @@
   });
   el.canvas.addEventListener('pointermove', (e) => {
     if (!pan || !lastInfo.photo) return;
-    const k = el.canvas.width / el.canvas.getBoundingClientRect().width;
+    const k = lastInfo.width / el.canvas.getBoundingClientRect().width;   // ontwerppixels per schermpixel
     const { overflowX, overflowY } = lastInfo.photo;
     const c = crop();
     if (overflowX > 0.5) c.fx = Math.min(1, Math.max(0, pan.fx - ((e.clientX - pan.x) * k) / overflowX));
@@ -1242,6 +1251,10 @@
   // Canvas kent alleen fonts die al geladen zijn: eerst laden, dan opnieuw tekenen
   const fontsReady = PM.fontsReady;
   fontsReady.then(render);
+  // Andere maat of pixeldichtheid (venster, paneel, zoomen, ander scherm): opnieuw tekenen, scherp
+  PM.watchPreview(el.canvas, render);
+  // De miniaturen meten hun vakje: pas als het paneel Template open is, weten ze hoe groot dat is
+  shell.onChange(({ id }) => { if (id === 'template') requestAnimationFrame(renderThumbs); });
 
   syncLast();
   syncVisibility();

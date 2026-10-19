@@ -13,6 +13,8 @@
      PM.toggleEmphasis(veld), PM.insertAtCaret(veld, tekst)
                            dezelfde acties los, voor de werkbalk (js/shared/toolbar.js)
      PM.miniPreview(stage, canvas)  zwevende live preview op mobiel
+     PM.previewScale(canvas, w)  canvaspixels per ontwerppixel voor een scherpe preview (schermschaal)
+     PM.watchPreview(canvas, fn)  opnieuw tekenen bij een andere maat of pixeldichtheid
      PM.store              localStorage met JSON en try/catch
      PM.idb                IndexedDB voor afbeeldingen (te groot voor localStorage)
      PM.readImage(file)    bestand -> { img, url } of een nette foutmelding
@@ -463,6 +465,38 @@
      Geeft { update } terug: aanroepen na elke nieuwe tekening.
      ------------------------------------------------------------------------- */
 
+  /**
+   * Een canvas-preview scherp op elk scherm: zoveel canvaspixels per ontwerppixel als het
+   * scherm laat zien, dus de breedte op het scherm keer de pixeldichtheid (Windows-schaal
+   * 125-200%, retina) gedeeld door de ontwerpbreedte. Hoogstens 3: anders wordt tekenen traag.
+   * Het ontwerp zelf blijft in ontwerppixels (zie canvas.dataset.designW in de shell).
+   */
+  function previewScale(canvas, designW, max = 3) {
+    const cssW = canvas.getBoundingClientRect().width;
+    if (!cssW || !designW) return 1;
+    return Math.min(max, Math.max(0.25, (cssW * (global.devicePixelRatio || 1)) / designW));
+  }
+
+  /**
+   * Roept onChange zodra een preview een andere breedte of pixeldichtheid krijgt: venster,
+   * paneel open of dicht, zoomen in de browser, of het venster naar een ander scherm slepen.
+   */
+  function watchPreview(canvas, onChange) {
+    let last = '';
+    const check = () => {
+      const key = `${Math.round(canvas.getBoundingClientRect().width)}@${global.devicePixelRatio || 1}`;
+      if (key === last) return;
+      last = key;
+      onChange();
+    };
+    if (global.ResizeObserver) new ResizeObserver(check).observe(canvas);
+    const watchDpr = () => {
+      const mq = global.matchMedia && global.matchMedia(`(resolution: ${global.devicePixelRatio || 1}dppx)`);
+      if (mq && mq.addEventListener) mq.addEventListener('change', () => { check(); watchDpr(); }, { once: true });
+    };
+    watchDpr();
+  }
+
   function miniPreview(stage, source) {
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -698,7 +732,7 @@
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   global.PM = {
-    url, esc, renderToolNav, recentTools, startParams, toast, run, textTools, toggleEmphasis, insertAtCaret, miniPreview, wait, store, idb, readImage, bindDrop, preventStrayDrops,
+    url, esc, renderToolNav, recentTools, startParams, toast, run, textTools, toggleEmphasis, insertAtCaret, miniPreview, previewScale, watchPreview, wait, store, idb, readImage, bindDrop, preventStrayDrops,
     brandImage, brandSrc, brandSvg, saveBlob, canvasToBlob, fileProtocolError, slug, formatSize, busy,
     libs, pdfFonts, pdfFontStyle, pdfDocument, pdfFinish, pdfColor, fontFiles, fontsReady, debounce, uid,
   };
