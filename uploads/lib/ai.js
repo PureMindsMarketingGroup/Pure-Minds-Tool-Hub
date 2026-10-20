@@ -155,7 +155,7 @@ const EMAIL = {
   properties: {
     onderwerp: str('De onderwerpregel: concreet, nieuwsgierig makend, zonder hoofdletters in elk woord.', 60),
     voorvertoning: str('De voorvertoningstekst naast het onderwerp in de inbox: vult het onderwerp aan, herhaalt het niet.', 100),
-    blokken: list(BLOK, 'De blokken van boven naar beneden. Begin met opening, eindig met afsluiter.', 2, 12),
+    blokken: list(BLOK, 'De blokken van boven naar beneden. Begin met opening, eindig met afsluiter. Zet er in een nieuwsbrief minstens één foto- of fototekst-blok in (met fotoZoek), zodat de mail beeld heeft; alleen een korte mail of een uitdrukkelijke wens mag zonder.', 2, 12),
   },
 };
 

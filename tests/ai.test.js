@@ -268,3 +268,8 @@ test('foto’s in de makers: photos.js vóór ai.js, en elke maker geeft fotople
   }
   assert.doesNotThrow(() => new vm.Script(read('js/shared/photos.js')));
 });
+
+test('e-mail: een nieuwsbrief krijgt beeld (minstens één foto- of fototekst-blok)', async () => {
+  const A = await load();
+  assert.match(A.FORMATS.email.schema.properties.blokken.description, /minstens één foto- of fototekst-blok/);
+});
