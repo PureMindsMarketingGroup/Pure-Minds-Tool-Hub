@@ -24,7 +24,7 @@
        opties.lib                    de bieb van de maker (PM.library.attach)
        opties.canRefine()            optioneel: '' = aanpassen mag, anders de reden waarom niet
        opties.photos                 optioneel: foto's van Pexels (js/shared/photos.js)
-         .slots(data)                na het maken: [{ key, query, orientation, width }] per fotoplek;
+         .slots(data)                na het maken: [{ key, query, orientation, width, download }] per fotoplek;
                                      de foto's gaan als opties.apply(data, { photos: Map }) mee
          .target()                   { label, orientation, query, width } van de open fotoplek, of null
          .apply(file, foto)          een gekozen foto plaatsen (zoals een upload)
@@ -58,7 +58,7 @@
     },
     'ai-fotos': {
       title: 'Foto’s van Pexels',
-      text: 'Na het maken zet de AI er meteen passende foto’s in, van Pexels: gratis, ook zakelijk, zonder naamsvermelding. Niet goed? Zoek hier een andere en klik erop: hij komt op de open slide, post of blok. Eigen foto’s kan ook altijd.',
+      text: 'Na het maken zet de AI er meteen passende foto’s in, uit een gratis fotobank (Unsplash): ook zakelijk te gebruiken, zonder naamsvermelding in je post of mail. Niet goed? Zoek hier een andere en klik erop: hij komt op de open slide, post of blok. Eigen foto’s kan ook altijd.',
     },
     'ai-bewaren': {
       title: 'Vanzelf bewaard',
@@ -232,10 +232,11 @@ ${opts.wishField || ''}
         // Wat er open stond en gewijzigd was, eerst als nieuwe versie in de bieb
         if (opts.lib && opts.lib.isDirty && opts.lib.isDirty()) await opts.lib.save({ quiet: true, asNew: true });
         await opts.apply(res.data, { mode: 'generate', photos });
+        if (photos) photos.forEach(({ photo }) => PM.photos.used(photo));
         if (opts.lib) await opts.lib.save({ quiet: true, asNew: true });
         if (opts.saver) opts.saver.start();
         const n = photos ? photos.size : 0;
-        PM.toast(`Je ${noun} is ingevuld${n ? `, met ${n === 1 ? 'een foto' : `${n} foto’s`} van Pexels,` : ''} en staat in je bieb. Lees hem na en pas aan wat je wilt.`, false, opts.undo ? { label: 'ongedaan maken', run: opts.undo } : null);
+        PM.toast(`Je ${noun} is ingevuld${n ? `, met ${n === 1 ? 'een foto' : `${n} foto’s`} van ${PM.photos.providerName()},` : ''} en staat in je bieb. Lees hem na en pas aan wat je wilt.`, false, opts.undo ? { label: 'ongedaan maken', run: opts.undo } : null);
         if (picker) picker.refresh();
         if (PM.tour) PM.tour.signal('ai');
       } catch (err) {

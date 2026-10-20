@@ -91,7 +91,7 @@ js/
   shared/library.js           de bieb: ontwerpen 14 dagen bewaren (PM.library)
   shared/service.js           de server van de hub: adres en verzoeken, wachtwoord alleen als Vercel erom vraagt (PM.service)
   shared/ai.js                het paneel AI in de makers, vanzelf opslaan na de AI (PM.ai)
-  shared/photos.js            passende foto's van Pexels zoeken en plaatsen (PM.photos)
+  shared/photos.js            passende foto's uit een fotobank (Unsplash) zoeken en plaatsen (PM.photos)
   shared/shell.js             indeling zoals Canva: rail, één paneel, podium (PM.shell)
   shared/help.js              [?]-uitleg naast instellingen (PM.help)
   shared/toolbar.js           tekstwerkbalk zoals Word (PM.toolbar)
@@ -1185,11 +1185,12 @@ de editor: de AI vult hun velden, en daarna pas je alles gewoon aan.
 
 - **Starten:** in elke maker zit het paneel **AI** (het icoon met de sterretjes in de rail). Plak de content,
   zet er eventueel een wens bij ("voor ondernemers, hoogstens 8 slides") en klik op *maak met AI*.
-- **Foto's:** de AI geeft per fotoplek zoektermen; de server zoekt bij **Pexels** (`uploads/api/photos.js`,
-  sleutel `PEXELS_API_KEY` in Vercel) en de maker zet de beste foto er meteen in: op de post (bij een
-  carousel de eerste slide, als achtergrond), op de slides met een fotoplek, en in de fotoblokken van een mail
-  (die gaan meteen online). Onder *Foto zoeken* in het paneel AI kies je met één klik een andere. Pexels heeft
-  een gratis licentie, ook zakelijk, zonder naamsvermelding; willekeurige foto's van internet niet (auteursrecht).
+- **Foto's:** de AI geeft per fotoplek zoektermen; de server zoekt bij **Unsplash** (`uploads/api/photos.js`,
+  sleutel `UNSPLASH_ACCESS_KEY` in Vercel; Pexels als reserve) en de maker zet de beste foto er meteen in: op
+  de post (bij een carousel de eerste slide, als achtergrond), op de slides met een fotoplek, en in de
+  fotoblokken van een mail (daar op de link van Unsplash, zoals hun regels vragen). Onder *Foto zoeken* in het
+  paneel AI kies je met één klik een andere; de fotograaf staat erbij. Unsplash heeft een gratis licentie, ook
+  zakelijk, zonder naamsvermelding in je post of mail; willekeurige foto's van internet niet (auteursrecht).
 - **Altijd JSON:** de server (`uploads/api/generate.js`) geeft Claude één tool met een vast schema
   (`uploads/lib/ai.js`: `vul_presentatie`, `vul_post`, `vul_mail`) en laat hem alleen daarmee antwoorden.
   Opus 5.5 denkt eerst na en staat dan geen gedwongen tool toe; antwoordt hij toch in tekst, dan vraagt de

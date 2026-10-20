@@ -7,15 +7,16 @@ samen in één Vercel-project: deze map `uploads/`.
    plaatjes tonen die online staan. De maker verkleint een foto tot 1200 px breed en stuurt hem hierheen. Hij
    komt in **Vercel Blob**, en er komt een vaste, openbare link terug voor in de HTML.
 2. **De AI** (`api/generate.js`): Claude Opus maakt van ruwe content een presentatie, Instagram-post of
-   e-mail. Passende foto's zoekt `api/photos.js` bij **Pexels** (gratis licentie, ook zakelijk). Het antwoord is altijd JSON volgens een vast schema (`lib/ai.js`), en de maker zet die JSON in zijn
+   e-mail. Passende foto's zoekt `api/photos.js` bij **Unsplash** (gratis licentie, ook zakelijk; Pexels als
+   reserve). Het antwoord is altijd JSON volgens een vast schema (`lib/ai.js`), en de maker zet die JSON in zijn
    eigen velden. Zie [Maken met AI](../README.md#maken-met-ai).
 
 Bestanden:
 
 - `api/upload.js`: foto's (`GET` = status, `POST` = uploaden)
 - `api/generate.js`: de AI (`GET` = status, `POST` = maken of aanpassen)
-- `api/photos.js`: foto's zoeken bij Pexels (`GET` = status, `GET ?q=` = zoeken)
-- `lib/photos.js`: de zoekvraag en het antwoord van Pexels (alleen foto's van images.pexels.com)
+- `api/photos.js`: foto's zoeken (`GET` = status, `GET ?q=` = zoeken, `GET ?track=` = download melden bij Unsplash)
+- `lib/photos.js`: de zoekvraag en het antwoord van Unsplash en Pexels (alleen foto's van hun eigen beeldserver)
 - `lib/check.js`: alleen vanaf de Tool Hub, alleen JPG en PNG, hoogstens 4 MB (en een wachtwoord als dat is ingesteld)
 - `lib/ai.js`: de JSON-schema's per formaat, de technische regels en het verzoek aan Claude
 - `vercel.json`: de AI mag 300 seconden duren (een grote presentatie duurt een minuut of twee)
@@ -45,8 +46,12 @@ De hub gebruikt dat adres al (`js/shared/service.js`).
      (tone of voice, en wat een goede slide, post of mail is). Deze teksten staan bewust niet in deze openbare
      repo, maar in *vercel-instellingen* bij de beheerder. Ontbreken ze, dan werkt de AI met een korte, neutrale
      reserve uit `lib/ai.js`.
-   - `PEXELS_API_KEY`: de sleutel van Pexels voor foto's (gratis: pexels.com/api, *Your API Key*). Zonder
-     deze sleutel werkt de AI gewoon, maar dan zonder foto's.
+   - `UNSPLASH_ACCESS_KEY`: de *Access Key* van Unsplash voor foto's (gratis: unsplash.com/developers →
+     *Your apps* → *New Application*). Zonder deze sleutel werkt de AI gewoon, maar dan zonder foto's.
+     Om te beginnen 50 zoekvragen per uur; vraag voor meer *Apply for Production* aan in Unsplash (1.000 per
+     uur). De kiezer noemt al de fotograaf en Unsplash, zoals hun regels vragen.
+   - `PEXELS_API_KEY` (reserve): wordt alleen gebruikt als er geen sleutel van Unsplash is. Pexels geeft sinds
+     oktober 2026 geen nieuwe sleutels uit.
    - Optioneel `AI_MODEL` (standaard `claude-opus-5-5`).
 4. **Redeploy:** *Deployments* → de bovenste → *…* → *Redeploy*. Pas dan gelden de instellingen.
 5. **Testen:** `/api/upload` geeft `{"ok":true,"blob":true,...}`, `/api/generate` geeft
@@ -59,7 +64,9 @@ De hub gebruikt dat adres al (`js/shared/service.js`).
   Anthropic, voor een grote presentatie met Opus hooguit enkele tientallen centen. Kijk bij twijfel onder *Usage* (Vercel) en
   *Billing* (Anthropic).
 - **Rem.** Hoogstens 60 uploads, 40 AI-opdrachten en 120 zoekvragen naar foto's per kwartier per adres.
-  Pexels zelf staat 200 zoekvragen per uur toe (20.000 per maand); een zoekvraag wordt 10 minuten bewaard.
+  Unsplash zelf staat 50 zoekvragen per uur toe (na goedkeuring 1.000); een zoekvraag wordt 10 minuten bewaard.
+- **Regels van Unsplash:** de kiezer noemt fotograaf en Unsplash met een link; in een mail blijft de foto op
+  de link van Unsplash (geen kopie); en elke gebruikte foto meldt een download. Dat regelt de hub zelf.
 - **Niets weggooien wat al verstuurd is.** Een foto in een verstuurde mail moet online blijven, anders ziet de
   lezer een leeg vlak. Ruim de opslag (*Storage → Blob → Browser*) alleen op als je zeker weet dat een bestand
   nergens meer in staat.

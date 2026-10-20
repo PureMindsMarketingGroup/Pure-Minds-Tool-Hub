@@ -200,36 +200,58 @@ test('carousel: de AI zet geen nummer voor een les, en de maker haalt het weg al
   assert.equal(strip('3 tips voor je site'), '3 tips voor je site', 'een getal dat bij de zin hoort blijft');
 });
 
-test('foto’s: de AI geeft zoektermen per fotoplek; de server zoekt bij Pexels, alleen vanaf de Tool Hub', async () => {
+test('foto’s: de AI geeft zoektermen per fotoplek; de server zoekt bij Unsplash (of Pexels), alleen vanaf de Tool Hub', async () => {
   const A = await load();
   assert.ok(A.FORMATS.presentatie.element.properties.fotoZoek, 'slide');
   assert.ok(A.FORMATS.insta.schema.properties.fotoZoek, 'post');
   assert.ok(A.FORMATS.email.element.properties.fotoZoek, 'blok');
   const P = await import(pathToFileURL(path.join(root, 'uploads/lib/photos.js')).href);
+  // Unsplash eerst; Pexels als reserve; zonder sleutel uit
+  assert.equal(P.pickProvider({ UNSPLASH_ACCESS_KEY: 'u', PEXELS_API_KEY: 'p' }), 'unsplash');
+  assert.equal(P.pickProvider({ PEXELS_API_KEY: 'p' }), 'pexels');
+  assert.equal(P.pickProvider({}), null);
   const q = (o) => P.checkQuery(new URLSearchParams(o));
   assert.deepEqual(q({ q: '  bakery   bread ', orientation: 'portrait', n: '50', locale: 'nl-NL' }), { ok: true, q: 'bakery bread', orientation: 'portrait', n: 24, locale: 'nl-NL' });
-  assert.deepEqual(q({ q: 'team', orientation: 'scheef', locale: 'fr' }), { ok: true, q: 'team', orientation: '', n: 12, locale: 'en-US' });
+  assert.deepEqual(q({ q: 'team', orientation: 'scheef', locale: 'fr' }), { ok: true, q: 'team', orientation: '', n: 9, locale: 'en-US' });
   assert.equal(q({ q: 'x' }).status, 400);
-  const url = new URL(P.searchUrl({ q: 'bakery & bread', orientation: 'landscape', n: 1, locale: 'en-US' }));
-  assert.equal(url.origin + url.pathname, 'https://api.pexels.com/v1/search');
-  assert.equal(url.searchParams.get('query'), 'bakery & bread');
-  assert.equal(url.searchParams.get('orientation'), 'landscape');
-  // Alleen foto's van images.pexels.com; vreemde links vallen weg
-  const list = P.mapResults({ photos: [
+  const un = P.searchRequest('unsplash', { q: 'bakery & bread', orientation: 'square', n: 1, locale: 'en-US' }, 'KEY');
+  const uu = new URL(un.url);
+  assert.equal(uu.origin + uu.pathname, 'https://api.unsplash.com/search/photos');
+  assert.equal(uu.searchParams.get('query'), 'bakery & bread');
+  assert.equal(uu.searchParams.get('orientation'), 'squarish', 'Unsplash noemt vierkant squarish');
+  assert.equal(uu.searchParams.get('content_filter'), 'high');
+  assert.equal(un.headers.authorization, 'Client-ID KEY');
+  const px = P.searchRequest('pexels', { q: 'bakery', orientation: 'landscape', n: 1, locale: 'en-US' }, 'KEY');
+  assert.equal(new URL(px.url).origin, 'https://api.pexels.com');
+  assert.equal(px.headers.authorization, 'KEY');
+  // Unsplash: alleen images.unsplash.com, links met utm, downloadmelding alleen naar api.unsplash.com
+  const u = P.mapResults('unsplash', { results: [
+    { id: 'abc', width: 4000, height: 3000, color: '#a08060', alt_description: 'bread', urls: { raw: 'https://images.unsplash.com/photo-1?ixid=XYZ' }, links: { html: 'https://unsplash.com/photos/abc', download_location: 'https://api.unsplash.com/photos/abc/download?ixid=XYZ' }, user: { name: 'Ann', links: { html: 'https://unsplash.com/@ann' } } },
+    { id: 'bad', urls: { raw: 'https://evil.example/x.jpg' } },
+    { id: 'bad2', urls: { raw: 'https://images.unsplash.com/photo-2' }, links: { download_location: 'https://evil.example/photos/x/download' }, user: { links: { html: 'javascript:alert(1)' } } },
+  ] });
+  assert.equal(u.length, 2);
+  assert.equal(u[0].src, 'https://images.unsplash.com/photo-1?ixid=XYZ');
+  assert.equal(u[0].thumb, 'https://images.unsplash.com/photo-1?ixid=XYZ&w=400&fit=max&q=70&fm=jpg');
+  assert.equal(u[0].photographerUrl, 'https://unsplash.com/@ann?utm_source=pure_minds_tool_hub&utm_medium=referral');
+  assert.equal(u[0].track, 'https://api.unsplash.com/photos/abc/download?ixid=XYZ');
+  assert.equal(u[1].track, '', 'een vreemde downloadlink valt weg');
+  assert.ok(u[1].photographerUrl.startsWith('https://unsplash.com'), 'geen javascript:-link');
+  // Pexels: alleen images.pexels.com
+  const list = P.mapResults('pexels', { photos: [
     { id: 1, width: 4000, height: 3000, alt: 'Brood', avg_color: '#AA8866', photographer: 'Ann', photographer_url: 'https://www.pexels.com/@ann', url: 'https://www.pexels.com/photo/1/', src: { original: 'https://images.pexels.com/photos/1/pexels-photo-1.jpeg?x=1' } },
     { id: 2, src: { original: 'https://evil.example/a.jpg' } },
-    { id: 3, src: { original: 'javascript:alert(1)' }, photographer_url: 'javascript:x' },
   ] });
   assert.equal(list.length, 1);
-  assert.equal(list[0].original, 'https://images.pexels.com/photos/1/pexels-photo-1.jpeg');
-  assert.equal(list[0].thumb, 'https://images.pexels.com/photos/1/pexels-photo-1.jpeg?auto=compress&cs=tinysrgb&w=400');
-  assert.match(P.pexelsError(401), /PEXELS_API_KEY/);
+  assert.equal(list[0].src, 'https://images.pexels.com/photos/1/pexels-photo-1.jpeg');
+  assert.match(P.providerError('unsplash', 401), /UNSPLASH_ACCESS_KEY/);
   const C = await import(pathToFileURL(path.join(root, 'uploads/lib/check.js')).href);
   assert.deepEqual(C.checkOrigin({ origin: 'https://puremindsmarketinggroup.github.io', expected: '' }), { ok: true });
   assert.equal(C.checkOrigin({ origin: null, expected: '' }).status, 403);
   assert.equal(C.checkOrigin({ origin: 'https://puremindsmarketinggroup.github.io', expected: 'geheim', password: 'fout' }).status, 401);
   const api = read('uploads/api/photos.js');
-  assert.match(api, /process\.env\.PEXELS_API_KEY/);
+  assert.match(api, /pickProvider\(process\.env\)/);
+  assert.match(api, /params\.has\('track'\)/, 'downloadmelding voor Unsplash');
   assert.match(api, /checkOrigin\(/);
 });
 
@@ -240,7 +262,7 @@ test('foto’s in de makers: photos.js vóór ai.js, en elke maker geeft fotople
     const b = html.indexOf('<script src="../js/shared/ai.js">');
     assert.ok(a > 0 && a < b, `${tool}: photos.js vóór ai.js`);
     const app = read(`js/${tool}/app.js`);
-    assert.match(app, /photos: \{\s*slots: \(d\) =>/, `${tool}: fotoplekken na het maken`);
+    assert.match(app, /photos: \{[\s\S]{0,240}?slots: \(d\) =>/, `${tool}: fotoplekken na het maken`);
     assert.match(app, /target: \(\) =>/, `${tool}: doel om zelf te kiezen`);
     assert.match(app, /fotoZoek/, `${tool}: zoektermen van de AI`);
   }

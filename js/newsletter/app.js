@@ -1282,14 +1282,32 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
     renderList();
     render();
     renderIdeas();
-    // De foto's van Pexels online zetten (tegelijk; elk blok toont hem zodra hij online staat)
+    // De foto's uit de fotobank in de fotoblokken
     if (target == null && photos && photos.size) {
       const list = Array.isArray(d.blokken) ? d.blokken : [];
+      let linked = false;
       for (const [i, found] of photos) {
         const b = state.blocks[i];
-        if (b && b.img) uploadPhoto(b.id, found.file, { alt: txt(list[i] && list[i].fotoIdee) || found.photo.alt, quiet: true });
+        if (!b || !b.img) continue;
+        const alt = txt(list[i] && list[i].fotoIdee) || found.photo.alt;
+        if (found.photo.provider === 'unsplash') {
+          linkPhoto(b, found.photo, alt);
+          linked = true;
+        } else if (found.file) uploadPhoto(b.id, found.file, { alt, quiet: true });
+        else PM.photos.toFile(found.photo, 1600).then((file) => uploadPhoto(b.id, file, { alt, quiet: true })).catch(() => {});
+      }
+      if (linked) {
+        changed(null);
+        renderList();
+        render();
       }
     }
+  }
+
+  // Unsplash: de foto blijft op de link van Unsplash (API-regels), 1200 px breed: scherp op retina
+  function linkPhoto(b, photo, alt) {
+    const w = 1200;
+    b.img = { src: PM.photos.url(photo, w), alt: alt || photo.alt || '', w, h: photo.w && photo.h ? Math.round((w * photo.h) / photo.w) : undefined, query: b.img.query, shape: b.img.shape };
   }
 
   function renderIdeas() {
@@ -1314,9 +1332,14 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
       apply: applyAI,
       // Foto's van Pexels: na het maken meteen in de fotoblokken (online gezet), en zelf zoeken voor het open blok
       photos: {
-        slots: (d) => (!canUpload() ? [] : (Array.isArray(d && d.blokken) ? d.blokken : [])
-          .map((x, i) => (x && ['foto', 'fototekst'].includes(x.type) && txt(x.fotoZoek) ? { key: i, query: txt(x.fotoZoek), orientation: 'landscape', width: 1600 } : null))
-          .filter(Boolean).slice(0, 6)),
+        // Unsplash: alleen de link (de foto blijft daar); een andere fotobank: downloaden en online zetten
+        slots: (d) => {
+          const linkOnly = PM.photos.provider() === 'unsplash';
+          if (!linkOnly && !canUpload()) return [];
+          return (Array.isArray(d && d.blokken) ? d.blokken : [])
+            .map((x, i) => (x && ['foto', 'fototekst'].includes(x.type) && txt(x.fotoZoek) ? { key: i, query: txt(x.fotoZoek), orientation: 'landscape', width: 1600, download: !linkOnly } : null))
+            .filter(Boolean).slice(0, 6);
+        },
         target: () => {
           const b = find(selected);
           return b && b.img ? { label: `${E.BLOCKS[b.type].name.toLowerCase()} (blok ${indexOf(b.id) + 1})`, orientation: 'landscape', query: b.img.query || '', width: 1600 } : null;
@@ -1324,6 +1347,13 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
         apply: async (file, photo) => {
           const b = find(selected);
           if (!b || !b.img) return;
+          if (photo.provider === 'unsplash') {
+            linkPhoto(b, photo, b.img.alt || photo.alt);
+            changed(null);
+            renderList();
+            render();
+            return;
+          }
           if (!canUpload()) { PM.toast('Foto’s uploaden staat nog niet aan.', true); return; }
           await uploadPhoto(b.id, file, { alt: b.img.alt || photo.alt });
         },
