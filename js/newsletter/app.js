@@ -106,7 +106,7 @@
      Editor: indeling, werkbalk, ongedaan maken
      ------------------------------------------------------------------------- */
 
-  const shell = PM.shell(el.app, { tool: 'newsletter', quickStart: !!quickKind || !!start.ai });
+  const shell = PM.shell(el.app, { tool: 'newsletter', quickStart: !!quickKind });
   PM.toolbar($('#tbar'));
 
   const history = PM.history({
@@ -733,7 +733,8 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
     }
   }
 
-  async function uploadPhoto(id, file) {
+  // opts.alt: beschrijving (zoals de fotosuggestie van de AI); opts.quiet: geen melding (meer foto's tegelijk)
+  async function uploadPhoto(id, file, opts = {}) {
     const b = find(id);
     if (!b || !b.img || !file) return;
     if (!canUpload()) {
@@ -750,7 +751,7 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
     const origKey = `nb-orig-${PM.uid()}`;
     await PM.idb.set(origKey, file);
     trackFile(origKey);
-    await sendPhoto(id, prepared, file.name || 'foto', { orig: origKey, name: file.name || '' });
+    await sendPhoto(id, prepared, file.name || 'foto', { orig: origKey, name: file.name || '', ...(opts.alt ? { alt: opts.alt } : {}), quiet: !!opts.quiet });
   }
 
   async function sendPhoto(id, prepared, name, extra) {
@@ -763,12 +764,13 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
       const b = find(id);
       if (!b) return;
       const fresh = b.img.src !== url;
-      b.img = { ...b.img, ...extra, src: url, w: prepared.w, h: prepared.h, alt: extra.keepAlt ? b.img.alt : '' };
+      b.img = { ...b.img, ...extra, src: url, w: prepared.w, h: prepared.h, alt: extra.keepAlt ? b.img.alt : (extra.alt || '') };
       delete b.img.keepAlt;
+      delete b.img.quiet;
       if (fresh) changed(null);
-      PM.toast(prepared.small
+      if (!extra.quiet) PM.toast(prepared.small
         ? `Foto staat online, maar hij is klein (${prepared.w} px breed): in de mail kan hij wazig worden.`
-        : `Foto staat online. ${extra.keepAlt ? '' : 'Beschrijf hem nog in een paar woorden.'}`);
+        : `Foto staat online. ${extra.keepAlt || extra.alt ? '' : 'Beschrijf hem nog in een paar woorden.'}`);
     } catch (err) {
       if (err && err.cancelled) PM.toast('Niet geüpload: zonder wachtwoord kan het niet.', true);
       else PM.toast(err.message || 'Uploaden lukte niet.', true);
@@ -1202,11 +1204,11 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
     switch (b.type) {
       case 'opening': return { type: b.type, label: b.label, kop: b.title, tekst: b.intro, knopTekst: b.button.text, knopLink: b.button.url };
       case 'tekst': return { type: b.type, kop: b.title, tekst: b.body, linkTekst: b.link.text, linkLink: b.link.url };
-      case 'fototekst': return { type: b.type, kop: b.title, tekst: b.body, linkTekst: b.link.text, linkLink: b.link.url, fotoKant: b.side, fotoIdee: b.img.alt };
+      case 'fototekst': return { type: b.type, kop: b.title, tekst: b.body, linkTekst: b.link.text, linkLink: b.link.url, fotoKant: b.side, fotoIdee: b.img.alt, fotoZoek: b.img.query || '' };
       case 'punten': return { type: b.type, kop: b.title, punten: b.items.map((it) => ({ titel: it.title, tekst: it.text })) };
       case 'resultaat': return { type: b.type, label: b.label, cijfer: b.number, cijferTekst: b.text };
       case 'afsluiter': return { type: b.type, kop: b.title, tekst: b.body, knopTekst: b.button.text, knopLink: b.button.url };
-      case 'foto': return { type: b.type, fotoIdee: b.img.alt };
+      case 'foto': return { type: b.type, fotoIdee: b.img.alt, fotoZoek: b.img.query || '' };
       default: return { type: b.type };
     }
   }
@@ -1223,6 +1225,7 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
       const p = E.STOCK[photoNo % E.STOCK.length];
       b.img = { src: p.src, alt: p.alt, w: p.w, h: p.h };
     }
+    if (b.img && txt(x.fotoZoek)) b.img.query = txt(x.fotoZoek);
     // Een knop zonder link uit de content: de vaste plek van Pure Minds (contact, mail)
     const link = (text, url, fallback = '') => ({ text: txt(text), url: txt(url) || (txt(text) ? fallback : '') });
     if (type === 'opening') Object.assign(b, { label: txt(x.label) || b.label, title: txt(x.kop), intro: txt(x.tekst), button: link(x.knopTekst, x.knopLink, 'https://www.pureminds.nl/contact/') });
@@ -1242,7 +1245,7 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
     return b;
   }
 
-  function applyAI(data, { mode, target }) {
+  function applyAI(data, { mode, target, photos }) {
     const d = data && typeof data === 'object' ? data : {};
     if (target != null) {
       // Alleen het open blok: id, foto en iconen blijven
@@ -1256,10 +1259,10 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
       const list = Array.isArray(d.blokken) ? d.blokken.slice(0, E.MAX_BLOCKS) : [];
       if (!list.length) throw new Error('De AI gaf geen blokken terug. Probeer het nog eens.');
       const old = mode === 'refine' ? state.blocks : [];
-      let photos = 0;
+      let stockNo = 0;   // welke foto uit de fotobank als begin (tot Pexels er een heeft)
       state.blocks = list.map((x, i) => {
-        const b = blockFromAI(x, old[i], photos);
-        if (b.img && !(old[i] && old[i].type === b.type)) photos++;
+        const b = blockFromAI(x, old[i], stockNo);
+        if (b.img && !(old[i] && old[i].type === b.type)) stockNo++;
         return b;
       });
       if (txt(d.onderwerp)) state.subject = txt(d.onderwerp);
@@ -1268,8 +1271,9 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
         state.name = txt(d.onderwerp).slice(0, 120);
         state.kind = state.blocks.length <= 4 ? 'kort' : 'nieuwsbrief';
       }
+      // Fotosuggesties alleen voor een blok zonder foto van Pexels (daar staat dan nog de fotobank)
       state.ideas = list
-        .map((x, i) => (x && ['foto', 'fototekst'].includes(x.type) && txt(x.fotoIdee) ? `Blok ${i + 1} (${E.BLOCKS[x.type].name.toLowerCase()}): ${txt(x.fotoIdee)}` : ''))
+        .map((x, i) => (x && ['foto', 'fototekst'].includes(x.type) && txt(x.fotoIdee) && !(photos && photos.has(i)) ? `Blok ${i + 1} (${E.BLOCKS[x.type].name.toLowerCase()}): ${txt(x.fotoIdee)}` : ''))
         .filter(Boolean);
       selected = state.blocks[0] ? state.blocks[0].id : null;
     }
@@ -1278,6 +1282,14 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
     renderList();
     render();
     renderIdeas();
+    // De foto's van Pexels online zetten (tegelijk; elk blok toont hem zodra hij online staat)
+    if (target == null && photos && photos.size) {
+      const list = Array.isArray(d.blokken) ? d.blokken : [];
+      for (const [i, found] of photos) {
+        const b = state.blocks[i];
+        if (b && b.img) uploadPhoto(b.id, found.file, { alt: txt(list[i] && list[i].fotoIdee) || found.photo.alt, quiet: true });
+      }
+    }
   }
 
   function renderIdeas() {
@@ -1300,11 +1312,25 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
         return i < 0 ? null : { index: i, label: `${E.BLOCKS[state.blocks[i].type].name} (blok ${i + 1})` };
       },
       apply: applyAI,
+      // Foto's van Pexels: na het maken meteen in de fotoblokken (online gezet), en zelf zoeken voor het open blok
+      photos: {
+        slots: (d) => (!canUpload() ? [] : (Array.isArray(d && d.blokken) ? d.blokken : [])
+          .map((x, i) => (x && ['foto', 'fototekst'].includes(x.type) && txt(x.fotoZoek) ? { key: i, query: txt(x.fotoZoek), orientation: 'landscape', width: 1600 } : null))
+          .filter(Boolean).slice(0, 6)),
+        target: () => {
+          const b = find(selected);
+          return b && b.img ? { label: `${E.BLOCKS[b.type].name.toLowerCase()} (blok ${indexOf(b.id) + 1})`, orientation: 'landscape', query: b.img.query || '', width: 1600 } : null;
+        },
+        apply: async (file, photo) => {
+          const b = find(selected);
+          if (!b || !b.img) return;
+          if (!canUpload()) { PM.toast('Foto’s uploaden staat nog niet aan.', true); return; }
+          await uploadPhoto(b.id, file, { alt: b.img.alt || photo.alt });
+        },
+      },
       lib,
       saver: aiSaver,
       undo: () => history.undo(),
-      autostart: !!start.ai,
-      open: () => shell.open('ai'),
     });
     renderIdeas();
     // "Dit onderdeel" volgt het open blok

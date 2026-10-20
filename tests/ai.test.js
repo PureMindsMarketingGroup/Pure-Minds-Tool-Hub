@@ -141,23 +141,19 @@ test('de drie makers hebben het paneel AI, laden service.js en ai.js, en koppele
     assert.match(app, /aiSaver = PM\.ai\.keepSaved\(lib\)/, `${tool}: vanzelf in de bieb`);
     assert.match(app, /if \(aiSaver\) aiSaver\.touch\(\);/, `${tool}: elke wijziging`);
     assert.match(app, /if \(aiSaver\) aiSaver\.stop\(\);/, `${tool}: stoppen bij een ander ontwerp`);
-    assert.match(app, /autostart: !!start\.ai/, `${tool}: van de startpagina`);
     const sandbox = {};
     new Function('window', read(`js/${tool}/help.js`))(sandbox);
     assert.ok(sandbox.PM_HELP[tool].sections.some((s) => s.id === 'ai'), `${tool}: sectie ai`);
   }
-  for (const f of ['js/shared/ai.js', 'js/shared/service.js', 'js/ai/app.js']) assert.doesNotThrow(() => new vm.Script(read(f), { filename: f }));
+  for (const f of ['js/shared/ai.js', 'js/shared/service.js', 'js/shared/photos.js']) assert.doesNotThrow(() => new vm.Script(read(f), { filename: f }));
 });
 
-test('de startpagina staat in het register, met de drie formaten als snelle start', () => {
+test('geen aparte startpagina meer: de AI zit in het paneel AI van elke maker', () => {
   const sandbox = { window: {} };
   vm.runInNewContext(read('js/shared/tools.js'), sandbox);
-  const tool = sandbox.window.PM_TOOLS.find((t) => t.id === 'ai');
-  assert.equal(tool.href, 'tools/ai.html');
-  assert.equal(JSON.stringify(tool.starts.map((s) => s.params.format)), JSON.stringify(['presentatie', 'insta', 'email']));
-  const html = read('tools/ai.html');
-  for (const v of ['presentatie', 'insta', 'email']) assert.ok(html.includes(`name="format" value="${v}"`), v);
-  assert.match(read('js/ai/app.js'), /PM\.ai\.handoff\.put\(/);
+  assert.ok(!sandbox.window.PM_TOOLS.some((t) => t.id === 'ai'), 'geen kaart Maken met AI');
+  assert.ok(!fs.existsSync(path.join(root, 'tools/ai.html')));
+  assert.ok(!/handoff|autostart/.test(read('js/shared/ai.js')));
 });
 
 test('debounce: na de AI één keer opslaan na de laatste wijziging, en niet meer na stop', async () => {
@@ -202,4 +198,51 @@ test('carousel: de AI zet geen nummer voor een les, en de maker haalt het weg al
   assert.equal(strip('1. Vul je profiel in'), 'Vul je profiel in');
   assert.equal(strip('12) Snel op mobiel'), 'Snel op mobiel');
   assert.equal(strip('3 tips voor je site'), '3 tips voor je site', 'een getal dat bij de zin hoort blijft');
+});
+
+test('foto’s: de AI geeft zoektermen per fotoplek; de server zoekt bij Pexels, alleen vanaf de Tool Hub', async () => {
+  const A = await load();
+  assert.ok(A.FORMATS.presentatie.element.properties.fotoZoek, 'slide');
+  assert.ok(A.FORMATS.insta.schema.properties.fotoZoek, 'post');
+  assert.ok(A.FORMATS.email.element.properties.fotoZoek, 'blok');
+  const P = await import(pathToFileURL(path.join(root, 'uploads/lib/photos.js')).href);
+  const q = (o) => P.checkQuery(new URLSearchParams(o));
+  assert.deepEqual(q({ q: '  bakery   bread ', orientation: 'portrait', n: '50', locale: 'nl-NL' }), { ok: true, q: 'bakery bread', orientation: 'portrait', n: 24, locale: 'nl-NL' });
+  assert.deepEqual(q({ q: 'team', orientation: 'scheef', locale: 'fr' }), { ok: true, q: 'team', orientation: '', n: 12, locale: 'en-US' });
+  assert.equal(q({ q: 'x' }).status, 400);
+  const url = new URL(P.searchUrl({ q: 'bakery & bread', orientation: 'landscape', n: 1, locale: 'en-US' }));
+  assert.equal(url.origin + url.pathname, 'https://api.pexels.com/v1/search');
+  assert.equal(url.searchParams.get('query'), 'bakery & bread');
+  assert.equal(url.searchParams.get('orientation'), 'landscape');
+  // Alleen foto's van images.pexels.com; vreemde links vallen weg
+  const list = P.mapResults({ photos: [
+    { id: 1, width: 4000, height: 3000, alt: 'Brood', avg_color: '#AA8866', photographer: 'Ann', photographer_url: 'https://www.pexels.com/@ann', url: 'https://www.pexels.com/photo/1/', src: { original: 'https://images.pexels.com/photos/1/pexels-photo-1.jpeg?x=1' } },
+    { id: 2, src: { original: 'https://evil.example/a.jpg' } },
+    { id: 3, src: { original: 'javascript:alert(1)' }, photographer_url: 'javascript:x' },
+  ] });
+  assert.equal(list.length, 1);
+  assert.equal(list[0].original, 'https://images.pexels.com/photos/1/pexels-photo-1.jpeg');
+  assert.equal(list[0].thumb, 'https://images.pexels.com/photos/1/pexels-photo-1.jpeg?auto=compress&cs=tinysrgb&w=400');
+  assert.match(P.pexelsError(401), /PEXELS_API_KEY/);
+  const C = await import(pathToFileURL(path.join(root, 'uploads/lib/check.js')).href);
+  assert.deepEqual(C.checkOrigin({ origin: 'https://puremindsmarketinggroup.github.io', expected: '' }), { ok: true });
+  assert.equal(C.checkOrigin({ origin: null, expected: '' }).status, 403);
+  assert.equal(C.checkOrigin({ origin: 'https://puremindsmarketinggroup.github.io', expected: 'geheim', password: 'fout' }).status, 401);
+  const api = read('uploads/api/photos.js');
+  assert.match(api, /process\.env\.PEXELS_API_KEY/);
+  assert.match(api, /checkOrigin\(/);
+});
+
+test('foto’s in de makers: photos.js vóór ai.js, en elke maker geeft fotoplekken en een doel', () => {
+  for (const [tool, page] of [['insta', 'insta'], ['presentation', 'presentation'], ['newsletter', 'nieuwsbrief']]) {
+    const html = read(`tools/${page}.html`);
+    const a = html.indexOf('<script src="../js/shared/photos.js">');
+    const b = html.indexOf('<script src="../js/shared/ai.js">');
+    assert.ok(a > 0 && a < b, `${tool}: photos.js vóór ai.js`);
+    const app = read(`js/${tool}/app.js`);
+    assert.match(app, /photos: \{\s*slots: \(d\) =>/, `${tool}: fotoplekken na het maken`);
+    assert.match(app, /target: \(\) =>/, `${tool}: doel om zelf te kiezen`);
+    assert.match(app, /fotoZoek/, `${tool}: zoektermen van de AI`);
+  }
+  assert.doesNotThrow(() => new vm.Script(read('js/shared/photos.js')));
 });

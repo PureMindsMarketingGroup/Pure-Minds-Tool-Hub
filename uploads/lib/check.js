@@ -45,6 +45,17 @@ export function sniff(bytes) {
   return null;
 }
 
+// Alleen de herkomst en het wachtwoord (als dat is ingesteld): voor de AI en het zoeken van foto's
+export function checkOrigin({ origin, password, expected }) {
+  if (origin && !allowedOrigin(origin)) return { ok: false, status: 403, error: 'Dit kan alleen vanuit de Tool Hub.' };
+  if (expected) {
+    if (!passwordOk(password, expected)) return { ok: false, status: 401, error: 'Het wachtwoord klopt niet.' };
+  } else if (!origin) {
+    return { ok: false, status: 403, error: 'Dit kan alleen vanuit de Tool Hub.' };
+  }
+  return { ok: true };
+}
+
 // Vóór het lezen van het bestand: herkomst, wachtwoord (als dat is ingesteld), soort en grootte.
 // Zonder wachtwoord moet het verzoek uit de Tool Hub komen (een browser stuurt Origin altijd mee)
 export function checkRequest({ origin, password, expected, type, length }) {

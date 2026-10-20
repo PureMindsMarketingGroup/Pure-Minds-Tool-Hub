@@ -23,12 +23,13 @@
        opties.apply(data, { mode, target })   de JSON in de velden zetten (één stap ongedaan maken)
        opties.lib                    de bieb van de maker (PM.library.attach)
        opties.canRefine()            optioneel: '' = aanpassen mag, anders de reden waarom niet
-       opties.autostart              true: content van de startpagina meteen verwerken
-       opties.open()                 het paneel openen (shell.open('ai'))
+       opties.photos                 optioneel: foto's van Pexels (js/shared/photos.js)
+         .slots(data)                na het maken: [{ key, query, orientation, width }] per fotoplek;
+                                     de foto's gaan als opties.apply(data, { photos: Map }) mee
+         .target()                   { label, orientation, query, width } van de open fotoplek, of null
+         .apply(file, foto)          een gekozen foto plaatsen (zoals een upload)
      PM.ai.keepSaved(lib)            na de AI: elke wijziging vanzelf in de bieb (debounce);
                                      geeft { start, stop, touch }
-     PM.ai.handoff.put(format, content, wish) / take(format)
-                                     de startpagina (tools/ai.html) geeft content door aan een maker
 
    Bewaren: in deze browser, zoals alles in de hub. Na de AI staat het
    resultaat meteen in de bieb, als nieuw ontwerp (wat er open stond en
@@ -40,7 +41,6 @@
 
   const PM = global.PM;
   const doc = global.document;
-  const HANDOFF_KEY = 'pm-ai-handoff-v1';
   const RAW_KEY = (tool) => `pm-ai-raw-${tool}-v1`;
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const MAX_CONTENT = 60000;
@@ -55,6 +55,10 @@
     'ai-aanpassen': {
       title: 'Aanpassen met AI',
       text: 'Zeg wat er anders moet: korter, formeler, meer voor ondernemers, of "maak van punt 3 een vraag". Kies alles of alleen de open slide of het open blok. Wat je zelf schreef, blijft zoveel mogelijk staan.',
+    },
+    'ai-fotos': {
+      title: 'Foto’s van Pexels',
+      text: 'Na het maken zet de AI er meteen passende foto’s in, van Pexels: gratis, ook zakelijk, zonder naamsvermelding. Niet goed? Zoek hier een andere en klik erop: hij komt op de open slide, post of blok. Eigen foto’s kan ook altijd.',
     },
     'ai-bewaren': {
       title: 'Vanzelf bewaard',
@@ -74,22 +78,6 @@
     });
   }
   const status = () => PM.service.status('/api/generate');
-
-  /* ---------------------------------------------------------------------------
-     Doorgeven van de startpagina naar een maker (een half uur geldig)
-     ------------------------------------------------------------------------- */
-
-  const handoff = {
-    put(format, content, wish = '') {
-      PM.store.set(HANDOFF_KEY, { format, content: String(content).slice(0, MAX_CONTENT), wish: String(wish || ''), at: Date.now() });
-    },
-    take(format) {
-      const h = PM.store.get(HANDOFF_KEY, null);
-      if (!h || h.format !== format || !(Date.now() - h.at < 30 * 60 * 1000)) return null;
-      PM.store.set(HANDOFF_KEY, null);
-      return h;
-    },
-  };
 
   /* ---------------------------------------------------------------------------
      Na de AI: elke wijziging vanzelf in de bieb, met een debounce
@@ -156,6 +144,7 @@ ${opts.wishField || ''}
   <button type="button" class="btn btn-outline btn-sm" data-ai-refine>pas aan</button>
 </section>
 
+<section class="ai-photos" data-ai-photos hidden></section>
 <div class="ai-extras" data-ai-extras></div>
 <p class="ai-foot">Claude Opus van Anthropic, via de server van Pure Minds. Lees altijd na: de AI kan zich vergissen.</p>`;
 
@@ -231,12 +220,23 @@ ${opts.wishField || ''}
       try {
         const wish = [wishInput.value.trim(), opts.wish ? opts.wish() : ''].filter(Boolean).join(' ');
         const res = await request({ format: opts.format, mode: 'generate', content, wish });
+        // Passende foto's van Pexels voor de fotoplekken (als zoeken aanstaat); mislukt er een, dan blijft die plek leeg
+        let photos = null;
+        if (opts.photos && PM.photos && await PM.photos.ready()) {
+          const slots = opts.photos.slots(res.data);
+          if (slots.length) {
+            busyText.textContent = 'De AI zoekt passende foto’s…';
+            photos = await PM.photos.fill(slots);
+          }
+        }
         // Wat er open stond en gewijzigd was, eerst als nieuwe versie in de bieb
         if (opts.lib && opts.lib.isDirty && opts.lib.isDirty()) await opts.lib.save({ quiet: true, asNew: true });
-        await opts.apply(res.data, { mode: 'generate' });
+        await opts.apply(res.data, { mode: 'generate', photos });
         if (opts.lib) await opts.lib.save({ quiet: true, asNew: true });
         if (opts.saver) opts.saver.start();
-        PM.toast(`Je ${noun} is ingevuld en staat in je bieb. Lees hem na en pas aan wat je wilt.`, false, opts.undo ? { label: 'ongedaan maken', run: opts.undo } : null);
+        const n = photos ? photos.size : 0;
+        PM.toast(`Je ${noun} is ingevuld${n ? `, met ${n === 1 ? 'een foto' : `${n} foto’s`} van Pexels,` : ''} en staat in je bieb. Lees hem na en pas aan wat je wilt.`, false, opts.undo ? { label: 'ongedaan maken', run: opts.undo } : null);
+        if (picker) picker.refresh();
         if (PM.tour) PM.tour.signal('ai');
       } catch (err) {
         if (!(err && err.cancelled)) PM.toast(err.message || 'De AI lukte niet. Probeer het opnieuw.', true);
@@ -303,22 +303,32 @@ ${opts.wishField || ''}
         : '<b>De AI is nu niet bereikbaar.</b> Is de server van de Tool Hub al ingesteld in Vercel (Root Directory uploads)?';
     });
 
+    // Foto zoeken bij Pexels: alleen als de server het aan heeft staan
+    let picker = null;
+    if (opts.photos && PM.photos) {
+      PM.photos.ready().then((on) => {
+        if (!on) return;
+        const box = $('[data-ai-photos]');
+        box.hidden = false;
+        picker = PM.photos.picker(box, { tool, target: opts.photos.target, apply: opts.photos.apply });
+        if (PM.help && PM.help.init) PM.help.init(box, tool);
+        picker.refresh();
+      });
+    }
+
     if (PM.help && PM.help.init) PM.help.init(root, tool);
     refresh();
 
-    // Van de startpagina: content erin en meteen maken
-    const h = opts.autostart ? handoff.take(opts.format) : null;
-    if (h) {
-      raw.value = h.content;
-      PM.store.set(RAW_KEY(tool), h.content);
-      syncCount();
-      wishInput.value = h.wish || '';
-      if (opts.open) opts.open();
-      setTimeout(make, 300);
-    }
-
-    return { extras: $('[data-ai-extras]'), refresh, make, refine };
+    return {
+      extras: $('[data-ai-extras]'),
+      refresh() {
+        refresh();
+        if (picker) picker.refresh();
+      },
+      make,
+      refine,
+    };
   }
 
-  if (PM) PM.ai = { request, status, panel, keepSaved, handoff, HELP };
+  if (PM) PM.ai = { request, status, panel, keepSaved, HELP };
 })(window);

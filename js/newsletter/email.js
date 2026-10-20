@@ -158,6 +158,7 @@
     for (const k of ['w', 'h']) if (Number.isFinite(o[k]) && o[k] > 0) out[k] = Math.round(o[k]);
     if (typeof o.orig === 'string') out.orig = o.orig;
     if (typeof o.name === 'string') out.name = o.name.slice(0, 120);
+    if (typeof o.query === 'string') out.query = o.query.slice(0, 100);   // zoektermen van de AI (Pexels)
     if (['auto', '3:2', '16:9', '1:1'].includes(o.shape)) out.shape = o.shape;
     return out;
   }

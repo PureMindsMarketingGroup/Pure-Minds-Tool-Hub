@@ -50,7 +50,7 @@
       photoKey: '',   // sleutel van de foto in IndexedDB
       logoKey: '',    // sleutel van het klantlogo
       // Bij de post, niet op het plaatje: caption, hashtags en de fotosuggestie (AI of zelf)
-      social: { caption: '', hashtags: '', photoIdea: '' },
+      social: { caption: '', hashtags: '', photoIdea: '', photoQuery: '' },
       data: {
         photo: { style: 'full', label: '' },
         overlay: {
@@ -181,7 +181,7 @@
   // Gestart vanaf het dashboard (?template=carousel&format=portrait): meteen het
   // goede template en formaat. Pas opgeslagen bij de eerste wijziging.
   const start = PM.startParams();
-  const quickStart = !!(start.template || start.format || start.ai);
+  const quickStart = !!(start.template || start.format);
   if (T.TEMPLATE_META.some((t) => t.id === start.template)) state.template = start.template;
   if (T.FORMATS[start.format]) state.format = start.format;
 
@@ -1316,7 +1316,7 @@
   function toAI() {
     const t = state.template === 'photo' ? 'overlay' : state.template;
     const d = state.data;
-    const out = { template: t, label: (d[t] || {}).label || '', caption: state.social.caption, hashtags: state.social.hashtags.split(/\s+/).filter(Boolean), fotoIdee: state.social.photoIdea };
+    const out = { template: t, label: (d[t] || {}).label || '', caption: state.social.caption, hashtags: state.social.hashtags.split(/\s+/).filter(Boolean), fotoIdee: state.social.photoIdea, fotoZoek: state.social.photoQuery };
     if (t === 'overlay') Object.assign(out, { titel: d.overlay.title, ondertitel: d.overlay.subtitle });
     if (t === 'blog') Object.assign(out, { titel: d.blog.title, onderwerp: d.blog.topic, cta: d.blog.cta, knop: d.blog.button });
     if (t === 'case') Object.assign(out, { klant: d.case.client, diensten: d.case.services.filter(Boolean), zin: d.case.sentence, resultaat: d.case.resultValue, resultaatTekst: d.case.resultLabel });
@@ -1339,7 +1339,10 @@
     numbered: !!(x && x.soort === 'les'),
   });
 
-  function applyAI(data, { mode, target }) {
+  // Waar een foto van Pexels heen gaat: de post, of bij een carousel de eerste slide (als achtergrond)
+  const photoOrientation = () => (state.format === 'landscape' ? 'landscape' : state.template === 'blog' ? 'square' : 'portrait');
+
+  async function applyAI(data, { mode, target, photos }) {
     const d = data && typeof data === 'object' ? data : {};
     const c = carousel();
     if (target != null) {
@@ -1375,6 +1378,19 @@
       if (txt(d.caption)) state.social.caption = txt(d.caption);
       if (d.hashtags) state.social.hashtags = tags(d.hashtags);
       if (typeof d.fotoIdee === 'string') state.social.photoIdea = txt(d.fotoIdee);
+      if (typeof d.fotoZoek === 'string') state.social.photoQuery = txt(d.fotoZoek);
+      const found = photos && photos.get('post');
+      if (found) {
+        const key = await addFile(found.file, 'photo');
+        if (key && t === 'carousel') {
+          const first = carousel().slides[0];
+          Object.assign(first, { photo: true, photoStyle: 'achtergrond', photoKey: key, crop: { ...CROP } });
+        } else if (key) {
+          state.photoKey = key;
+          state.crop = { ...CROP };
+          if (t === 'case') state.data.case.photoBg = true;
+        }
+      }
     }
     state = normalize(state);
     syncLast();
@@ -1449,11 +1465,17 @@
       },
       wishPlaceholder: 'bijv. voor LinkedIn, met een vraag aan het eind',
       apply: applyAI,
+      // Foto's van Pexels: na het maken meteen een passende foto, en zelf zoeken voor de post of slide
+      photos: {
+        slots: (d) => (d && txt(d.fotoZoek) ? [{ key: 'post', query: txt(d.fotoZoek), orientation: d.template === 'blog' ? 'square' : state.format === 'landscape' ? 'landscape' : 'portrait', width: 2400 }] : []),
+        target: () => (state.template === 'photo' || AI_TEMPLATES[state.template]
+          ? { label: isCarousel() ? `slide ${carousel().active + 1}` : 'de post', orientation: photoOrientation(), query: state.social.photoQuery, width: 2400 }
+          : null),
+        apply: (file) => setPhoto(file),
+      },
       lib,
       saver: aiSaver,
       undo: () => history.undo(),
-      autostart: !!start.ai,
-      open: () => shell.open('ai'),
     });
     syncSocial();
     history.onChange(() => syncSocial());

@@ -128,6 +128,7 @@
       vpc: emptyVpc(),        // de vakken van de waardepropositie
       bmc: emptyBmc(),        // de blokken van het business model canvas
       notes: '',              // sprekersnotities: niet op de slide, wel in PowerPoint (Notities)
+      photoQuery: '',         // zoektermen van de AI voor een foto (Pexels, paneel AI)
       ...fields,
     };
   }
@@ -2752,6 +2753,7 @@
   function slideToAI(s) {
     const layout = s.layout === 'quote' && styleOf(s) === 'stat' ? 'stat' : s.layout;
     const out = { layout, label: s.label, titel: s.title, notities: s.notes || '' };
+    if (PHOTO_LAYOUTS.has(s.layout)) out.fotoZoek = s.photoQuery || '';
     if (['title', 'section', 'table', 'closing', 'stat'].includes(layout)) out.ondertitel = s.subtitle;
     if (layout === 'bullets' || layout === 'closing') out.punten = lines(s.body);
     if (layout === 'split') {
@@ -2774,7 +2776,7 @@
       id: prev.id, photoKey: prev.photoKey, crop: prev.crop, imageSide: prev.imageSide, photoFit: prev.photoFit, titleSize: prev.titleSize, meta: prev.meta,
     } : {};
     const punten = (Array.isArray(x.punten) ? x.punten : []).map(txt).filter(Boolean);
-    const fields = { label: txt(x.label), title: txt(x.titel), subtitle: txt(x.ondertitel), notes: txt(x.notities) };
+    const fields = { label: txt(x.label), title: txt(x.titel), subtitle: txt(x.ondertitel), notes: txt(x.notities), photoQuery: txt(x.fotoZoek) };
     if (layout === 'title' && !keep.meta) fields.meta = `Pure Minds Marketing Group · ${today()}`;
     if (layout === 'bullets' || layout === 'closing') fields.body = punten.join('\n');
     if (layout === 'split') fields.body = [txt(x.tekst), ...punten.map((p) => `- ${p}`)].filter(Boolean).join('\n');
@@ -2784,7 +2786,10 @@
     return slide;
   }
 
-  function applyAI(data, { mode, target }) {
+  // Foto's van Pexels: titelslide en afsluiter in de zeshoek (vierkant), beeld + tekst staand
+  const photoShape = (layout) => (layout === 'split' ? 'portrait' : 'square');
+
+  async function applyAI(data, { mode, target, photos }) {
     const d = data && typeof data === 'object' ? data : {};
     if (state.type !== 'regulier') switchType('regulier', { atStart: true });
     if (target != null) {
@@ -2804,6 +2809,13 @@
         .map((x, i) => (x && txt(x.fotoIdee) ? `Slide ${i + 1}: ${txt(x.fotoIdee)}` : ''))
         .filter(Boolean);
       PM.store.set(IDEAS_KEY, ideas);
+      // De foto's die de AI zocht, op hun slide
+      for (const [i, found] of photos || []) {
+        const slide = state.slides[i];
+        if (!slide || !PHOTO_LAYOUTS.has(slide.layout)) continue;
+        const key = await addFile(found.file);
+        if (key) Object.assign(slide, { photoKey: key, crop: { zoom: 1, fx: 0.5, fy: 0.5 } });
+      }
     }
     syncAll();
     changed(null);
@@ -2830,11 +2842,20 @@
       canRefine: () => (state.type === 'regulier' ? '' : 'Aanpassen met AI kan bij een gewone presentatie. Een voorstel of positionering vul je in met zijn eigen formulier.'),
       target: () => (state.type === 'regulier' ? { index: state.active, label: `slide ${state.active + 1}` } : null),
       apply: applyAI,
+      // Foto's van Pexels: na het maken meteen op de slides met een fotoplek, en zelf zoeken voor de open slide
+      photos: {
+        slots: (d) => (Array.isArray(d && d.slides) ? d.slides : [])
+          .map((x, i) => (x && ['title', 'split', 'closing'].includes(x.layout) && txt(x.fotoZoek) ? { key: i, query: txt(x.fotoZoek), orientation: photoShape(x.layout), width: 2400 } : null))
+          .filter(Boolean).slice(0, 6),
+        target: () => {
+          const s = current();
+          return s && PHOTO_LAYOUTS.has(s.layout) ? { label: `slide ${state.active + 1}`, orientation: photoShape(s.layout), query: s.photoQuery || '', width: 2400 } : null;
+        },
+        apply: (file) => setPhoto(file),
+      },
       lib,
       saver: aiSaver,
       undo: () => history.undo(),
-      autostart: !!start.ai,
-      open: () => shell.open('ai'),
     });
     renderIdeas();
     shell.onChange(({ id }) => { if (id === 'ai') { ai.refresh(); renderIdeas(); } });

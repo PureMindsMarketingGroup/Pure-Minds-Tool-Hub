@@ -25,7 +25,6 @@ Plain HTML, CSS en JavaScript: geen framework, geen buildstap.
 | [Document Maker](tools/document.html) | Brief, offerte, memo of notitie op A4-briefpapier | bewerkbare PDF, Word (.docx, ook voor Google Docs), afdrukken |
 | [Presentation Maker](tools/presentation.html) | 16:9-slides in zeven layouts, waaronder een tabel, plus voorstellen en positioneringen in de vaste opbouw van Pure Minds | bewerkbare PDF, PowerPoint (.pptx, ook voor Google Slides), PNG (Full HD of 4K) |
 | [Icon Finder](tools/icons.html) | 1.690 lijniconen, te zoeken in het Nederlands of Engels; los of in de zeshoek, in de merkkleuren | SVG, PNG (128 tot 2048 px), kopiëren om te plakken |
-| [Maken met AI](tools/ai.html) | Ruwe notities in, een ingevulde presentatie, Instagram-post of e-mail eruit (Claude Opus), daarna aanpassen met de hand of met de AI | wat de maker exporteert |
 | [Nieuwsbrief Maker](tools/nieuwsbrief.html) | Nieuwsbrieven en mails in de huisstijl, blok voor blok; foto's en iconen gaan vanzelf online. Met een [handleiding voor Brevo](tools/brevo-handleiding.html) | HTML om in Brevo te plakken (kopiëren of .html) |
 | [Brand Styleguide](tools/styleguide.html) | Het brandbook digitaal: kleurwaarden kopiëren, logo's downloaden, contrast checken, zoeken in alle richtlijnen | bewerkbare PDF met lagen (Canva, Illustrator), logo-pakket (SVG en PNG), kleuren als ASE en JSON |
 
@@ -70,7 +69,6 @@ tools/
   icons.html                  Icon Finder
   styleguide.html             Brand Styleguide
   nieuwsbrief.html            Nieuwsbrief Maker
-  ai.html                     Maken met AI: ruwe content in, formaat kiezen, door naar de maker
   brevo-handleiding.html      handleiding: van de Nieuwsbrief Maker naar Brevo, stap voor stap
 css/
   global.css                  gedeeld designsysteem (kleuren, Pure Minds Sans, kaarten,
@@ -85,7 +83,6 @@ css/
   styleguide.css              Brand Styleguide
   newsletter.css              Nieuwsbrief Maker
   handleiding.css             handleidingen (leespagina)
-  ai.css                      Maken met AI (de startpagina)
 js/
   shared/tools.js             register van alle tools (hub + toolwisselaar)
   shared/core.js              gedeelde hulpfuncties (window.PM)
@@ -94,6 +91,7 @@ js/
   shared/library.js           de bieb: ontwerpen 14 dagen bewaren (PM.library)
   shared/service.js           de server van de hub: adres en verzoeken, wachtwoord alleen als Vercel erom vraagt (PM.service)
   shared/ai.js                het paneel AI in de makers, vanzelf opslaan na de AI (PM.ai)
+  shared/photos.js            passende foto's van Pexels zoeken en plaatsen (PM.photos)
   shared/shell.js             indeling zoals Canva: rail, één paneel, podium (PM.shell)
   shared/help.js              [?]-uitleg naast instellingen (PM.help)
   shared/toolbar.js           tekstwerkbalk zoals Word (PM.toolbar)
@@ -113,7 +111,6 @@ js/
   newsletter/email.js         de HTML van een mail uit blokken (PMEmail, ook in Node getest)
   newsletter/app.js           Nieuwsbrief Maker: blokken, preview, uploaden, iconen, kopiëren
   newsletter/help.js          [?]-uitleg, rondleiding en sneltoetsen (PM_HELP.newsletter)
-  ai/app.js                   Maken met AI: de startpagina (geeft de content door aan de maker)
   document/app.js             editor, blokken en paginering
   document/model.js           bedragen, totalen en de controle op voorbeeldtekst (zonder DOM)
   document/help.js            [?]-uitleg, rondleiding en sneltoetsen (PM_HELP.document)
@@ -1186,9 +1183,13 @@ Ruwe content (notities, een transcript, een oude blog, losse ideeën) wordt in �
 presentatie, Instagram-post of e-mail, in de huisstijl. Claude Opus doet het schrijfwerk. De makers blijven
 de editor: de AI vult hun velden, en daarna pas je alles gewoon aan.
 
-- **Starten:** op de startpagina (`tools/ai.html`, ook als kaart op het dashboard) plak je de content, kies je
-  het formaat en eventueel een wens ("voor ondernemers, hoogstens 8 slides"). Je gaat naar de maker en de AI
-  begint meteen. In elke maker kan het ook direct, in het paneel **AI** in de rail.
+- **Starten:** in elke maker zit het paneel **AI** (het icoon met de sterretjes in de rail). Plak de content,
+  zet er eventueel een wens bij ("voor ondernemers, hoogstens 8 slides") en klik op *maak met AI*.
+- **Foto's:** de AI geeft per fotoplek zoektermen; de server zoekt bij **Pexels** (`uploads/api/photos.js`,
+  sleutel `PEXELS_API_KEY` in Vercel) en de maker zet de beste foto er meteen in: op de post (bij een
+  carousel de eerste slide, als achtergrond), op de slides met een fotoplek, en in de fotoblokken van een mail
+  (die gaan meteen online). Onder *Foto zoeken* in het paneel AI kies je met één klik een andere. Pexels heeft
+  een gratis licentie, ook zakelijk, zonder naamsvermelding; willekeurige foto's van internet niet (auteursrecht).
 - **Altijd JSON:** de server (`uploads/api/generate.js`) geeft Claude één tool met een vast schema
   (`uploads/lib/ai.js`: `vul_presentatie`, `vul_post`, `vul_mail`) en laat hem alleen daarmee antwoorden.
   Opus 5.5 denkt eerst na en staat dan geen gedwongen tool toe; antwoordt hij toch in tekst, dan vraagt de

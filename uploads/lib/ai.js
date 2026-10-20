@@ -60,7 +60,8 @@ const SLIDE = {
     cijfer: str('Alleen bij stat: het kerncijfer, zoals "+184%" of "3x".', 12),
     tabel: list(list({ type: 'string' }, 'Een rij cellen.', 2, 5), 'Alleen bij table: de rijen, de eerste rij is de kop. Hoogstens 8 rijen en 5 kolommen.', 2, 8),
     notities: str('Sprekersnotities: wat de spreker bij deze slide vertelt, in 2 tot 5 zinnen, in spreektaal.', 900),
-    fotoIdee: str('Bij title, split en closing: welke foto past (onderwerp en sfeer), zodat de gebruiker er een kan kiezen.', 140),
+    fotoIdee: str('Bij title, split en closing: welke foto past (onderwerp en sfeer), in het Nederlands.', 140),
+    fotoZoek: str('Bij title, split en closing: zoektermen in het Engels (2 tot 5 woorden) voor een passende foto uit een fotobank, zoals "baker shop window morning". Concreet en beeldend: wie of wat, waar. Geen merknamen of tekst.', 60),
   },
 };
 
@@ -110,7 +111,8 @@ const INSTA = {
     slides: list(CAROUSEL_SLIDE, 'Alleen carousel: de slides, beginnend met een hook en eindigend met een afsluiter.', 0, 10),
     caption: str('De caption onder de post: een sterke eerste zin (die is te zien voor "meer"), dan de kern in korte alinea\'s met witregels, en een vraag of actie aan het eind. Geen hashtags in de caption.', 2000),
     hashtags: list(str('Een hashtag met #, zonder spaties.', 40), '5 tot 12 hashtags: een mix van breed en specifiek, passend bij de content.', 0, 15),
-    fotoIdee: str('Welke foto past bij de post (onderwerp, sfeer, kader), zodat de gebruiker er een kan kiezen of maken.', 200),
+    fotoIdee: str('Welke foto past bij de post (onderwerp, sfeer, kader), in het Nederlands.', 200),
+    fotoZoek: str('Zoektermen in het Engels (2 tot 5 woorden) voor een passende foto uit een fotobank, zoals "bakery fresh bread display". Concreet en beeldend: wie of wat, waar. Geen merknamen of tekst. Bij een carousel: voor de eerste slide.', 60),
   },
 };
 
@@ -141,7 +143,8 @@ const BLOK = {
     }, 'Alleen punten: 2 of 3 punten.', 0, 3),
     cijfer: str('Alleen resultaat: het cijfer, zoals "+184%". Alleen als het in de content staat.', 12),
     cijferTekst: str('Alleen resultaat: wat het cijfer betekent.', 80),
-    fotoIdee: str('foto en fototekst: welke foto past, zodat de gebruiker er een kan kiezen.', 160),
+    fotoIdee: str('foto en fototekst: welke foto past, in het Nederlands. Wordt ook de beschrijving (alt-tekst) van de foto.', 160),
+    fotoZoek: str('foto en fototekst: zoektermen in het Engels (2 tot 5 woorden) voor een passende foto uit een fotobank, zoals "team meeting laptop office". Concreet en beeldend; geen merknamen of tekst.', 60),
     fotoKant: { type: 'string', enum: ['links', 'rechts'], description: 'Alleen fototekst: aan welke kant de foto staat. Wissel af als er meer fototekst-blokken zijn.' },
   },
 };

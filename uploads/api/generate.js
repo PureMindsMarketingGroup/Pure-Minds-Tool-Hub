@@ -12,7 +12,7 @@
    schema en de technische regels staan in lib/ai.js. Een grote presentatie kan
    een minuut of twee duren; vercel.json geeft deze functie 300 seconden.
    ============================================================================= */
-import { corsHeaders, checkRequest, rateLimiter } from '../lib/check.js';
+import { corsHeaders, checkOrigin, rateLimiter } from '../lib/check.js';
 import { FORMATS, checkInput, buildRequest, followUp, hasToolCall, readResponse, apiError } from '../lib/ai.js';
 
 const limit = rateLimiter({ limit: 40, windowMs: 15 * 60 * 1000 });
@@ -42,13 +42,7 @@ export function GET(request) {
 export async function POST(request) {
   const origin = request.headers.get('origin');
   const headers = corsHeaders(origin);
-  const verdict = checkRequest({
-    origin,
-    password: request.headers.get('x-app-password'),
-    expected: process.env.APP_PASSWORD,
-    type: 'image/png',   // checkRequest kent alleen beeld; de soort controleren we hieronder zelf
-    length: 0,
-  });
+  const verdict = checkOrigin({ origin, password: request.headers.get('x-app-password'), expected: process.env.APP_PASSWORD });
   if (!verdict.ok) return json({ error: verdict.error }, verdict.status, headers);
   if (!/^application\/json/i.test(request.headers.get('content-type') || '')) return json({ error: 'Stuur JSON.' }, 415, headers);
   if (!process.env.ANTHROPIC_API_KEY) return json({ error: 'De AI staat nog niet aan: ANTHROPIC_API_KEY ontbreekt in Vercel.' }, 500, headers);
