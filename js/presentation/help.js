@@ -57,6 +57,7 @@
     { id: 'inhoud', label: 'Inhoud', title: 'Inhoud van deze slide', icon: 'input-method-line' },
     { id: 'foto', label: 'Foto', title: 'Foto op deze slide', icon: 'image-line' },
     { id: 'presentatie', label: 'Presentatie', title: 'Hele presentatie', icon: 'slideshow-line' },
+    { id: 'ai', label: 'AI', title: 'Maken met AI', icon: 'sparkling-line' },
   ],
 
   help: {
@@ -128,6 +129,10 @@
     'label': {
       title: 'Label',
       text: 'Een kort woord linksboven, in hoofdletters met een cyaan zeshoekje, zoals ANALYSE. Een nieuwe slide neemt het label van de vorige over, zodat een hoofdstuk herkenbaar blijft. Leeg laten mag.',
+    },
+    'notities': {
+      title: 'Sprekersnotities',
+      text: 'Wat je bij deze slide vertelt. Ze staan niet op de slide, maar in PowerPoint en Google Slides onder de slide (Notities), en in de presentatieweergave alleen op jouw scherm. De AI schrijft ze mee.',
     },
     'tabel': {
       title: 'Tabel',

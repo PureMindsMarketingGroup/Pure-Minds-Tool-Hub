@@ -830,3 +830,29 @@ test('exportDeck: bmc en vpc op layout 2 zonder slidenummer; andere slides en de
   assert.ok(!plain['ppt/slideMasters/_rels/slideMaster1.xml.rels'].includes('slideLayout2') && !plain['[Content_Types].xml'].includes('slideLayout2'));
   assert.ok(files['ppt/slideMasters/_rels/slideMaster1.xml.rels'].includes('slideLayout2'));
 });
+
+test('sprekersnotities: alleen als er notities zijn, met notitiemaster, op de goede plek en als goede XML', () => {
+  const plain = writer();
+  plain.slide([]);
+  assert.ok(!plain.hasNotes);
+  assert.ok(!plain.presentationXml().includes('notesMaster'), 'zonder notities blijft het bestand zoals het was');
+  assert.ok(!plain.contentTypesXml().includes('notesSlide'));
+
+  const deck = writer();
+  deck.slide([], 1, 'Vertel eerst over **SEO**.\n\nDan over <ads> & "budget".');
+  deck.slide([], 1, '');
+  assert.ok(deck.hasNotes);
+  const pres = deck.presentationXml();
+  assertWellFormed(pres, 'presentation.xml');
+  assert.ok(pres.includes('</p:sldMasterIdLst><p:notesMasterIdLst><p:notesMasterId r:id="rId5"/></p:notesMasterIdLst><p:sldIdLst>'), 'na de slidemaster, id na 2 slides en het thema');
+  const types = deck.contentTypesXml();
+  assertWellFormed(types, '[Content_Types].xml');
+  assert.ok(types.includes('/ppt/notesSlides/notesSlide1.xml') && !types.includes('notesSlide2.xml'), 'alleen slides met notities');
+  assert.ok(types.includes('/ppt/notesMasters/notesMaster1.xml') && types.includes('/ppt/theme/theme2.xml'));
+  const note = deck.notesSlideXml(deck.slideNotes[0]);
+  assertWellFormed(note, 'notesSlide1.xml');
+  assertWellFormed(deck.notesMasterXml(), 'notesMaster1.xml');
+  assert.ok(note.includes('<a:t>Vertel eerst over SEO.</a:t>'), 'zonder nadruktekens');
+  assert.ok(note.includes('<a:p><a:endParaRPr lang="nl-NL" dirty="0"/></a:p>'), 'witregel blijft');
+  assert.ok(note.includes('<a:t>Dan over &lt;ads&gt; &amp; &quot;budget&quot;.</a:t>'));
+});

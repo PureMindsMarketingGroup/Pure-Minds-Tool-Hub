@@ -19,7 +19,7 @@ const STYLES = ['normal', 'bold', 'extrabold', 'italic', 'bolditalic'];
 test('geen Light, Medium of SemiBold in de code: alleen 400, 700 en 800', () => {
   const files = [
     ...list('css', '.css'), ...list('tools', '.html'), 'index.html', 'js/hub.js',
-    ...['shared', 'insta', 'document', 'presentation', 'styleguide', 'icons', 'newsletter'].flatMap((d) => list(`js/${d}`, '.js')),
+    ...['shared', 'insta', 'document', 'presentation', 'styleguide', 'icons', 'newsletter', 'ai'].flatMap((d) => list(`js/${d}`, '.js')),
   ].filter((f) => !GENERATED.test(f));
   const rules = [
     [/font-weight:\s*(300|500|600)\b/, 'font-weight 300/500/600'],

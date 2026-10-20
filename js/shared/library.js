@@ -31,6 +31,7 @@
        opts.close()               optioneel: de popover sluiten
        opts.openId                uit de link van het dashboard (?bieb=<id>, of 'lijst')
      controller.isClean(slot)     staat dat soort ongewijzigd in de bieb? (niets te bewaren)
+     controller.isDirty()         gewijzigd sinds de laatste keer opslaan (iets te bewaren)
 
    De maker roept touch() bij elke wijziging (iets om op te slaan), detach() bij
    een nieuw, leeg ontwerp, en autoSave() na een download.
@@ -436,7 +437,10 @@
       return !!(cur && cur.id && !cur.dirty && list(tool).some((e) => e.id === cur.id));
     }
 
-    return { save, autoSave, saveClick, open, touch, detach, render, isClean };
+    // Gewijzigd sinds de laatste keer opslaan (of nooit opgeslagen en wel aangepast)?
+    const isDirty = () => !!readCurrent().dirty;
+
+    return { save, autoSave, saveClick, open, touch, detach, render, isClean, isDirty };
   }
 
   PM.library = { ...api, list, remove, attach };

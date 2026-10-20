@@ -119,6 +119,8 @@
 
 /* --- Mail --- */
 
+.nb-copyrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .375rem; align-items: center; }
+
 .nb-upload { font-size: .8125rem; line-height: 1.45; }
 .nb-upload b { font-weight: 700; }
 .nb-restart { display: flex; gap: .5rem; flex-wrap: wrap; }

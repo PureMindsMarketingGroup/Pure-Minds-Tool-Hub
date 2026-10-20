@@ -566,6 +566,15 @@ canvas.needs-photo { cursor: pointer; }
 }
 .noscript { margin: 1rem; padding: 1rem; border-left: 4px solid var(--pm-magenta); background: #fbe8ee; color: #9e1744; font-weight: 700; }
 
+/* --- Wachtwoord van de Tool Hub (js/shared/service.js): foto's uploaden en de AI --- */
+
+.svc-dialog { width: min(30rem, calc(100vw - 2rem)); padding: 0; border: 0; border-top: 4px solid var(--pm-cyan); box-shadow: 0 30px 60px -20px rgba(16, 40, 60, .5); color: var(--pm-ink); }
+.svc-dialog::backdrop { background: rgba(48, 48, 48, .45); }
+.svc-dialog__inner { display: flex; flex-direction: column; gap: .75rem; padding: 1.25rem 1.25rem 1.5rem; }
+.svc-dialog .popover__title { margin: 0; font-size: 1.0625rem; font-weight: 700; }
+.svc-dialog__lead { margin: 0; font-size: .875rem; line-height: 1.55; color: var(--pm-muted); }
+.svc-dialog__foot { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .25rem; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; }
   .btn.is-busy::before { animation: none; }

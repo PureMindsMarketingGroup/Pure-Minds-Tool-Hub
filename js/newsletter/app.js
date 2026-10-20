@@ -8,7 +8,9 @@
 
      Inhoud    de blokken als kaartjes; het open blok heeft zijn velden
      Blokken   een blok toevoegen (onder het open blok)
-     Mail      naam, voorvertoningstekst, foto's online, opnieuw beginnen
+     Mail      naam, onderwerp, voorvertoningstekst, foto's online, opnieuw beginnen
+     AI        ruwe content in, blokken eruit (js/shared/ai.js); daarna aanpassen
+               met de hand of met de AI, voor alles of alleen het open blok
      Podium    de mail in een iframe (computer of telefoon); klik op een blok
 
    Foto's en iconen moeten online staan om in een mail te werken. De tool
@@ -16,11 +18,12 @@
    en stuurt hem naar de upload-service (uploads/, Vercel Blob). Daar komt een
    vaste link uit, die in de HTML komt. Het origineel blijft in IndexedDB
    (nb-orig-*), zodat een andere vorm later nog kan; de bieb bewaart het mee.
-   Zonder upload-service (UPLOAD_URL leeg) werken de fotobank en een link naar
-   een foto die al online staat.
+   Staat de server nog niet klaar (PM.service.status), dan werken de fotobank
+   en een link naar een foto die al online staat.
 
    Ongedaan maken: PM.history over de hele mail. Opslaan: PM.store
-   (pm-newsletter-v1) en de bieb (14 dagen).
+   (pm-newsletter-v1) en de bieb (14 dagen); na de AI gaat elke wijziging
+   vanzelf in de bieb (PM.ai.keepSaved, met een debounce).
    ============================================================================= */
 (function () {
   'use strict';
@@ -31,13 +34,12 @@
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-  // De upload-service (uploads/README.md): https://<project>.vercel.app/api/upload. Leeg = staat nog niet aan.
-  // Om te testen kan een andere link in localStorage (pm-newsletter-upload-url-v1)
-  const DEFAULT_UPLOAD_URL = '';
-  const UPLOAD_URL = String(PM.store.get('pm-newsletter-upload-url-v1', '') || DEFAULT_UPLOAD_URL);
+  // Uploaden loopt via de server van de Tool Hub (js/shared/service.js, uploads/ in Vercel).
+  // null = nog niet bekend; false = de server staat (nog) niet klaar: dan fotobank en links
+  let uploadOk = null;
+  const canUpload = () => PM.service.ready && uploadOk !== false;
 
   const KEY = 'pm-newsletter-v1';
-  const PW_KEY = 'pm-newsletter-upload-v1';
   const FILES_KEY = 'pm-newsletter-files-v1';
   const ICONS_KEY = 'pm-newsletter-icons-v1';
   const MAX_W = 1200;
@@ -69,6 +71,7 @@
     checkGo: $('#checkGo'),
     checkAnyway: $('#checkAnyway'),
     name: $('#mName'),
+    subject: $('#mSubject'),
     pre: $('#mPre'),
     preCount: $('#preCount'),
     uploadState: $('#uploadState'),
@@ -79,9 +82,6 @@
     iconDialog: $('#iconDialog'),
     iconSearch: $('#iconSearch'),
     iconGrid: $('#iconGrid'),
-    pwDialog: $('#pwDialog'),
-    pwInput: $('#pwInput'),
-    pwLead: $('#pwLead'),
   };
 
   /* ---------------------------------------------------------------------------
@@ -94,6 +94,8 @@
   let state = savedDraft ? E.normalize(savedDraft) : E.starter(quickKind || 'nieuwsbrief');
   let selected = state.blocks[0] ? state.blocks[0].id : null;
   let lib = null;
+  let aiSaver = null;   // na de AI: elke wijziging vanzelf in de bieb
+  let ai = null;        // het paneel AI
   const pending = {};   // sleutel (blok-id of blok-id:punt) -> blob-url zolang een upload loopt
 
   const find = (id) => state.blocks.find((b) => b.id === id) || null;
@@ -104,7 +106,7 @@
      Editor: indeling, werkbalk, ongedaan maken
      ------------------------------------------------------------------------- */
 
-  const shell = PM.shell(el.app, { tool: 'newsletter', quickStart: !!quickKind });
+  const shell = PM.shell(el.app, { tool: 'newsletter', quickStart: !!quickKind || !!start.ai });
   PM.toolbar($('#tbar'));
 
   const history = PM.history({
@@ -125,6 +127,7 @@
     history.commit(key);
     save();
     if (lib) lib.touch();
+    if (aiSaver) aiSaver.touch();
     renderSoon();
   }
 
@@ -335,7 +338,7 @@ html { scrollbar-width: none; }
     </div>
   </div>
 </div>
-${UPLOAD_URL ? `<div class="field">
+${canUpload() ? `<div class="field">
   <span class="label" id="${sid}">Vorm <button type="button" class="help" data-help="vorm"></button></span>
   <div class="seg seg--sm nb-shape" role="radiogroup" aria-labelledby="${sid}">
     ${SHAPES.map((s) => { const id = fid(); return `<input type="radio" name="shape-${esc(b.id)}" id="${id}" value="${s.id}" data-shape${s.id === shape ? ' checked' : ''}><label for="${id}">${s.label}</label>`; }).join('')}
@@ -349,7 +352,7 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
   }
 
   function imgState(img) {
-    if (!img.src) return ['', UPLOAD_URL ? 'Sleep een foto hierheen of plak hem (Ctrl + V).' : 'Kies een foto uit de fotobank, of plak een link.'];
+    if (!img.src) return ['', canUpload() ? 'Sleep een foto hierheen of plak hem (Ctrl + V).' : 'Kies een foto uit de fotobank, of plak een link.'];
     if (!E.safeImg(img.src)) return ['is-err', 'Deze link werkt niet in een mail: hij moet met https:// beginnen.'];
     const size = img.w && img.h ? ` · ${img.w} × ${img.h} px` : '';
     if (img.src.startsWith(E.SITE)) return ['is-ok', `fotobank, staat online${size}`];
@@ -619,6 +622,7 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
 
   function syncMail() {
     if (document.activeElement !== el.name) el.name.value = state.name;
+    if (document.activeElement !== el.subject) el.subject.value = state.subject;
     if (document.activeElement !== el.pre) el.pre.value = state.preheader;
     syncPreCount();
   }
@@ -626,7 +630,12 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
     const n = state.preheader.trim().length;
     el.preCount.textContent = n ? `${n} tekens${n > 110 ? ': de inbox toont er vaak maar zo’n 90' : ''}` : 'Eén zin, zo’n 40 tot 90 tekens.';
   }
-  [el.name, el.pre].forEach((f) => f.addEventListener('input', () => {
+  $('#subjectCopy').addEventListener('click', async () => {
+    if (!state.subject.trim()) { PM.toast('Er is nog geen onderwerp.', true); return; }
+    const ok = await writeClipboard(state.subject.trim());
+    PM.toast(ok ? 'Onderwerp gekopieerd: plak het in Brevo bij Subject.' : 'Kopiëren lukte niet.', !ok);
+  });
+  [el.name, el.subject, el.pre].forEach((f) => f.addEventListener('input', () => {
     state[f.dataset.mail] = f.value;
     syncPreCount();
     changed(f.dataset.mail);
@@ -640,6 +649,7 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
     renderList();
     render();
     if (lib) lib.detach();
+    if (aiSaver) aiSaver.stop();
     if (!quiet) PM.toast(`${kind === 'kort' ? 'Nieuwe korte mail' : 'Nieuwe nieuwsbrief'} gestart.`, false, { label: 'ongedaan maken', run: () => history.undo() });
   }
   $$('[data-restart]').forEach((btn) => btn.addEventListener('click', () => restart(btn.dataset.restart)));
@@ -650,7 +660,7 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
 
   let pickFor = null;
   function pickFile(id) {
-    if (!UPLOAD_URL) {
+    if (!canUpload()) {
       PM.toast('Foto’s uploaden staat nog niet aan. Kies er een uit de fotobank, of plak een link naar een foto die al online staat.', true);
       openStock(id);
       return;
@@ -726,7 +736,7 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
   async function uploadPhoto(id, file) {
     const b = find(id);
     if (!b || !b.img || !file) return;
-    if (!UPLOAD_URL) {
+    if (!canUpload()) {
       pickFile(id);
       return;
     }
@@ -779,7 +789,7 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
     let orig = b.img.orig ? await PM.idb.get(b.img.orig) : null;
     // Een foto uit de fotobank staat op deze site: die kan de tool ook bijsnijden
     const stockPhoto = E.STOCK.find((p) => p.src === b.img.src);
-    if (!(orig instanceof Blob) && stockPhoto && UPLOAD_URL) {
+    if (!(orig instanceof Blob) && stockPhoto && canUpload()) {
       try {
         const res = await fetch(PM.url(`assets/styleguide/photos/${stockPhoto.file}`));
         if (res.ok) {
@@ -797,7 +807,7 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
       if (b.img.src && !b.img.orig) PM.toast('De vorm geldt voor foto’s die je hier uploadt. Kies de foto opnieuw om hem bij te snijden.');
       return;
     }
-    if (!UPLOAD_URL) return;
+    if (!canUpload()) return;
     try {
       const prepared = await prepare(orig, shapeId);
       await sendPhoto(id, prepared, b.img.name || 'foto', { orig: b.img.orig, name: b.img.name || '', keepAlt: true });
@@ -892,7 +902,7 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
   };
 
   async function openIcons(id, i) {
-    if (!UPLOAD_URL) {
+    if (!canUpload()) {
       PM.toast('Iconen kiezen kan zodra foto’s uploaden aanstaat: een icoon moet online staan om in een mail te werken.', true);
       return;
     }
@@ -988,82 +998,42 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
   }
 
   /* ---------------------------------------------------------------------------
-     De upload-service: wachtwoord één keer per browser, dan uploaden
+     Uploaden via de server van de Tool Hub (wachtwoord: PM.service, één keer per browser)
      ------------------------------------------------------------------------- */
 
-  function askPassword(wrong = false) {
-    el.pwLead.textContent = wrong
-      ? 'Dat wachtwoord klopt niet (of het is gewijzigd). Probeer het nog eens, of vraag het aan je collega die de Tool Hub beheert.'
-      : 'Foto’s en iconen gaan naar de opslag van Pure Minds, zodat ze in elke mail werken. Vul één keer het wachtwoord in; deze browser onthoudt het. Weet je het niet? Vraag het aan je collega die de Tool Hub beheert.';
-    el.pwInput.value = '';
-    return new Promise((resolve) => {
-      el.pwDialog.onclose = () => {
-        el.pwDialog.onclose = null;
-        const pw = el.pwDialog.returnValue === 'ok' ? el.pwInput.value.trim() : '';
-        if (pw) PM.store.set(PW_KEY, pw);
-        syncUploadState();
-        resolve(pw);
-      };
-      el.pwDialog.returnValue = '';
-      el.pwDialog.showModal();
-      el.pwInput.focus();
+  async function upload(blob, name) {
+    const data = await PM.service.request('/api/upload', {
+      body: blob,
+      headers: { 'content-type': blob.type, 'x-file-name': String(name).slice(0, 120) },
     });
+    syncPwLink();
+    if (!data.url) throw new Error('Uploaden lukte niet.');
+    return data.url;
   }
 
-  async function upload(blob, name) {
-    if (!UPLOAD_URL) throw new Error('Foto’s uploaden staat nog niet aan.');
-    let pw = PM.store.get(PW_KEY, '');
-    for (let attempt = 0; attempt < 3; attempt++) {
-      if (!pw) pw = await askPassword(attempt > 0);
-      if (!pw) throw Object.assign(new Error('geen wachtwoord'), { cancelled: true });
-      let res;
-      try {
-        res = await fetch(UPLOAD_URL, {
-          method: 'POST',
-          headers: { 'content-type': blob.type, 'x-app-password': pw, 'x-file-name': String(name).slice(0, 120) },
-          body: blob,
-        });
-      } catch (err) {
-        throw new Error('De upload-service is niet bereikbaar. Controleer je internet en probeer het opnieuw.');
-      }
-      let data = {};
-      try { data = await res.json(); } catch (err) { data = {}; }
-      if (res.status === 401) {
-        PM.store.set(PW_KEY, '');
-        pw = '';
-        continue;
-      }
-      if (!res.ok || !data.url) throw new Error(data.error || `Uploaden lukte niet (fout ${res.status}).`);
-      return data.url;
-    }
-    throw new Error('Het wachtwoord klopt niet.');
-  }
+  const syncPwLink = () => { el.pwForget.hidden = !PM.service.hasPassword() || !uploadOk; };
 
   async function syncUploadState() {
-    const hasPw = !!PM.store.get(PW_KEY, '');
-    el.pwForget.hidden = !hasPw || !UPLOAD_URL;
-    if (!UPLOAD_URL) {
-      el.uploadState.className = 'notice notice-warn nb-upload';
-      el.uploadState.innerHTML = '<b>Uploaden staat nog niet aan.</b> Kies tot die tijd foto’s uit de fotobank, of plak een link naar een foto die al online staat.';
-      return;
-    }
     el.uploadState.className = 'notice nb-upload';
-    el.uploadState.textContent = 'Even kijken of de upload-service klaarstaat…';
-    try {
-      const res = await fetch(UPLOAD_URL, { method: 'GET' });
-      const data = await res.json();
-      if (!data.ok || !data.blob || !data.password) throw new Error('half');
-      el.uploadState.innerHTML = `<b>Staat klaar.</b> Je foto’s en iconen gaan vanzelf online. ${hasPw ? 'Het wachtwoord is ingevuld in deze browser.' : 'Het wachtwoord vraagt de tool bij je eerste upload.'}`;
-    } catch (err) {
+    el.uploadState.textContent = 'Even kijken of uploaden klaarstaat…';
+    const st = await PM.service.status('/api/upload');
+    const was = uploadOk;
+    uploadOk = !!(st && st.ok && st.blob && st.password);
+    if (uploadOk) {
+      el.uploadState.innerHTML = `<b>Staat klaar.</b> Je foto’s en iconen gaan vanzelf online. ${PM.service.hasPassword() ? 'Het wachtwoord is ingevuld in deze browser.' : 'Het wachtwoord vraagt de tool bij je eerste upload.'}`;
+    } else {
       el.uploadState.className = 'notice notice-warn nb-upload';
-      el.uploadState.innerHTML = err.message === 'half'
-        ? '<b>De upload-service is nog niet helemaal ingesteld</b> (opslag of wachtwoord in Vercel). Zie uploads/README.md.'
-        : '<b>De upload-service reageert niet.</b> Controleer je internet; foto’s uit de fotobank werken wel.';
+      el.uploadState.innerHTML = st && st.ok
+        ? '<b>Uploaden is nog niet helemaal ingesteld</b> (opslag of wachtwoord in Vercel, zie uploads/README.md). Kies tot die tijd foto’s uit de fotobank, of plak een link naar een foto die al online staat.'
+        : '<b>Uploaden staat nog niet aan.</b> Kies tot die tijd foto’s uit de fotobank, of plak een link naar een foto die al online staat.';
     }
+    syncPwLink();
+    if (was !== uploadOk) renderList();   // de keuze voor de vorm hoort alleen bij uploaden
   }
-  el.pwForget.addEventListener('click', () => {
-    PM.store.set(PW_KEY, '');
-    askPassword();
+  el.pwForget.addEventListener('click', async () => {
+    PM.service.forget();
+    await PM.service.askPassword();
+    syncUploadState();
   });
 
   /* ---------------------------------------------------------------------------
@@ -1210,6 +1180,7 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
     fileKeys,
     apply(saved, keys) {
       keys.forEach(trackFile);
+      if (aiSaver) aiSaver.stop();
       state = E.normalize(saved);
       selected = state.blocks[0] ? state.blocks[0].id : null;
       syncMail();
@@ -1221,6 +1192,128 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
     close: () => shell.closePopover(),
     openId: start.bieb,
   }) : null;
+
+  /* ---------------------------------------------------------------------------
+     AI: ruwe content in, blokken eruit (schema: vul_mail in uploads/lib/ai.js)
+     ------------------------------------------------------------------------- */
+
+  // Een blok in de vorm van het schema (om aan te passen)
+  function blockToAI(b) {
+    switch (b.type) {
+      case 'opening': return { type: b.type, label: b.label, kop: b.title, tekst: b.intro, knopTekst: b.button.text, knopLink: b.button.url };
+      case 'tekst': return { type: b.type, kop: b.title, tekst: b.body, linkTekst: b.link.text, linkLink: b.link.url };
+      case 'fototekst': return { type: b.type, kop: b.title, tekst: b.body, linkTekst: b.link.text, linkLink: b.link.url, fotoKant: b.side, fotoIdee: b.img.alt };
+      case 'punten': return { type: b.type, kop: b.title, punten: b.items.map((it) => ({ titel: it.title, tekst: it.text })) };
+      case 'resultaat': return { type: b.type, label: b.label, cijfer: b.number, cijferTekst: b.text };
+      case 'afsluiter': return { type: b.type, kop: b.title, tekst: b.body, knopTekst: b.button.text, knopLink: b.button.url };
+      case 'foto': return { type: b.type, fotoIdee: b.img.alt };
+      default: return { type: b.type };
+    }
+  }
+  const toAI = () => ({ onderwerp: state.subject, voorvertoning: state.preheader, blokken: state.blocks.map(blockToAI) });
+
+  // Een blok uit de AI; prev = het blok dat er stond (foto, iconen en id blijven)
+  const txt = (v) => (typeof v === 'string' ? v.trim() : '');
+  function blockFromAI(x, prev, photoNo) {
+    const type = x && E.BLOCKS[x.type] ? x.type : 'tekst';
+    const same = !!(prev && prev.type === type);
+    const b = same ? JSON.parse(JSON.stringify(prev)) : E.block(type);
+    if (b.img && !same) {
+      // Een foto uit de fotobank als begin; de suggestie van de AI zegt welke foto past
+      const p = E.STOCK[photoNo % E.STOCK.length];
+      b.img = { src: p.src, alt: p.alt, w: p.w, h: p.h };
+    }
+    // Een knop zonder link uit de content: de vaste plek van Pure Minds (contact, mail)
+    const link = (text, url, fallback = '') => ({ text: txt(text), url: txt(url) || (txt(text) ? fallback : '') });
+    if (type === 'opening') Object.assign(b, { label: txt(x.label) || b.label, title: txt(x.kop), intro: txt(x.tekst), button: link(x.knopTekst, x.knopLink, 'https://www.pureminds.nl/contact/') });
+    if (type === 'tekst') Object.assign(b, { title: txt(x.kop), body: txt(x.tekst), link: link(x.linkTekst, x.linkLink) });
+    if (type === 'fototekst') Object.assign(b, { title: txt(x.kop), body: txt(x.tekst), link: link(x.linkTekst, x.linkLink), side: x.fotoKant === 'rechts' ? 'rechts' : 'links' });
+    if (type === 'punten') {
+      const items = (Array.isArray(x.punten) ? x.punten : []).slice(0, 3).map((p, i) => ({
+        icon: b.items[i] ? b.items[i].icon : null,
+        title: txt(p && p.titel),
+        text: txt(p && p.tekst),
+      }));
+      while (items.length < 2) items.push({ icon: null, title: '', text: '' });
+      Object.assign(b, { title: txt(x.kop), items });
+    }
+    if (type === 'resultaat') Object.assign(b, { label: txt(x.label), number: txt(x.cijfer), text: txt(x.cijferTekst) });
+    if (type === 'afsluiter') Object.assign(b, { title: txt(x.kop), body: txt(x.tekst), button: link(x.knopTekst, x.knopLink, 'mailto:info@pureminds.nl') });
+    return b;
+  }
+
+  function applyAI(data, { mode, target }) {
+    const d = data && typeof data === 'object' ? data : {};
+    if (target != null) {
+      // Alleen het open blok: id, foto en iconen blijven
+      const prev = state.blocks[target];
+      if (!prev) return;
+      const next = blockFromAI(d, prev, target);
+      next.id = prev.id;
+      state.blocks[target] = next;
+      selected = next.id;
+    } else {
+      const list = Array.isArray(d.blokken) ? d.blokken.slice(0, E.MAX_BLOCKS) : [];
+      if (!list.length) throw new Error('De AI gaf geen blokken terug. Probeer het nog eens.');
+      const old = mode === 'refine' ? state.blocks : [];
+      let photos = 0;
+      state.blocks = list.map((x, i) => {
+        const b = blockFromAI(x, old[i], photos);
+        if (b.img && !(old[i] && old[i].type === b.type)) photos++;
+        return b;
+      });
+      if (txt(d.onderwerp)) state.subject = txt(d.onderwerp);
+      if (txt(d.voorvertoning)) state.preheader = txt(d.voorvertoning);
+      if (mode === 'generate') {
+        state.name = txt(d.onderwerp).slice(0, 120);
+        state.kind = state.blocks.length <= 4 ? 'kort' : 'nieuwsbrief';
+      }
+      state.ideas = list
+        .map((x, i) => (x && ['foto', 'fototekst'].includes(x.type) && txt(x.fotoIdee) ? `Blok ${i + 1} (${E.BLOCKS[x.type].name.toLowerCase()}): ${txt(x.fotoIdee)}` : ''))
+        .filter(Boolean);
+      selected = state.blocks[0] ? state.blocks[0].id : null;
+    }
+    syncMail();
+    changed(null);
+    renderList();
+    render();
+    renderIdeas();
+  }
+
+  function renderIdeas() {
+    if (!ai) return;
+    ai.extras.innerHTML = state.ideas.length
+      ? `<h3>Fotosuggesties van de AI</h3><ul class="ai-ideas">${state.ideas.map((t) => `<li>${esc(t)}</li>`).join('')}</ul><p class="field-hint">Er staat nu een foto uit de fotobank. Kies bij het blok een eigen foto die hierbij past.</p>`
+      : '';
+  }
+
+  if (PM.ai) {
+    aiSaver = PM.ai.keepSaved(lib);
+    ai = PM.ai.panel($('[data-ai-panel]'), {
+      tool: 'newsletter',
+      format: 'email',
+      noun: 'mail',
+      wishPlaceholder: 'bijv. korte mail, uitnodiging voor ons webinar',
+      current: toAI,
+      target: () => {
+        const i = indexOf(selected);
+        return i < 0 ? null : { index: i, label: `${E.BLOCKS[state.blocks[i].type].name} (blok ${i + 1})` };
+      },
+      apply: applyAI,
+      lib,
+      saver: aiSaver,
+      undo: () => history.undo(),
+      autostart: !!start.ai,
+      open: () => shell.open('ai'),
+    });
+    renderIdeas();
+    // "Dit onderdeel" volgt het open blok
+    const refreshAI = () => ai.refresh();
+    el.list.addEventListener('click', () => setTimeout(refreshAI, 0));
+    shell.onChange(({ id }) => { if (id === 'ai') refreshAI(); });
+    history.onChange(() => renderIdeas());
+  }
+
 
   cleanupFiles();
 })();

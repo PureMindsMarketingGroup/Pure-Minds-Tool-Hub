@@ -125,6 +125,7 @@
     <button class="rail__item" data-section="inhoud"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5V19H19V5H5ZM4 3H20C20.5523 3 21 3.44772 21 4V20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V4C3 3.44772 3.44772 3 4 3ZM9.86885 15L9.04918 17H6.83333L11 7H13L17.1667 17H14.9508L14.1311 15H9.86885ZM10.6885 13H13.3115L12 9.8L10.6885 13Z"/></svg><span>Inhoud</span></button>
     <button class="rail__item" data-section="foto"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.9918 21C2.44405 21 2 20.5551 2 20.0066V3.9934C2 3.44476 2.45531 3 2.9918 3H21.0082C21.556 3 22 3.44495 22 3.9934V20.0066C22 20.5552 21.5447 21 21.0082 21H2.9918ZM20 15V5H4V19L14 9L20 15ZM20 17.8284L14 11.8284L6.82843 19H20V17.8284ZM8 11C6.89543 11 6 10.1046 6 9C6 7.89543 6.89543 7 8 7C9.10457 7 10 7.89543 10 9C10 10.1046 9.10457 11 8 11Z"/></svg><span>Foto</span></button>
     <button class="rail__item" data-section="presentatie"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 21V23H11V21H3C2.44772 21 2 20.5523 2 20V6H22V20C22 20.5523 21.5523 21 21 21H13ZM4 19H20V8H4V19ZM13 10H18V12H13V10ZM13 14H18V16H13V14ZM9 10V13H12C12 14.6569 10.6569 16 9 16C7.34315 16 6 14.6569 6 13C6 11.3431 7.34315 10 9 10ZM2 3H22V5H2V3Z"/></svg><span>Presen&shy;tatie</span></button>
+    <button class="rail__item" data-section="ai"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4.4375C15.3462 4.4375 16.4375 3.34619 16.4375 2H17.5625C17.5625 3.34619 18.6538 4.4375 20 4.4375V5.5625C18.6538 5.5625 17.5625 6.65381 17.5625 8H16.4375C16.4375 6.65381 15.3462 5.5625 14 5.5625V4.4375ZM1 11C4.31371 11 7 8.31371 7 5H9C9 8.31371 11.6863 11 15 11V13C11.6863 13 9 15.6863 9 19H7C7 15.6863 4.31371 13 1 13V11ZM4.87601 12C6.18717 12.7276 7.27243 13.8128 8 15.124 8.72757 13.8128 9.81283 12.7276 11.124 12 9.81283 11.2724 8.72757 10.1872 8 8.87601 7.27243 10.1872 6.18717 11.2724 4.87601 12ZM17.25 14C17.25 15.7949 15.7949 17.25 14 17.25V18.75C15.7949 18.75 17.25 20.2051 17.25 22H18.75C18.75 20.2051 20.2051 18.75 22 18.75V17.25C20.2051 17.25 18.75 15.7949 18.75 14H17.25Z"/></svg><span>AI</span></button>
   </nav>
 
   <!-- ============================================================
@@ -574,6 +575,11 @@
           <label class="label" for="sLabel">Label <i>klein, linksboven &middot; optioneel</i> <button type="button" class="help" data-help="label"></button></label>
           <input class="input" id="sLabel" data-bind="label" maxlength="40" placeholder="bijv. analyse">
         </div>
+
+        <div class="field">
+          <label class="label" for="sNotes">Sprekersnotities <i>niet op de slide &middot; wel in PowerPoint</i> <button type="button" class="help" data-help="notities"></button></label>
+          <textarea class="input" id="sNotes" data-bind="notes" rows="4" maxlength="2000" placeholder="Wat vertel je bij deze slide?"></textarea>
+        </div>
       </div>
     </section>
 
@@ -644,6 +650,10 @@
           <span class="switch__txt">Cyaan punt achter de titels <span class="muted">zoals in &ldquo;Pure Minds.&rdquo;</span> <button type="button" class="help" data-help="cyaan-punt"></button></span>
         </label>
       </div>
+    </section>
+    <!-- AI: ruwe content in, slides met sprekersnotities eruit (js/shared/ai.js vult dit paneel) -->
+    <section class="panel" data-section="ai">
+      <div class="panel__body" data-ai-panel></div>
     </section>
   </form>
 
@@ -742,6 +752,7 @@
 <script src="../js/shared/tools.js"></script>
 <script src="../js/shared/core.js"></script>
 <script src="../js/shared/library.js"></script>
+<script src="../js/shared/service.js"></script>
 <script src="../js/shared/brand-data.js"></script>
 <script src="../js/shared/canvas-kit.js"></script>
 <script src="../js/shared/brand.js"></script>
@@ -760,6 +771,7 @@
 <script src="../js/shared/toolbar.js"></script>
 <script src="../js/shared/tour.js"></script>
 <script src="../js/presentation/help.js"></script>
+<script src="../js/shared/ai.js"></script>
 <script src="../js/presentation/app.js"></script>
 </body>
 </html>

@@ -1,45 +1,63 @@
-# Upload-service van de Nieuwsbrief Maker
+# Server van de Tool Hub (Vercel)
 
-Een e-mail kan alleen plaatjes tonen die online staan. Deze kleine service zet de foto's en iconen uit de
-Nieuwsbrief Maker (`tools/nieuwsbrief.html`) in **Vercel Blob**: de maker verkleint een foto tot 1200 px breed,
-stuurt hem hierheen en krijgt een vaste, openbare link terug. Die link komt in de HTML die je in Brevo plakt.
+De hub zelf staat op GitHub Pages en heeft geen server. Twee dingen hebben er wel een nodig. Die draaien
+samen in één Vercel-project: deze map `uploads/`.
 
-- `api/upload.js`: de functie (`GET` = status, `POST` = uploaden)
-- `lib/check.js`: de controles: wachtwoord, alleen JPG en PNG, hoogstens 4 MB, alleen vanaf de Tool Hub
+1. **Foto's en iconen online zetten** voor de Nieuwsbrief Maker (`api/upload.js`). Een e-mail kan alleen
+   plaatjes tonen die online staan. De maker verkleint een foto tot 1200 px breed en stuurt hem hierheen. Hij
+   komt in **Vercel Blob**, en er komt een vaste, openbare link terug voor in de HTML.
+2. **De AI** (`api/generate.js`): Claude Opus maakt van ruwe content een presentatie, Instagram-post of
+   e-mail. Het antwoord is altijd JSON volgens een vast schema (`lib/ai.js`), en de maker zet die JSON in zijn
+   eigen velden. Zie [Maken met AI](../README.md#maken-met-ai).
+
+Bestanden:
+
+- `api/upload.js`: foto's (`GET` = status, `POST` = uploaden)
+- `api/generate.js`: de AI (`GET` = status, `POST` = maken of aanpassen)
+- `lib/check.js`: wachtwoord, alleen JPG en PNG, hoogstens 4 MB, alleen vanaf de Tool Hub
+- `lib/ai.js`: de JSON-schema's per formaat, de technische regels en het verzoek aan Claude
+- `vercel.json`: de AI mag 300 seconden duren (een grote presentatie duurt een minuut of twee)
 - `public/index.html`: een korte uitleg als iemand de link opent
 
-Alleen wie het wachtwoord kent, kan uploaden. Lezen kan iedereen met de link: zo werkt een plaatje in een mail.
+Alleen wie het wachtwoord kent, kan uploaden of de AI gebruiken. Een foto kan iedereen met de link lezen: zo
+werkt een plaatje in een mail.
 
-## Eenmalig instellen (ongeveer 5 minuten)
+## Instellen
 
-Doe dit met het Vercel-account van Pure Minds, niet met een persoonlijk account.
+Het project heet **Pure-Minds-Tool-Hub** (team Pure Minds) en staat op `https://pure-minds-tool-hub.vercel.app`.
+De hub gebruikt dat adres al (`js/shared/service.js`).
 
-1. **Project maken.** Vercel → *Add New…* → *Project* → importeer de repo
-   `PureMindsMarketingGroup/Pure-Minds-Tool-Hub`.
-2. **Root Directory** → *Edit* → kies de map `uploads`. Framework Preset: *Other*. Verder niets aanpassen.
-   Geef het project een herkenbare naam, bijvoorbeeld `pm-nieuwsbrief-uploads`, en klik *Deploy*.
-3. **Opslag koppelen.** Open het project → tab *Storage* → *Create Database* → **Blob** → naam bijvoorbeeld
-   `nieuwsbrief-fotos` → *Create* en koppel hem aan dit project (alle omgevingen). Vercel zet dan zelf
-   `BLOB_READ_WRITE_TOKEN` klaar.
-4. **Wachtwoord.** *Settings* → *Environment Variables* → nieuwe variabele `APP_PASSWORD` met een wachtwoord
-   dat je met je collega's deelt (minstens 12 tekens). Opslaan.
-5. **Opnieuw deployen.** Tab *Deployments* → de bovenste → *…* → *Redeploy*. Pas dan gelden opslag en wachtwoord.
-6. **Testen.** Open `https://<jouw-project>.vercel.app/api/upload`. Je ziet
-   `{"ok":true,"blob":true,"password":true}`: alles staat klaar.
-7. Geef de link (`https://<jouw-project>.vercel.app/api/upload`) door: hij komt als `UPLOAD_URL` bovenin
-   `js/newsletter/app.js`.
+1. **Root Directory:** zet hem bij *Settings* → *Build and Deployment* op **`uploads`**. Staat hij op `./`, dan
+   zet Vercel alleen een kopie van de hub online. `/api/upload` en `/api/generate` geven dan 404.
+2. **Opslag:** *Storage* → *Create* → **Blob**, en koppel hem aan dit project. Vercel zet
+   `BLOB_READ_WRITE_TOKEN` dan zelf klaar.
+3. **Environment Variables** (*Settings*):
+   - `APP_PASSWORD`: het wachtwoord dat je met collega's deelt (minstens 12 tekens)
+   - `ANTHROPIC_API_KEY`: de API-sleutel van Anthropic. Alleen hier invullen, nooit in de code of in een chat.
+   - `AI_PROMPT`, `AI_PROMPT_PRESENTATIE`, `AI_PROMPT_INSTA`, `AI_PROMPT_EMAIL`: hoe Pure Minds schrijft
+     (tone of voice, en wat een goede slide, post of mail is). Deze teksten staan bewust niet in deze openbare
+     repo, maar in *vercel-instellingen* bij de beheerder. Ontbreken ze, dan werkt de AI met een korte, neutrale
+     reserve uit `lib/ai.js`.
+   - Optioneel `AI_MODEL` (standaard `claude-opus-5-5`).
+4. **Redeploy:** *Deployments* → de bovenste → *…* → *Redeploy*. Pas dan gelden de instellingen.
+5. **Testen:** `/api/upload` geeft `{"ok":true,"blob":true,"password":true}` en `/api/generate` geeft
+   `{"ok":true,"ai":true,...}`.
 
-Elke collega vult het wachtwoord één keer in, bij de eerste upload. De browser onthoudt het.
+Elke collega vult het wachtwoord één keer in, bij de eerste upload of AI-opdracht. De browser onthoudt het.
 
 ## Goed om te weten
 
-- **Gratis tegoed.** Het Hobby-tegoed van Vercel Blob is ruim genoeg voor nieuwsbrieven: een foto is na
-  verkleinen meestal 100 tot 250 KB, en Gmail en Outlook bewaren plaatjes zelf (ze halen ze niet bij elke lezer
-  opnieuw op). Kijk bij twijfel onder *Usage* in Vercel.
-- **Niets weggooien wat al verstuurd is.** Een foto die in een verstuurde mail staat, moet online blijven,
-  anders ziet de lezer een leeg vlak. Ruim de opslag (*Storage → Blob → Browser*) dus alleen op als je zeker weet
-  dat een bestand nergens meer in staat.
-- **Wachtwoord wijzigen.** Pas `APP_PASSWORD` aan en doe *Redeploy*. Collega's krijgen bij hun volgende upload
-  de vraag om het nieuwe wachtwoord.
-- **Vercel bouwt bij elke push opnieuw.** Het project hangt aan de hele repo; een push naar de hub geeft dus ook
-  hier een nieuwe deploy. Dat kost niets en duurt een paar seconden.
+- **Kosten.** Het Hobby-tegoed van Vercel Blob is ruim genoeg voor nieuwsbrieven. Een foto is na verkleinen
+  meestal 100 tot 250 KB, en Gmail en Outlook bewaren plaatjes zelf. De AI kost per opdracht tegoed bij
+  Anthropic, voor een grote presentatie met Opus hooguit enkele tientallen centen. Kijk bij twijfel onder *Usage* (Vercel) en
+  *Billing* (Anthropic).
+- **Rem.** Hoogstens 60 uploads en 40 AI-opdrachten per kwartier per adres.
+- **Niets weggooien wat al verstuurd is.** Een foto in een verstuurde mail moet online blijven, anders ziet de
+  lezer een leeg vlak. Ruim de opslag (*Storage → Blob → Browser*) alleen op als je zeker weet dat een bestand
+  nergens meer in staat.
+- **Wachtwoord wijzigen:** pas `APP_PASSWORD` aan en doe *Redeploy*. Collega's krijgen bij hun volgende upload
+  of AI-opdracht de vraag om het nieuwe wachtwoord.
+- **Prompts aanpassen:** wijzig de waarde in Vercel, *Save* en *Redeploy*. Aan de code hoeft niets te
+  veranderen.
+- **Vercel bouwt bij elke push opnieuw.** Het project hangt aan de hele repo, dus een push naar de hub geeft
+  ook hier een nieuwe deploy. Dat kost niets en duurt een paar seconden.

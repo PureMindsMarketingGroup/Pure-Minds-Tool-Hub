@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="nl" data-root="../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maken met AI &middot; Pure Minds</title>
+<meta name="description" content="Van ruwe notities naar een presentatie, Instagram-post of e-mail in de huisstijl, ingevuld in de maker.">
+<meta name="theme-color" content="#1ab9e2">
+<link rel="icon" type="image/png" href="../assets/brand/favicon.png">
+<link rel="stylesheet" href="../css/global.css">
+<link rel="stylesheet" href="../css/ai.css">
+</head>
+<body>
+<div class="bg-deco" aria-hidden="true"></div>
+
+<div class="topstrip">
+  <a href="https://www.pureminds.nl/" target="_blank" rel="noopener">pure minds</a>
+  <span class="topstrip__sep">|</span>interne tool: maken met AI<span class="hide-sm"> van ruwe content naar af</span>
+</div>
+
+<header class="site-header">
+  <div class="container site-header__inner">
+    <div class="site-header__brand">
+      <a href="../index.html" aria-label="Naar de Generator Hub"><img src="../assets/brand/logo/PureMinds-zeshoek-logo-zwart.svg" alt="Pure Minds marketing group" width="80" height="92" class="site-header__logo"></a>
+      <span class="site-header__divider hide-sm" aria-hidden="true"></span>
+      <div class="site-header__title hide-sm">
+        <h1>Maken met AI</h1>
+        <p>Van ruwe notities naar een presentatie, post of e-mail, in de huisstijl.</p>
+      </div>
+    </div>
+    <nav class="toolnav" data-toolnav="ai" aria-label="Tools"></nav>
+  </div>
+</header>
+
+<main class="aip container">
+  <form class="aip__card" id="aiForm" novalidate>
+    <p class="aip__label"><span class="hexmark" aria-hidden="true"></span>maken met AI</p>
+    <h2 class="aip__title">Van ruwe content naar af<span class="dot">.</span></h2>
+    <p class="aip__lead">Plak je notities, een transcript of losse ideeën en kies wat je wilt maken. De AI vult de maker voor je in, in de huisstijl. Daarna pas je alles zelf aan, of vraag je de AI om een aanpassing.</p>
+
+    <div class="field">
+      <label class="label" for="aiContent">1. Je ruwe content</label>
+      <textarea class="input aip__raw" id="aiContent" rows="12" maxlength="60000" placeholder="Bijvoorbeeld: aantekeningen van een klantgesprek, een blog die je wilt hergebruiken, of een rijtje ideeën…" required></textarea>
+      <p class="field-hint" id="aiCount" aria-live="polite"></p>
+    </div>
+
+    <fieldset class="field aip__formats">
+      <legend class="label">2. Wat maak je?</legend>
+      <label class="aip__fmt">
+        <input type="radio" name="format" value="presentatie" checked>
+        <span class="aip__art aip__art--deck" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="aip__name">Presentatie</span>
+        <span class="aip__sub">slides met titels, punten en sprekersnotities</span>
+      </label>
+      <label class="aip__fmt">
+        <input type="radio" name="format" value="insta">
+        <span class="aip__art aip__art--post" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="aip__name">Instagram-post</span>
+        <span class="aip__sub">post of carousel, met caption, hashtags en een fotosuggestie</span>
+      </label>
+      <label class="aip__fmt">
+        <input type="radio" name="format" value="email">
+        <span class="aip__art aip__art--mail" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="aip__name">E-mail</span>
+        <span class="aip__sub">nieuwsbrief met onderwerp en voorvertoning, klaar voor Brevo</span>
+      </label>
+    </fieldset>
+
+    <div class="field">
+      <label class="label" for="aiWish">3. Wens <i>optioneel</i></label>
+      <input class="input" id="aiWish" maxlength="300" placeholder="bijv. voor ondernemers, informeel, hoogstens 8 slides">
+    </div>
+
+    <div class="notice notice-warn aip__off" id="aiOff" hidden></div>
+
+    <div class="aip__go">
+      <button type="submit" class="btn btn-primary btn-lg" id="aiGo"><svg class="ri" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4.4375C15.3462 4.4375 16.4375 3.34619 16.4375 2H17.5625C17.5625 3.34619 18.6538 4.4375 20 4.4375V5.5625C18.6538 5.5625 17.5625 6.65381 17.5625 8H16.4375C16.4375 6.65381 15.3462 5.5625 14 5.5625V4.4375ZM1 11C4.31371 11 7 8.31371 7 5H9C9 8.31371 11.6863 11 15 11V13C11.6863 13 9 15.6863 9 19H7C7 15.6863 4.31371 13 1 13V11ZM4.87601 12C6.18717 12.7276 7.27243 13.8128 8 15.124 8.72757 13.8128 9.81283 12.7276 11.124 12 9.81283 11.2724 8.72757 10.1872 8 8.87601 7.27243 10.1872 6.18717 11.2724 4.87601 12ZM17.25 14C17.25 15.7949 15.7949 17.25 14 17.25V18.75C15.7949 18.75 17.25 20.2051 17.25 22H18.75C18.75 20.2051 20.2051 18.75 22 18.75V17.25C20.2051 17.25 18.75 15.7949 18.75 14H17.25Z"/></svg><span id="aiGoText">maak de presentatie</span></button>
+      <p class="field-hint">Je gaat naar de maker; de AI vult hem in een halve tot twee minuten. Wat daar openstond, gaat eerst naar je bieb.</p>
+    </div>
+  </form>
+
+  <aside class="aip__how" aria-labelledby="howTitle">
+    <h2 id="howTitle">Zo werkt het<span class="dot">.</span></h2>
+    <ol>
+      <li><b>De AI vult de maker.</b> Titels, teksten, punten, de caption of de blokken van je mail: alles staat meteen op de goede plek, in de huisstijl.</li>
+      <li><b>Jij leest na en past aan.</b> Met de hand, of in het paneel AI: “korter”, “formeler”, voor alles of alleen de open slide of het open blok.</li>
+      <li><b>Vanzelf bewaard.</b> Het resultaat en elke aanpassing staan in je bieb, 14 dagen, in deze browser.</li>
+    </ol>
+    <p class="muted">De AI verzint geen cijfers, namen of links: wat ontbreekt staat er als [invullen]. Foto's kies je zelf; de AI zegt welke passen.</p>
+  </aside>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="../js/shared/tools.js"></script>
+<script src="../js/shared/core.js"></script>
+<script src="../js/shared/service.js"></script>
+<script src="../js/shared/ai.js"></script>
+<script src="../js/ai/app.js"></script>
+</body>
+</html>

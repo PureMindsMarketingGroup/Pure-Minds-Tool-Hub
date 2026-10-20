@@ -233,9 +233,10 @@ test('help.js: elke [?] en elk rondleidingsdoel heeft een tekst, en andersom; ra
 test('de maker laadt, staat in het register en linkt naar de handleiding voor Brevo', () => {
   const app = read('js/newsletter/app.js');
   assert.doesNotThrow(() => new vm.Script(app, { filename: 'js/newsletter/app.js' }));
-  // De upload-service: leeg (nog niet ingesteld) of een https-link op Vercel
-  const url = /const DEFAULT_UPLOAD_URL = '([^']*)'/.exec(app)[1];
-  assert.ok(url === '' || /^https:\/\/[a-z0-9-]+\.vercel\.app\/api\/upload$/.test(url), url);
+  // De server van de Tool Hub (uploads en AI): een https-adres op Vercel, in js/shared/service.js
+  const url = /const DEFAULT_SERVICE_URL = '([^']*)'/.exec(read('js/shared/service.js'))[1];
+  assert.match(url, /^https:\/\/[a-z0-9-]+\.vercel\.app$/);
+  assert.match(app, /PM\.service\.request\('\/api\/upload'/);
   const sandbox = { window: {} };
   vm.runInNewContext(read('js/shared/tools.js'), sandbox);
   const tool = sandbox.window.PM_TOOLS.find((t) => t.id === 'newsletter');

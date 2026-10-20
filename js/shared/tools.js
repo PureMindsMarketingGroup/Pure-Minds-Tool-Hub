@@ -65,6 +65,21 @@ window.PM_GROUPS = [
 
 window.PM_TOOLS = [
   {
+    id: 'ai',
+    name: 'Maken met AI',
+    short: 'AI',
+    href: 'tools/ai.html',
+    description: 'Plak ruwe notities: de AI maakt er een presentatie, Instagram-post of e-mail van, ingevuld in de maker.',
+    exports: ['presentatie', 'post met caption', 'e-mail voor Brevo'],
+    status: 'nieuw',
+    newUntil: '2026-12-31',
+    starts: [
+      { label: 'Presentatie', sub: 'slides + notities', ratio: '16 / 9', stack: true, params: { format: 'presentatie' } },
+      { label: 'Instagram-post', sub: 'post + caption', ratio: '4 / 5', params: { format: 'insta' } },
+      { label: 'E-mail', sub: 'nieuwsbrief, Brevo', ratio: '3 / 5', params: { format: 'email' } },
+    ],
+  },
+  {
     id: 'insta',
     name: 'Insta Post Maker',
     short: 'posts',

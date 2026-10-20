@@ -127,6 +127,7 @@
       photoFit: 'cover',      // cover: foto vult de zeshoek; logo: in zijn geheel op wit
       vpc: emptyVpc(),        // de vakken van de waardepropositie
       bmc: emptyBmc(),        // de blokken van het business model canvas
+      notes: '',              // sprekersnotities: niet op de slide, wel in PowerPoint (Notities)
       ...fields,
     };
   }
@@ -509,11 +510,16 @@
   });
   history.bind({ undo: $('#undoBtn'), redo: $('#redoBtn') });
 
+  // Na de AI: elke wijziging vanzelf in de bieb (PM.ai.keepSaved); het paneel AI (js/shared/ai.js)
+  let aiSaver = null;
+  let ai = null;
+
   // Elke wijziging: een stap in de geschiedenis, opslaan en opnieuw tekenen
   function changed(key) {
     history.commit(key);
     save();
     if (lib) lib.touch();
+    if (aiSaver) aiSaver.touch();
     render();
   }
 
@@ -1530,6 +1536,7 @@
     state.stash = { ...state.stash, [type]: null };
     afterSwitch(true);
     if (lib) lib.detach();
+    if (aiSaver) aiSaver.stop();
     const undo = { label: 'ongedaan maken', run: () => history.undo() };
     const text = {
       regulier: 'Nieuwe presentatie gestart met de voorbeeldslides.',
@@ -2705,6 +2712,7 @@
     fileKeys: (s) => [...(s.slides || []), ...Object.values(s.parked || {})].map((x) => x && x.photoKey),
     async apply(saved, keys) {
       keys.forEach(trackFile);
+      if (aiSaver) aiSaver.stop();
       const deck = normalize({ ...saved, exportWidth: state.exportWidth, stash: {} });
       const stash = { ...state.stash };
       if (deck.type !== state.type) {
@@ -2728,6 +2736,110 @@
     close: () => shell.closePopover(),
     openId: start.bieb,
   }) : null;
+
+  /* ---------------------------------------------------------------------------
+     AI: ruwe content in, slides eruit (schema: vul_presentatie in uploads/lib/ai.js)
+     Alleen voor een gewone presentatie: een voorstel of positionering heeft zijn
+     eigen formulier en vaste opbouw. Maken vanuit een voorstel wisselt eerst naar
+     de gewone presentatie (het voorstel blijft bewaard bij Soort)
+     ------------------------------------------------------------------------- */
+
+  const AI_LAYOUTS = new Set(['title', 'section', 'bullets', 'split', 'quote', 'table', 'closing']);
+  const IDEAS_KEY = 'pm-ai-ideas-presentation-v1';
+  const txt = (v) => (typeof v === 'string' ? v.trim() : '');
+  const lines = (v) => String(v || '').split('\n').map((l) => l.trim()).filter(Boolean);
+
+  function slideToAI(s) {
+    const layout = s.layout === 'quote' && styleOf(s) === 'stat' ? 'stat' : s.layout;
+    const out = { layout, label: s.label, titel: s.title, notities: s.notes || '' };
+    if (['title', 'section', 'table', 'closing', 'stat'].includes(layout)) out.ondertitel = s.subtitle;
+    if (layout === 'bullets' || layout === 'closing') out.punten = lines(s.body);
+    if (layout === 'split') {
+      const all = lines(s.body);
+      out.tekst = all.filter((l) => !l.startsWith('- ')).join(' ');
+      out.punten = all.filter((l) => l.startsWith('- ')).map((l) => l.slice(2));
+    }
+    if (layout === 'quote' || layout === 'stat') Object.assign(out, { citaat: s.quote, bron: s.author });
+    if (layout === 'stat') out.cijfer = s.value;
+    if (layout === 'table') out.tabel = s.table.cells;
+    return out;
+  }
+  const toAI = () => ({ titel: (state.slides[0] && state.slides[0].title) || '', slides: state.slides.map(slideToAI) });
+
+  // Een slide uit de AI; prev = de slide die er stond (foto, uitsnede en id blijven bij dezelfde layout)
+  function slideFromAI(x, prev) {
+    const stat = x && x.layout === 'stat';
+    const layout = stat ? 'quote' : AI_LAYOUTS.has(x && x.layout) ? x.layout : 'bullets';
+    const keep = prev && prev.layout === layout ? {
+      id: prev.id, photoKey: prev.photoKey, crop: prev.crop, imageSide: prev.imageSide, photoFit: prev.photoFit, titleSize: prev.titleSize, meta: prev.meta,
+    } : {};
+    const punten = (Array.isArray(x.punten) ? x.punten : []).map(txt).filter(Boolean);
+    const fields = { label: txt(x.label), title: txt(x.titel), subtitle: txt(x.ondertitel), notes: txt(x.notities) };
+    if (layout === 'title' && !keep.meta) fields.meta = `Pure Minds Marketing Group · ${today()}`;
+    if (layout === 'bullets' || layout === 'closing') fields.body = punten.join('\n');
+    if (layout === 'split') fields.body = [txt(x.tekst), ...punten.map((p) => `- ${p}`)].filter(Boolean).join('\n');
+    if (layout === 'quote') Object.assign(fields, { style: stat ? 'stat' : 'quote', quote: txt(x.citaat), author: txt(x.bron), value: txt(x.cijfer) });
+    if (layout === 'table' && Array.isArray(x.tabel)) fields.table = S.normalizeTable({ header: true, firstCol: true, cells: x.tabel });
+    const slide = newSlide(layout, { ...keep, ...fields });
+    return slide;
+  }
+
+  function applyAI(data, { mode, target }) {
+    const d = data && typeof data === 'object' ? data : {};
+    if (state.type !== 'regulier') switchType('regulier', { atStart: true });
+    if (target != null) {
+      const prev = state.slides[target];
+      if (!prev) return;
+      const next = slideFromAI(d, prev);
+      next.id = prev.id;
+      state.slides[target] = next;
+      state.active = target;
+    } else {
+      const list = (Array.isArray(d.slides) ? d.slides : []).slice(0, MAX_SLIDES);
+      if (!list.length) throw new Error('De AI gaf geen slides terug. Probeer het nog eens.');
+      const old = mode === 'refine' ? state.slides : [];
+      state.slides = list.map((x, i) => slideFromAI(x || {}, old[i]));
+      state.active = 0;
+      const ideas = list
+        .map((x, i) => (x && txt(x.fotoIdee) ? `Slide ${i + 1}: ${txt(x.fotoIdee)}` : ''))
+        .filter(Boolean);
+      PM.store.set(IDEAS_KEY, ideas);
+    }
+    syncAll();
+    changed(null);
+    applyPhotos();
+    renderIdeas();
+  }
+
+  function renderIdeas() {
+    if (!ai) return;
+    const ideas = state.type === 'regulier' ? PM.store.get(IDEAS_KEY, []) : [];
+    ai.extras.innerHTML = Array.isArray(ideas) && ideas.length
+      ? `<h3>Fotosuggesties van de AI</h3><ul class="ai-ideas">${ideas.map((t) => `<li>${PM.esc(t)}</li>`).join('')}</ul><p class="field-hint">Voeg een foto toe bij Foto, op de slides met een titelslide, beeld + tekst of afsluiter.</p>`
+      : '';
+  }
+
+  if (PM.ai) {
+    aiSaver = PM.ai.keepSaved(lib);
+    ai = PM.ai.panel($('[data-ai-panel]'), {
+      tool: 'presentation',
+      format: 'presentatie',
+      noun: 'presentatie',
+      wishPlaceholder: 'bijv. 8 slides, voor een klantpitch van 15 minuten',
+      current: toAI,
+      canRefine: () => (state.type === 'regulier' ? '' : 'Aanpassen met AI kan bij een gewone presentatie. Een voorstel of positionering vul je in met zijn eigen formulier.'),
+      target: () => (state.type === 'regulier' ? { index: state.active, label: `slide ${state.active + 1}` } : null),
+      apply: applyAI,
+      lib,
+      saver: aiSaver,
+      undo: () => history.undo(),
+      autostart: !!start.ai,
+      open: () => shell.open('ai'),
+    });
+    renderIdeas();
+    shell.onChange(({ id }) => { if (id === 'ai') { ai.refresh(); renderIdeas(); } });
+    history.onChange(() => ai.refresh());
+  }
 
   // Foto's uit een vorige sessie terugzetten, dan oude bestanden opruimen. De bewaarde
   // andere soort en geparkeerde slides houden hun foto's (photoKeys)

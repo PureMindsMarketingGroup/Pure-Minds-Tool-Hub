@@ -25,6 +25,7 @@ Plain HTML, CSS en JavaScript: geen framework, geen buildstap.
 | [Document Maker](tools/document.html) | Brief, offerte, memo of notitie op A4-briefpapier | bewerkbare PDF, Word (.docx, ook voor Google Docs), afdrukken |
 | [Presentation Maker](tools/presentation.html) | 16:9-slides in zeven layouts, waaronder een tabel, plus voorstellen en positioneringen in de vaste opbouw van Pure Minds | bewerkbare PDF, PowerPoint (.pptx, ook voor Google Slides), PNG (Full HD of 4K) |
 | [Icon Finder](tools/icons.html) | 1.690 lijniconen, te zoeken in het Nederlands of Engels; los of in de zeshoek, in de merkkleuren | SVG, PNG (128 tot 2048 px), kopiëren om te plakken |
+| [Maken met AI](tools/ai.html) | Ruwe notities in, een ingevulde presentatie, Instagram-post of e-mail eruit (Claude Opus), daarna aanpassen met de hand of met de AI | wat de maker exporteert |
 | [Nieuwsbrief Maker](tools/nieuwsbrief.html) | Nieuwsbrieven en mails in de huisstijl, blok voor blok; foto's en iconen gaan vanzelf online. Met een [handleiding voor Brevo](tools/brevo-handleiding.html) | HTML om in Brevo te plakken (kopiëren of .html) |
 | [Brand Styleguide](tools/styleguide.html) | Het brandbook digitaal: kleurwaarden kopiëren, logo's downloaden, contrast checken, zoeken in alle richtlijnen | bewerkbare PDF met lagen (Canva, Illustrator), logo-pakket (SVG en PNG), kleuren als ASE en JSON |
 
@@ -58,8 +59,8 @@ zodat de browser de export niet blokkeert.
 index.html                    de hub: maken (een kaart per tool) en checken (de technische tools),
                               en de uitleg bij de Consent Check (<dialog>)
 email/                        de e-mailtemplate voor Brevo, met plaatjes in email/img/
-uploads/                      upload-service van de Nieuwsbrief Maker (Vercel Blob, eigen
-                              Vercel-project met Root Directory uploads; zie uploads/README.md)
+uploads/                      de server van de hub (Vercel, Root Directory uploads): foto's
+                              online zetten (Vercel Blob) en de AI (Claude); zie uploads/README.md
 handtekeningen/                de e-mailhandtekeningen: index.html (kies je naam) en
                               een pagina per collega; plaatjes in assets/handtekeningen/
 tools/
@@ -69,6 +70,7 @@ tools/
   icons.html                  Icon Finder
   styleguide.html             Brand Styleguide
   nieuwsbrief.html            Nieuwsbrief Maker
+  ai.html                     Maken met AI: ruwe content in, formaat kiezen, door naar de maker
   brevo-handleiding.html      handleiding: van de Nieuwsbrief Maker naar Brevo, stap voor stap
 css/
   global.css                  gedeeld designsysteem (kleuren, Pure Minds Sans, kaarten,
@@ -83,12 +85,15 @@ css/
   styleguide.css              Brand Styleguide
   newsletter.css              Nieuwsbrief Maker
   handleiding.css             handleidingen (leespagina)
+  ai.css                      Maken met AI (de startpagina)
 js/
   shared/tools.js             register van alle tools (hub + toolwisselaar)
   shared/core.js              gedeelde hulpfuncties (window.PM)
   shared/brand.js             huisstijl als gegevens, plus controles (PM.brand)
   shared/history.js           ongedaan maken en opnieuw (PM.history)
   shared/library.js           de bieb: ontwerpen 14 dagen bewaren (PM.library)
+  shared/service.js           de server van de hub: adres, wachtwoord, verzoeken (PM.service)
+  shared/ai.js                het paneel AI in de makers, vanzelf opslaan na de AI (PM.ai)
   shared/shell.js             indeling zoals Canva: rail, één paneel, podium (PM.shell)
   shared/help.js              [?]-uitleg naast instellingen (PM.help)
   shared/toolbar.js           tekstwerkbalk zoals Word (PM.toolbar)
@@ -108,6 +113,7 @@ js/
   newsletter/email.js         de HTML van een mail uit blokken (PMEmail, ook in Node getest)
   newsletter/app.js           Nieuwsbrief Maker: blokken, preview, uploaden, iconen, kopiëren
   newsletter/help.js          [?]-uitleg, rondleiding en sneltoetsen (PM_HELP.newsletter)
+  ai/app.js                   Maken met AI: de startpagina (geeft de content door aan de maker)
   document/app.js             editor, blokken en paginering
   document/model.js           bedragen, totalen en de controle op voorbeeldtekst (zonder DOM)
   document/help.js            [?]-uitleg, rondleiding en sneltoetsen (PM_HELP.document)
@@ -1173,6 +1179,37 @@ jsPDF 4.2.1, svg2pdf.js 2.8.1, docx 9.7.1 (Word), JSZip 3.10.1
 (PowerPoint, zips) en pdf-lib 1.17.1 (de lagen in het brandbook) komen van
 jsDelivr, met een vaste versie en SRI-hash (`js/shared/core.js`). Ze worden
 pas geladen bij de eerste export, dus bewerken werkt ook zonder internet.
+
+## Maken met AI
+
+Ruwe content (notities, een transcript, een oude blog, losse ideeën) wordt in één keer een ingevulde
+presentatie, Instagram-post of e-mail, in de huisstijl. Claude Opus doet het schrijfwerk. De makers blijven
+de editor: de AI vult hun velden, en daarna pas je alles gewoon aan.
+
+- **Starten:** op de startpagina (`tools/ai.html`, ook als kaart op het dashboard) plak je de content, kies je
+  het formaat en eventueel een wens ("voor ondernemers, hoogstens 8 slides"). Je gaat naar de maker en de AI
+  begint meteen. In elke maker kan het ook direct, in het paneel **AI** in de rail.
+- **Altijd JSON:** de server (`uploads/api/generate.js`) geeft Claude één tool met een vast schema
+  (`uploads/lib/ai.js`: `vul_presentatie`, `vul_post`, `vul_mail`) en dwingt hem die te gebruiken. Elk
+  antwoord past dus in de velden. De maker zet de JSON in zijn eigen toestand: slides met layout, titel,
+  punten, tabel en **sprekersnotities**; een post of carousel met **caption, hashtags en een fotosuggestie**
+  (`state.social`); een mail met **onderwerp**, voorvertoning en blokken. Foto's kiest de mens. De AI zegt
+  welke passen, en een mail begint met foto's uit de fotobank.
+- **Aanpassen:** in het paneel AI zeg je wat er anders moet ("korter", "formeler", of eigen woorden), voor
+  alles of alleen de open slide of het open blok (`target`: dan krijgt Claude het schema van één element).
+  Wat je zelf schreef, blijft zoveel mogelijk staan. Met de hand aanpassen kan altijd, en ongedaan maken
+  werkt voor elke AI-stap.
+- **Bewaren:** in de browser, zoals de hele hub. Na de AI staat het resultaat meteen als nieuw ontwerp in de
+  bieb. Wat er open stond en gewijzigd was, gaat er eerst ook in. Elke wijziging daarna komt er na 1,5 seconde
+  rust vanzelf overheen (`PM.ai.keepSaved`, een debounce), tot je een ander ontwerp opent of opnieuw begint.
+- **Sprekersnotities:** elk slide heeft ze (Inhoud, onderaan). Ze staan niet op de slide, maar komen in de
+  PowerPoint (en Google Slides) bij Notities. Zonder notities blijft het .pptx-bestand precies zoals het was.
+- **Een voorstel of positionering** heeft zijn eigen formulier en vaste opbouw. Maken met AI wisselt eerst
+  naar de gewone presentatie (het voorstel blijft bewaard bij Soort). Aanpassen met AI kan alleen bij een
+  gewone presentatie.
+- **Prompts:** de technische regels en schema's staan in de repo; hoe Pure Minds schrijft (tone of voice, wat
+  een goede slide, post of mail is) staat alleen in Vercel (`AI_PROMPT*`, zie `uploads/README.md`). De sleutel
+  van Anthropic ook.
 
 ## Nieuwsbrief Maker
 

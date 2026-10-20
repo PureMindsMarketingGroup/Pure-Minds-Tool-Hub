@@ -139,7 +139,7 @@
   };
 
   function starter(kind = 'nieuwsbrief') {
-    return { v: 1, kind: STARTERS[kind] ? kind : 'nieuwsbrief', name: '', preheader: SAMPLE_PREHEADER, blocks: (STARTERS[kind] || STARTERS.nieuwsbrief).map(block) };
+    return { v: 1, kind: STARTERS[kind] ? kind : 'nieuwsbrief', name: '', subject: '', preheader: SAMPLE_PREHEADER, ideas: [], blocks: (STARTERS[kind] || STARTERS.nieuwsbrief).map(block) };
   }
 
   /* ---------------------------------------------------------------------------
@@ -204,7 +204,9 @@
       v: 1,
       kind: STARTERS[o.kind] ? o.kind : 'nieuwsbrief',
       name: str(o.name, 120),
+      subject: str(o.subject, 150),   // onderwerpregel: vul je in Brevo in, staat niet in de HTML
       preheader: 'preheader' in o ? str(o.preheader, 200) : SAMPLE_PREHEADER,
+      ideas: Array.isArray(o.ideas) ? o.ideas.filter((x) => typeof x === 'string').map((x) => x.slice(0, 200)).slice(0, 12) : [],   // fotosuggesties van de AI
       blocks,
     };
   }

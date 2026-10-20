@@ -49,6 +49,8 @@
       exportWidth: 1080,
       photoKey: '',   // sleutel van de foto in IndexedDB
       logoKey: '',    // sleutel van het klantlogo
+      // Bij de post, niet op het plaatje: caption, hashtags en de fotosuggestie (AI of zelf)
+      social: { caption: '', hashtags: '', photoIdea: '' },
       data: {
         photo: { style: 'full', label: '' },
         overlay: {
@@ -179,12 +181,14 @@
   // Gestart vanaf het dashboard (?template=carousel&format=portrait): meteen het
   // goede template en formaat. Pas opgeslagen bij de eerste wijziging.
   const start = PM.startParams();
-  const quickStart = !!(start.template || start.format);
+  const quickStart = !!(start.template || start.format || start.ai);
   if (T.TEMPLATE_META.some((t) => t.id === start.template)) state.template = start.template;
   if (T.FORMATS[start.format]) state.format = start.format;
 
   const save = PM.debounce(() => PM.store.set(STORAGE_KEY, state), 300, { flushOnHide: true });
   let lib = null;   // de bieb (js/shared/library.js), aan het eind gekoppeld
+  let aiSaver = null;   // na de AI: elke wijziging vanzelf in de bieb (PM.ai.keepSaved)
+  let ai = null;        // het paneel AI (js/shared/ai.js)
 
   const env = { logo: null, badge: null, photo: null, clientLogo: null };
   const current = () => state.data[state.template];
@@ -649,6 +653,7 @@
     history.commit(key);
     save();
     if (lib) lib.touch();
+    if (aiSaver) aiSaver.touch();
     render();
   }
 
@@ -1240,6 +1245,8 @@
     applyFiles();
     changed(null);
     if (lib) lib.detach();
+    if (aiSaver) aiSaver.stop();
+    syncSocial();
     toast('Alles gewist; je begint opnieuw met de voorbeelden.', false, { label: 'ongedaan maken', run: () => history.undo() });
   });
 
@@ -1270,6 +1277,7 @@
     fileKeys: (s) => [s.photoKey, s.logoKey, ...(((s.data || {}).carousel || {}).slides || []).map((x) => x && x.photoKey)],
     async apply(saved, keys) {
       keys.forEach(trackFile);
+      if (aiSaver) aiSaver.stop();
       const keep = { exportType: state.exportType, exportWidth: state.exportWidth };
       state = normalize({ ...merge(defaults(), saved), ...keep });
       syncLast();
@@ -1277,6 +1285,7 @@
       syncInputs();
       await applyFiles();
       changed(null);
+      syncSocial();
     },
     // De post, of de eerste slide van een carousel, zonder badge
     thumb() {
@@ -1288,6 +1297,167 @@
     close: () => shell.closePopover(),
     openId: start.bieb,
   }) : null;
+
+  /* ---------------------------------------------------------------------------
+     AI: ruwe content in, post eruit (schema: vul_post in uploads/lib/ai.js)
+     Caption, hashtags en de fotosuggestie staan in state.social: niet op het
+     plaatje, wel bij de post (bieb, ongedaan maken), met kopieerknoppen
+     ------------------------------------------------------------------------- */
+
+  const AI_TEMPLATES = { overlay: 'foto met tekst', blog: 'blog', case: 'case', carousel: 'carousel' };
+  const txt = (v) => (typeof v === 'string' ? v.trim() : '');
+  const tags = (v) => (Array.isArray(v) ? v : String(v || '').split(/[\s,]+/))
+    .map((t) => txt(t).replace(/^#*/, '#').replace(/[^#\p{L}\p{N}_]/gu, ''))
+    .filter((t) => t.length > 1)
+    .slice(0, 15)
+    .join(' ');
+
+  // De post in de vorm van het schema (om aan te passen)
+  function toAI() {
+    const t = state.template === 'photo' ? 'overlay' : state.template;
+    const d = state.data;
+    const out = { template: t, label: (d[t] || {}).label || '', caption: state.social.caption, hashtags: state.social.hashtags.split(/\s+/).filter(Boolean), fotoIdee: state.social.photoIdea };
+    if (t === 'overlay') Object.assign(out, { titel: d.overlay.title, ondertitel: d.overlay.subtitle });
+    if (t === 'blog') Object.assign(out, { titel: d.blog.title, onderwerp: d.blog.topic, cta: d.blog.cta, knop: d.blog.button });
+    if (t === 'case') Object.assign(out, { klant: d.case.client, diensten: d.case.services.filter(Boolean), zin: d.case.sentence, resultaat: d.case.resultValue, resultaatTekst: d.case.resultLabel });
+    if (t === 'carousel') {
+      out.slides = d.carousel.slides.map((s, i, all) => ({
+        soort: i === all.length - 1 ? 'afsluiter' : s.numbered ? 'les' : 'hook',
+        titel: s.title,
+        tekst: s.body,
+      }));
+    }
+    return out;
+  }
+
+  // Eén carousel-slide uit de AI; foto en uitsnede van de slide die er stond blijven
+  const slideFromAI = (x, prev) => ({
+    ...(prev || slideOf({})),
+    title: txt(x && x.titel),
+    body: txt(x && x.tekst),
+    numbered: !!(x && x.soort === 'les'),
+  });
+
+  function applyAI(data, { mode, target }) {
+    const d = data && typeof data === 'object' ? data : {};
+    const c = carousel();
+    if (target != null) {
+      if (!c.slides[target]) return;
+      c.slides[target] = slideFromAI(d, c.slides[target]);
+      c.active = target;
+    } else {
+      const t = AI_TEMPLATES[d.template] ? d.template : (state.template === 'photo' ? 'overlay' : state.template);
+      state.template = t;
+      const data_ = state.data[t];
+      if (txt(d.label)) data_.label = txt(d.label);
+      if (t === 'overlay') Object.assign(data_, { title: txt(d.titel), subtitle: txt(d.ondertitel) });
+      if (t === 'blog') {
+        Object.assign(data_, { title: txt(d.titel) });
+        if (txt(d.onderwerp)) data_.topic = txt(d.onderwerp);
+        if (txt(d.cta)) data_.cta = txt(d.cta);
+        if (txt(d.knop)) data_.button = txt(d.knop);
+      }
+      if (t === 'case') {
+        const services = (Array.isArray(d.diensten) ? d.diensten : []).map(txt).filter(Boolean).slice(0, 3);
+        while (services.length < 3) services.push('');
+        Object.assign(data_, { client: txt(d.klant), services, resultValue: txt(d.resultaat), resultLabel: txt(d.resultaatTekst) });
+        if (txt(d.zin)) data_.sentence = txt(d.zin);
+      }
+      if (t === 'carousel') {
+        const list = (Array.isArray(d.slides) ? d.slides : []).slice(0, 20);
+        if (list.length) {
+          const old = mode === 'refine' ? c.slides : [];
+          c.slides = list.map((x, i) => slideFromAI(x, old[i]));
+          c.active = 0;
+        }
+      }
+      if (txt(d.caption)) state.social.caption = txt(d.caption);
+      if (d.hashtags) state.social.hashtags = tags(d.hashtags);
+      if (typeof d.fotoIdee === 'string') state.social.photoIdea = txt(d.fotoIdee);
+    }
+    state = normalize(state);
+    syncLast();
+    syncVisibility();
+    syncInputs();
+    applyFiles();
+    changed(null);
+    syncSocial();
+  }
+
+  // Caption, hashtags en fotosuggestie in het paneel AI
+  function syncSocial() {
+    if (!ai) return;
+    const box = ai.extras;
+    if (!box.firstChild) {
+      box.innerHTML = `<h3>Bij je post</h3>
+<div class="field">
+  <label class="label" for="aiCaption">Caption <i>voor Instagram of LinkedIn</i></label>
+  <textarea class="input" id="aiCaption" rows="7" maxlength="2200" data-social="caption" placeholder="De tekst onder je post. De AI schrijft hem mee; je kunt hem ook zelf typen."></textarea>
+</div>
+<div class="field">
+  <label class="label" for="aiTags">Hashtags</label>
+  <input class="input" id="aiTags" maxlength="400" data-social="hashtags" placeholder="#onlinemarketing #googleads">
+</div>
+<div class="ai-copy"><button type="button" class="btn btn-outline btn-sm" data-social-copy>kopieer caption en hashtags</button></div>
+<div class="field" data-photo-idea>
+  <span class="label">Fotosuggestie</span>
+  <p class="field-hint" data-photo-text></p>
+</div>`;
+      box.addEventListener('input', (e) => {
+        const key = e.target.dataset.social;
+        if (!key) return;
+        state.social[key] = e.target.value;
+        changed(`social.${key}`);
+      });
+      box.querySelector('[data-social-copy]').addEventListener('click', async () => {
+        const text = [state.social.caption.trim(), state.social.hashtags.trim()].filter(Boolean).join('\n\n');
+        if (!text) { toast('Er is nog geen caption.', true); return; }
+        try {
+          await navigator.clipboard.writeText(text);
+          toast('Caption en hashtags gekopieerd: plak ze onder je post.');
+        } catch (err) {
+          toast('Kopiëren lukte niet. Selecteer de tekst en kopieer hem zelf.', true);
+        }
+      });
+    }
+    for (const input of box.querySelectorAll('[data-social]')) {
+      if (document.activeElement !== input) input.value = state.social[input.dataset.social] || '';
+    }
+    box.querySelector('[data-photo-idea]').hidden = !state.social.photoIdea;
+    box.querySelector('[data-photo-text]').textContent = state.social.photoIdea;
+  }
+
+  if (PM.ai) {
+    aiSaver = PM.ai.keepSaved(lib);
+    ai = PM.ai.panel($('[data-ai-panel]'), {
+      tool: 'insta',
+      format: 'insta',
+      noun: 'post',
+      current: toAI,
+      target: () => (isCarousel() ? { index: carousel().active, label: `slide ${carousel().active + 1}` } : null),
+      wishField: `<div class="field">
+  <label class="label" for="aiTemplate">Template</label>
+  <select class="input input--select" id="aiTemplate" data-ai-template>
+    <option value="">laat de AI kiezen</option>
+    ${Object.entries(AI_TEMPLATES).map(([id, name]) => `<option value="${id}">${name}</option>`).join('')}
+  </select>
+</div>`,
+      wish: () => {
+        const v = $('[data-ai-template]').value;
+        return v ? `Gebruik het template ${v}.` : '';
+      },
+      wishPlaceholder: 'bijv. voor LinkedIn, met een vraag aan het eind',
+      apply: applyAI,
+      lib,
+      saver: aiSaver,
+      undo: () => history.undo(),
+      autostart: !!start.ai,
+      open: () => shell.open('ai'),
+    });
+    syncSocial();
+    history.onChange(() => syncSocial());
+    shell.onChange(({ id }) => { if (id === 'ai') { ai.refresh(); syncSocial(); } });
+  }
 
   // Foto en klantlogo uit een vorige sessie terugzetten, dan oude bestanden opruimen
   if (state.photoKey) trackFile(state.photoKey);

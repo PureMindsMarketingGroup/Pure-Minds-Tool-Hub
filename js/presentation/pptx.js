@@ -712,8 +712,9 @@
       const box = badgeBox(ctx, fr, state, i);
       if (box && badge == null) badge = await badgeImage(deck, box, env.badge);
       const mark = box && badge != null ? { kind: 'pic', ...box, image: badge, name: 'Emerce 100-badge' } : null;
-      if (S.bare(p)) deck.slide(slideObjects(fr, s, env, p, photo, logoImage), 2);
-      else deck.slide([...slideObjects(fr, s, env, p, photo, logoImage), mark, number]);
+      // Sprekersnotities: in PowerPoint en Google Slides onder de slide (Notities)
+      if (S.bare(p)) deck.slide(slideObjects(fr, s, env, p, photo, logoImage), 2, s.notes);
+      else deck.slide([...slideObjects(fr, s, env, p, photo, logoImage), mark, number], 1, s.notes);
     }
     return deck.build();
   }

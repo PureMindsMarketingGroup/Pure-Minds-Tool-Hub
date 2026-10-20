@@ -35,6 +35,7 @@
     { id: 'foto', label: 'Foto', title: 'Foto en uitsnede', icon: 'image-line' },
     { id: 'tekst', label: 'Tekst', title: 'Tekst van je post', icon: 'input-method-line' },
     { id: 'details', label: 'Details', title: 'Fijnafstellen', icon: 'equalizer-line' },
+    { id: 'ai', label: 'AI', title: 'Maken met AI', icon: 'sparkling-line' },
   ],
 
   help: {

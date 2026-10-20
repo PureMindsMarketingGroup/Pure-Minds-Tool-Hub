@@ -16,6 +16,7 @@
      deck.plainLayout([...]);            // optioneel: layout 2, zonder de vormen van de master
      deck.slide([...]);                  // op layout 1
      deck.slide([...], 2);               // op layout 2
+     deck.slide([...], 1, 'notities');   // met sprekersnotities (Notities in PowerPoint)
      const blob = await deck.build();
 
    Objecten (maten in ontwerp-px, kleuren als '#rrggbb' of 'rgba(...)'):
@@ -116,6 +117,7 @@
       this.layoutObjects = [];
       this.plainObjects = null;   // layout 2 (plainLayout), alleen als die gebruikt wordt
       this.slideLayouts = [];     // per slide: layout 1 of 2
+      this.slideNotes = [];       // per slide: sprekersnotities (tekst) of ''
     }
 
     px(v) { return Math.round(v * this.emu); }
@@ -136,10 +138,14 @@
     // achtergrond van de master blijft, plus deze objecten. Voor slides zonder logo en
     // voetregel (het business model canvas en de waardepropositie)
     plainLayout(objects) { this.plainObjects = objects; }
-    slide(objects, layout = 1) {
+    slide(objects, layout = 1, notes = '') {
       this.slides.push(objects.filter(Boolean));
       this.slideLayouts.push(layout === 2 && this.plainObjects ? 2 : 1);
+      this.slideNotes.push(String(notes || '').replace(/\*\*/g, '').trim());
     }
+
+    // Zijn er sprekersnotities? Alleen dan komen er notitiepagina's (en hun master) in het bestand
+    get hasNotes() { return this.slideNotes.some(Boolean); }
 
     /* --- onderdelen van een part (master, layout of slide): relaties en id's --- */
 
@@ -398,10 +404,37 @@
       return `${XML}<p:sld xmlns:a="${NS_A}" xmlns:r="${NS_R}" xmlns:p="${NS_P}"><p:cSld>${tree}</p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`;
     }
 
+    /* --- Sprekersnotities: een notitiemaster en per slide met notities een notitiepagina --- */
+
+    notesMasterXml() {
+      const ph = (id, name, type, extra, xfrm, body) => `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="${name}"/><p:cNvSpPr><a:spLocks noGrp="1"${type === 'sldImg' ? ' noRot="1" noChangeAspect="1"' : ''}/></p:cNvSpPr><p:nvPr><p:ph type="${type}"${extra}/></p:nvPr></p:nvSpPr>`
+        + `<p:spPr><a:xfrm><a:off x="${xfrm[0]}" y="${xfrm[1]}"/><a:ext cx="${xfrm[2]}" cy="${xfrm[3]}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom>${type === 'sldImg' ? '<a:noFill/><a:ln w="12700"><a:solidFill><a:prstClr val="black"/></a:solidFill></a:ln>' : ''}</p:spPr>${body}</p:sp>`;
+      return `${XML}<p:notesMaster xmlns:a="${NS_A}" xmlns:r="${NS_R}" xmlns:p="${NS_P}"><p:cSld><p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg><p:spTree>`
+        + '<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>'
+        + ph(2, 'Dia-afbeelding 1', 'sldImg', ' idx="2"', [381000, 685800, 6096000, 3429000], '')
+        + ph(3, 'Notities 2', 'body', ' sz="quarter" idx="3"', [685800, 4343400, 5486400, 4114800], '<p:txBody><a:bodyPr vert="horz" lIns="91440" tIns="45720" rIns="91440" bIns="45720" rtlCol="0"/><a:lstStyle/><a:p><a:endParaRPr lang="nl-NL"/></a:p></p:txBody>')
+        + '</p:spTree></p:cSld>'
+        + '<p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>'
+        + '<p:notesStyle><a:lvl1pPr marL="0" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1"><a:defRPr sz="1200" kern="1200"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill><a:latin typeface="+mn-lt"/><a:ea typeface="+mn-ea"/><a:cs typeface="+mn-cs"/></a:defRPr></a:lvl1pPr></p:notesStyle>'
+        + '</p:notesMaster>';
+    }
+
+    notesSlideXml(text) {
+      const paras = text.split(/\r?\n/).map((line) => (line.trim()
+        ? `<a:p><a:r><a:rPr lang="nl-NL" dirty="0"/><a:t>${esc(line)}</a:t></a:r></a:p>`
+        : '<a:p><a:endParaRPr lang="nl-NL" dirty="0"/></a:p>')).join('');
+      return `${XML}<p:notes xmlns:a="${NS_A}" xmlns:r="${NS_R}" xmlns:p="${NS_P}"><p:cSld><p:spTree>`
+        + '<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>'
+        + '<p:sp><p:nvSpPr><p:cNvPr id="2" name="Dia-afbeelding 1"/><p:cNvSpPr><a:spLocks noGrp="1" noRot="1" noChangeAspect="1"/></p:cNvSpPr><p:nvPr><p:ph type="sldImg"/></p:nvPr></p:nvSpPr><p:spPr/></p:sp>'
+        + `<p:sp><p:nvSpPr><p:cNvPr id="3" name="Notities 2"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="body" idx="1"/></p:nvPr></p:nvSpPr><p:spPr/><p:txBody><a:bodyPr/><a:lstStyle/>${paras}</p:txBody></p:sp>`
+        + '</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:notes>';
+    }
+
     presentationXml() {
       const ids = this.slides.map((_, i) => `<p:sldId id="${256 + i}" r:id="rId${2 + i}"/>`).join('');
       return `${XML}<p:presentation xmlns:a="${NS_A}" xmlns:r="${NS_R}" xmlns:p="${NS_P}" saveSubsetFonts="1">`
         + '<p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst>'
+        + (this.hasNotes ? `<p:notesMasterIdLst><p:notesMasterId r:id="rId${3 + this.slides.length}"/></p:notesMasterIdLst>` : '')
         + `<p:sldIdLst>${ids}</p:sldIdLst><p:sldSz cx="${SLIDE_CX}" cy="${this.px(this.h)}"/><p:notesSz cx="6858000" cy="9144000"/>`
         + '<p:defaultTextStyle><a:defPPr><a:defRPr lang="nl-NL"/></a:defPPr>'
         + '<a:lvl1pPr marL="0" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1"><a:defRPr sz="1800" kern="1200"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill><a:latin typeface="+mn-lt"/><a:ea typeface="+mn-ea"/><a:cs typeface="+mn-cs"/></a:defRPr></a:lvl1pPr>'
@@ -438,6 +471,10 @@
         + (this.plainObjects ? over('/ppt/slideLayouts/slideLayout2.xml', `${CT}presentationml.slideLayout+xml`) : '')
         + over('/ppt/theme/theme1.xml', `${CT}theme+xml`)
         + this.slides.map((_, i) => over(`/ppt/slides/slide${i + 1}.xml`, `${CT}presentationml.slide+xml`)).join('')
+        + (this.hasNotes
+          ? over('/ppt/notesMasters/notesMaster1.xml', `${CT}presentationml.notesMaster+xml`) + over('/ppt/theme/theme2.xml', `${CT}theme+xml`)
+            + this.slideNotes.map((n, i) => (n ? over(`/ppt/notesSlides/notesSlide${i + 1}.xml`, `${CT}presentationml.notesSlide+xml`) : '')).join('')
+          : '')
         + over('/docProps/core.xml', 'application/vnd.openxmlformats-package.core-properties+xml')
         + over('/docProps/app.xml', `${CT}extended-properties+xml`)
         + '</Types>';
@@ -477,7 +514,8 @@
       ];
       const pres = [{ id: 'rId1', type: `${REL}slideMaster`, target: 'slideMasters/slideMaster1.xml' }]
         .concat(slides.map((_, i) => ({ id: `rId${2 + i}`, type: `${REL}slide`, target: `slides/slide${i + 1}.xml` })))
-        .concat([{ id: `rId${2 + slides.length}`, type: `${REL}theme`, target: 'theme/theme1.xml' }]);
+        .concat([{ id: `rId${2 + slides.length}`, type: `${REL}theme`, target: 'theme/theme1.xml' }])
+        .concat(this.hasNotes ? [{ id: `rId${3 + slides.length}`, type: `${REL}notesMaster`, target: 'notesMasters/notesMaster1.xml' }] : []);
 
       zip.file('[Content_Types].xml', this.contentTypesXml());
       zip.file('_rels/.rels', this.relsXml(root));
@@ -494,7 +532,21 @@
         zip.file('ppt/slideLayouts/slideLayout2.xml', plainXml);
         zip.file('ppt/slideLayouts/_rels/slideLayout2.xml.rels', this.relsXml(plain.rels));
       }
+      if (this.hasNotes) {
+        zip.file('ppt/notesMasters/notesMaster1.xml', this.notesMasterXml());
+        zip.file('ppt/notesMasters/_rels/notesMaster1.xml.rels', this.relsXml([{ id: 'rId1', type: `${REL}theme`, target: '../theme/theme2.xml' }]));
+        zip.file('ppt/theme/theme2.xml', this.themeXml());
+      }
       slides.forEach((s, i) => {
+        const notes = this.slideNotes[i];
+        if (notes) {
+          s.part.rel(`${REL}notesSlide`, `../notesSlides/notesSlide${i + 1}.xml`);
+          zip.file(`ppt/notesSlides/notesSlide${i + 1}.xml`, this.notesSlideXml(notes));
+          zip.file(`ppt/notesSlides/_rels/notesSlide${i + 1}.xml.rels`, this.relsXml([
+            { id: 'rId1', type: `${REL}notesMaster`, target: '../notesMasters/notesMaster1.xml' },
+            { id: 'rId2', type: `${REL}slide`, target: `../slides/slide${i + 1}.xml` },
+          ]));
+        }
         zip.file(`ppt/slides/slide${i + 1}.xml`, s.xml);
         zip.file(`ppt/slides/_rels/slide${i + 1}.xml.rels`, this.relsXml(s.part.rels));
       });

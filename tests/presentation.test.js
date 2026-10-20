@@ -271,7 +271,7 @@ const panelOfTour = (html, target) => panels(html).find((p) => p.html.includes(`
 test('de rail: een knop per onderdeel, Gegevens tussen Prijzen en Layout', () => {
   const html = read('tools/presentation.html');
   const rail = Array.from(html.matchAll(/class="rail__item" data-section="([^"]+)"/g), (m) => m[1]);
-  assert.deepEqual(rail, ['soort', 'voorstel', 'prijzen', 'gegevens', 'layout', 'inhoud', 'foto', 'presentatie']);
+  assert.deepEqual(rail, ['soort', 'voorstel', 'prijzen', 'gegevens', 'layout', 'inhoud', 'foto', 'presentatie', 'ai']);
   assert.deepEqual(panels(html).map((p) => p.section), rail, 'een paneel per knop, in dezelfde volgorde');
   // De knoppen van een soort staan uit tot app.js ze aanzet
   for (const id of ['voorstel', 'prijzen', 'gegevens']) assert.match(html, new RegExp(`<button class="rail__item" data-section="${id}" hidden>`), id);

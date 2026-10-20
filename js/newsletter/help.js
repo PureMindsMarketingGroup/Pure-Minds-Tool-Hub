@@ -24,6 +24,7 @@
     { id: 'inhoud', label: 'Inhoud', title: 'Je mail, blok voor blok', icon: 'layout-row-line' },
     { id: 'blokken', label: 'Blokken', title: 'Blok toevoegen', icon: 'add-box-line' },
     { id: 'mail', label: 'Mail', title: 'Instellingen van je mail', icon: 'mail-settings-line' },
+    { id: 'ai', label: 'AI', title: 'Maken met AI', icon: 'sparkling-line' },
   ],
 
   help: {
@@ -85,6 +86,10 @@
     'naam': {
       title: 'Naam',
       text: 'Alleen voor jou: zo heet je mail in je bieb en als bestand. Het onderwerp van de mail vul je in Brevo in, bij de campagne.',
+    },
+    'onderwerp': {
+      title: 'Onderwerp',
+      text: 'De onderwerpregel staat niet in de HTML: je vult hem in Brevo in, bij Subject. Hier bewaar je hem bij je mail (de AI maakt er ook een), met kopieer om hem te plakken.',
     },
     'voorvertoning': {
       title: 'Voorvertoningstekst',

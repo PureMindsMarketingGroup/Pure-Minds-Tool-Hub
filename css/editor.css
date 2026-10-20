@@ -613,3 +613,39 @@ canvas.has-region { cursor: pointer; }
 .items__foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem .75rem; margin-top: .625rem; }
 .items__tip { font-size: .75rem; color: var(--pm-muted); }
 .items__vat { width: 100%; max-width: 14rem; font-size: .875rem; padding-top: .55rem; padding-bottom: .55rem; }
+
+/* --- Paneel AI (js/shared/ai.js): ruwe content in, ingevulde velden eruit --- */
+
+.rail__item[data-section="ai"] svg { color: var(--pm-cyan); fill: var(--pm-cyan); }
+
+.ai-raw { min-height: 11rem; resize: vertical; font-size: .875rem; line-height: 1.55; }
+.ai-go { display: flex; flex-direction: column; align-items: flex-start; gap: .5rem; margin-top: .25rem; }
+.ai-go .btn .ri { width: 1.1rem; height: 1.1rem; fill: currentColor; }
+.ai-busy { display: flex; align-items: center; gap: .65rem; margin-top: .875rem; padding: .75rem .875rem; background: var(--pm-soft); border-left: 3px solid var(--pm-cyan); font-size: .8125rem; font-weight: 700; }
+.ai-busy[hidden] { display: none; }
+.ai-busy__hex {
+  flex: none; width: 1rem; height: 1.15rem; background: var(--pm-cyan);
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  animation: ai-pulse 1.2s ease-in-out infinite;
+}
+@keyframes ai-pulse { 50% { transform: scale(.6); opacity: .5; } }
+.ai-off { margin-bottom: .75rem; font-size: .8125rem; line-height: 1.45; }
+.ai-off b { font-weight: 700; }
+.ai-refine { display: flex; flex-direction: column; gap: .5rem; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--pm-line); }
+.ai-refine__title { display: flex; align-items: center; gap: .35rem; margin: 0; font-size: .875rem; font-weight: 700; }
+.ai-chips { display: flex; flex-wrap: wrap; gap: .35rem; }
+.ai-chip { padding: .25rem .6rem; border: 1px solid var(--pm-border); background: #fff; font-size: .75rem; font-weight: 700; color: var(--pm-ink); cursor: pointer; }
+.ai-chip:hover { border-color: var(--pm-cyan); background: var(--pm-soft); }
+.ai-chip:focus-visible { outline: none; box-shadow: var(--ring); }
+.ai-scope label { font-size: .75rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ai-scope input:disabled + label { opacity: .45; cursor: not-allowed; }
+.ai-refine .btn { align-self: flex-start; }
+.ai-extras:empty { display: none; }
+.ai-extras { display: flex; flex-direction: column; gap: .75rem; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--pm-line); }
+.ai-extras h3 { margin: 0; font-size: .875rem; font-weight: 700; }
+.ai-extras .field { margin: 0; }
+.ai-ideas { margin: 0; padding-left: 1.1rem; font-size: .8125rem; line-height: 1.5; color: var(--pm-muted); }
+.ai-copy { display: flex; justify-content: flex-end; }
+.ai-foot { margin: 1.25rem 0 0; font-size: .6875rem; line-height: 1.45; color: var(--pm-muted); }
+.panel .is-busy .ai-raw { opacity: .6; }
+@media (prefers-reduced-motion: reduce) { .ai-busy__hex { animation: none; } }
