@@ -1,0 +1,133 @@
+/**
+ * Handleidingen (tools/brevo-handleiding.html) — rustige leespagina in de huisstijl
+ * Bouwt op css/global.css. Gewichten alleen 400, 700 en 800.
+ */
+
+.guide { max-width: 52rem; padding-top: 2.5rem; padding-bottom: 4rem; }
+.guide a:not(.btn) { color: var(--pm-ink); text-decoration: none; border-bottom: 2px solid var(--pm-cyan); font-weight: 700; }
+.guide a:not(.btn):hover { background: var(--pm-soft); }
+.guide p, .guide li, .guide dd { font-size: 1rem; line-height: 1.65; }
+.guide i { font-style: italic; }
+.guide b { font-weight: 700; }
+.guide kbd {
+  display: inline-block; padding: 0 .35rem; border: 1px solid var(--pm-border); border-bottom-width: 2px;
+  background: #fff; font-family: inherit; font-size: .8125rem; font-weight: 700; line-height: 1.5;
+}
+
+/* Knopnamen uit Brevo (Inkt-rand) en uit de Nieuwsbrief Maker (magenta streep) */
+.ui {
+  display: inline-block; padding: 0 .45rem; border: 1px solid var(--pm-border); background: #fff;
+  font-size: .875rem; font-weight: 700; line-height: 1.6; white-space: nowrap;
+}
+.ui--pm { border-left: 3px solid var(--pm-magenta); }
+
+/* --- Bovenaan --- */
+
+.guide__hero { padding: 2rem; background: #fff; border-top: 6px solid var(--pm-cyan); box-shadow: 0 24px 48px -36px rgba(16, 40, 60, .45); }
+.guide__label { display: flex; align-items: center; gap: .5rem; margin-bottom: .75rem; font-size: .75rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--pm-muted); }
+.hexmark { width: .75rem; height: .85rem; background: var(--pm-cyan); clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
+.guide__title { font-size: clamp(2rem, 4vw, 2.75rem); line-height: 1.1; font-weight: 800; letter-spacing: -.02em; }
+.guide__lead { margin-top: 1rem; max-width: 40rem; font-size: 1.125rem !important; color: #3e4a54; }
+
+.guide__map { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; margin: 1.75rem 0 0; padding: 0; list-style: none; counter-reset: none; }
+.guide__map a {
+  display: flex; align-items: center; gap: .65rem; height: 100%; padding: .65rem .75rem;
+  border: 1px solid var(--pm-line) !important; background: var(--pm-zebra); font-weight: 700 !important; font-size: .875rem;
+}
+.guide__map a:hover { border-color: var(--pm-cyan) !important; background: var(--pm-soft) !important; }
+.guide__map b {
+  display: grid; place-items: center; flex: none; width: 1.9rem; height: 2.15rem;
+  background: var(--pm-cyan); color: #fff; font-weight: 800;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+.guide__map span { line-height: 1.3; }
+
+.guide__need { margin-top: 1.75rem; padding: 1rem 1.25rem; background: var(--pm-soft); border-left: 3px solid var(--pm-cyan); }
+.guide__need h3 { font-size: .9375rem; font-weight: 700; margin-bottom: .35rem; }
+.guide__need ul { margin: 0; padding-left: 1.2rem; }
+
+.guide__note { margin: 1.5rem 0 0; padding: .875rem 1.25rem; background: #fff; border: 1px solid var(--pm-line); font-size: .9375rem !important; }
+
+/* --- Stappen --- */
+
+.step { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr); gap: 1.25rem; margin-top: 2.75rem; scroll-margin-top: 1.5rem; }
+.step__num {
+  display: grid; place-items: center; width: 3.1rem; height: 3.5rem;
+  background: var(--pm-ink); color: #fff; font-size: 1.375rem; font-weight: 800;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+.step h2, .extra h2 { font-size: 1.5rem; line-height: 1.25; font-weight: 800; letter-spacing: -.01em; margin-bottom: .5rem; }
+.step__body > p { margin-bottom: .5rem; }
+
+.todo { margin: .75rem 0 0; padding: 0; list-style: none; counter-reset: todo; }
+.todo li { position: relative; padding: .55rem 0 .55rem 2.25rem; border-bottom: 1px solid var(--pm-line); counter-increment: todo; }
+.todo li:last-child { border-bottom: 0; }
+.todo li::before {
+  content: counter(todo); position: absolute; left: 0; top: .6rem;
+  display: grid; place-items: center; width: 1.5rem; height: 1.5rem;
+  background: var(--pm-tint); color: var(--pm-ink); font-size: .8125rem; font-weight: 700;
+}
+
+.fields { display: flex; flex-direction: column; gap: .5rem; margin: .75rem 0 0; }
+.fields > div { display: grid; grid-template-columns: 9rem minmax(0, 1fr); gap: 1rem; padding: .75rem 1rem; background: #fff; border: 1px solid var(--pm-line); }
+.fields dt { padding-top: .1rem; }
+.fields dd { margin: 0; }
+
+.tip { margin-top: 1rem; padding: .875rem 1.125rem; background: var(--pm-soft); border-left: 3px solid var(--pm-cyan); font-size: .9375rem; line-height: 1.6; }
+.tip--warn { background: #fdf7ec; border-left-color: #e0951f; }
+
+/* Checklist om af te vinken (onthoudt niets) */
+.check { margin-top: 1.25rem; padding: 1.25rem 1.25rem 1rem; background: #fff; border: 1px solid var(--pm-line); border-top: 4px solid var(--pm-ink); }
+.check h3 { font-size: 1.0625rem; font-weight: 800; }
+.check__hint { margin: .2rem 0 .5rem; font-size: .8125rem !important; color: var(--pm-muted); }
+.check ul { margin: 0; padding: 0; list-style: none; }
+.check li { border-bottom: 1px solid var(--pm-line); }
+.check li:last-child { border-bottom: 0; }
+.check label { display: flex; gap: .75rem; align-items: flex-start; padding: .55rem 0; cursor: pointer; }
+.check input { flex: none; width: 1.15rem; height: 1.15rem; margin-top: .25rem; accent-color: var(--pm-cyan); }
+.check label:has(input:checked) { color: var(--pm-muted); text-decoration: line-through; text-decoration-color: var(--pm-cyan); }
+
+/* --- Extra: aanpassen, template, problemen --- */
+
+.extra { margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--pm-line); scroll-margin-top: 1.5rem; }
+.extra .muted { margin-top: .75rem; font-size: .9375rem !important; }
+.faq { display: flex; flex-direction: column; gap: .375rem; margin-top: .75rem; }
+.faq details { background: #fff; border: 1px solid var(--pm-line); }
+.faq details[open] { border-color: var(--pm-cyan); box-shadow: inset 3px 0 0 var(--pm-cyan); }
+.faq summary { padding: .8rem 1rem; cursor: pointer; font-weight: 700; list-style-position: inside; }
+.faq summary:hover { background: var(--pm-soft); }
+.faq summary:focus-visible { outline: none; box-shadow: var(--ring); }
+.faq details p { padding: 0 1rem .9rem; }
+
+.guide__end { margin-top: 3rem; padding: 2rem; background: var(--pm-ink); color: #fff; }
+.guide__end h2 { font-size: 1.5rem; font-weight: 800; }
+.guide__end p { margin-top: .5rem; color: #e4e7ea; }
+.guide__acts { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.25rem; }
+.guide__end .btn-outline { background: transparent; color: #fff; border-color: #fff; }
+.guide__end .btn-outline:hover { background: rgba(255, 255, 255, .1); }
+
+/* --- Telefoon --- */
+
+@media (max-width: 639px) {
+  .guide { padding-top: 1.25rem; }
+  .guide__hero, .guide__end { padding: 1.25rem; }
+  .guide__map { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .step { grid-template-columns: minmax(0, 1fr); gap: .5rem; }
+  .step__num { width: 2.5rem; height: 2.85rem; font-size: 1.125rem; }
+  .fields > div { grid-template-columns: minmax(0, 1fr); gap: .25rem; }
+  .ui { white-space: normal; }
+}
+
+/* --- Afdrukken: alleen de handleiding, zonder kop, menu en knoppen --- */
+
+@media print {
+  .topstrip, .site-header, .bg-deco, .guide__acts, .guide__map { display: none !important; }
+  body { background: #fff !important; }
+  .guide { max-width: none; padding: 0; }
+  .guide__hero, .check { box-shadow: none; }
+  .faq details { break-inside: avoid; }
+  .step, .extra { break-inside: avoid-page; }
+  .guide__end { background: #fff; color: var(--pm-ink); border: 1px solid var(--pm-line); }
+  .guide__end p { color: var(--pm-ink); }
+  .step__num, .guide__map b, .hexmark { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+}

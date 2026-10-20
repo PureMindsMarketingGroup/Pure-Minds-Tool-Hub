@@ -58,10 +58,11 @@ test('titels zonder nadruk-tekens en dubbele spaties', () => {
   assert.equal(L.cleanTitle(null), '');
 });
 
-test('de drie makers hebben de bieb: knop, popover en script, en het dashboard laadt hem', () => {
+test('de makers hebben de bieb: knop, popover en script, en het dashboard laadt hem', () => {
   const read = (f) => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
-  for (const tool of ['insta', 'document', 'presentation']) {
-    const html = read(`tools/${tool}.html`);
+  // [id in tools.js, pagina in tools/]
+  for (const [tool, page] of [['insta', 'insta'], ['document', 'document'], ['presentation', 'presentation'], ['newsletter', 'nieuwsbrief']]) {
+    const html = read(`tools/${page}.html`);
     assert.match(html, /id="libBtn"[^>]*aria-controls="libPop"/, `${tool}: knop`);
     assert.match(html, /id="libPop"[\s\S]*data-lib/, `${tool}: popover`);
     assert.ok(html.indexOf('<script src="../js/shared/library.js">') > html.indexOf('<script src="../js/shared/core.js">'), `${tool}: script na core.js`);

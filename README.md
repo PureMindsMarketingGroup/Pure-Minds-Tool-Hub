@@ -25,6 +25,7 @@ Plain HTML, CSS en JavaScript: geen framework, geen buildstap.
 | [Document Maker](tools/document.html) | Brief, offerte, memo of notitie op A4-briefpapier | bewerkbare PDF, Word (.docx, ook voor Google Docs), afdrukken |
 | [Presentation Maker](tools/presentation.html) | 16:9-slides in zeven layouts, waaronder een tabel, plus voorstellen en positioneringen in de vaste opbouw van Pure Minds | bewerkbare PDF, PowerPoint (.pptx, ook voor Google Slides), PNG (Full HD of 4K) |
 | [Icon Finder](tools/icons.html) | 1.690 lijniconen, te zoeken in het Nederlands of Engels; los of in de zeshoek, in de merkkleuren | SVG, PNG (128 tot 2048 px), kopiëren om te plakken |
+| [Nieuwsbrief Maker](tools/nieuwsbrief.html) | Nieuwsbrieven en mails in de huisstijl, blok voor blok; foto's en iconen gaan vanzelf online. Met een [handleiding voor Brevo](tools/brevo-handleiding.html) | HTML om in Brevo te plakken (kopiëren of .html) |
 | [Brand Styleguide](tools/styleguide.html) | Het brandbook digitaal: kleurwaarden kopiëren, logo's downloaden, contrast checken, zoeken in alle richtlijnen | bewerkbare PDF met lagen (Canva, Illustrator), logo-pakket (SVG en PNG), kleuren als ASE en JSON |
 
 Alle PDF's hebben **echte tekst** in ingesloten Pure Minds Sans, met per gewicht een
@@ -57,6 +58,8 @@ zodat de browser de export niet blokkeert.
 index.html                    de hub: maken (een kaart per tool) en checken (de technische tools),
                               en de uitleg bij de Consent Check (<dialog>)
 email/                        de e-mailtemplate voor Brevo, met plaatjes in email/img/
+uploads/                      upload-service van de Nieuwsbrief Maker (Vercel Blob, eigen
+                              Vercel-project met Root Directory uploads; zie uploads/README.md)
 handtekeningen/                de e-mailhandtekeningen: index.html (kies je naam) en
                               een pagina per collega; plaatjes in assets/handtekeningen/
 tools/
@@ -65,6 +68,8 @@ tools/
   presentation.html           Presentation Maker
   icons.html                  Icon Finder
   styleguide.html             Brand Styleguide
+  nieuwsbrief.html            Nieuwsbrief Maker
+  brevo-handleiding.html      handleiding: van de Nieuwsbrief Maker naar Brevo, stap voor stap
 css/
   global.css                  gedeeld designsysteem (kleuren, Pure Minds Sans, kaarten,
                               knoppen, velden, kop met toolwisselaar)
@@ -76,6 +81,8 @@ css/
   presentation.css            Presentation Maker
   icons.css                   Icon Finder
   styleguide.css              Brand Styleguide
+  newsletter.css              Nieuwsbrief Maker
+  handleiding.css             handleidingen (leespagina)
 js/
   shared/tools.js             register van alle tools (hub + toolwisselaar)
   shared/core.js              gedeelde hulpfuncties (window.PM)
@@ -98,6 +105,9 @@ js/
   insta/export.js             wat een download oplevert (PNG, JPG, zip of PDF), de zin en de uitleg erbij
   insta/pdf.js                de PDF van een post of carousel (PMInstaPdf.build)
   insta/help.js               [?]-uitleg, rondleiding en sneltoetsen (PM_HELP.insta)
+  newsletter/email.js         de HTML van een mail uit blokken (PMEmail, ook in Node getest)
+  newsletter/app.js           Nieuwsbrief Maker: blokken, preview, uploaden, iconen, kopiëren
+  newsletter/help.js          [?]-uitleg, rondleiding en sneltoetsen (PM_HELP.newsletter)
   document/app.js             editor, blokken en paginering
   document/model.js           bedragen, totalen en de controle op voorbeeldtekst (zonder DOM)
   document/help.js            [?]-uitleg, rondleiding en sneltoetsen (PM_HELP.document)
@@ -1164,6 +1174,41 @@ jsPDF 4.2.1, svg2pdf.js 2.8.1, docx 9.7.1 (Word), JSZip 3.10.1
 jsDelivr, met een vaste versie en SRI-hash (`js/shared/core.js`). Ze worden
 pas geladen bij de eerste export, dus bewerken werkt ook zonder internet.
 
+## Nieuwsbrief Maker
+
+Nieuwsbrieven en mails in de huisstijl, zonder HTML te kennen
+(`tools/nieuwsbrief.html`). Je mail bestaat uit blokken onder elkaar; je past
+alleen tekst, foto's, iconen en links aan. Kop (logo, "bekijk online") en voet
+(contact, socials, Emerce 100, afmelden) staan vast. De HTML is dezelfde als
+die van `email/pure-minds-email.html` en komt uit `js/newsletter/email.js`.
+
+- **Blokken:** opening (kop, intro, magenta hoofdknop), foto, tekst, foto en
+  tekst (foto links of rechts), punten (twee of drie, met een zeshoek of
+  icoon), resultaat en afsluiter (rustige knop). Toevoegen bij *Blokken*
+  (onder het open blok), verschuiven, kopiëren en weggooien op het kaartje.
+  Hoogstens 30 blokken.
+- **Tekst:** `**vet**`, `{voornaam}` (Brevo: `{{ contact.FIRSTNAME }}`, anders
+  "daar"), `[tekst](link)` en een witregel voor een nieuwe alinea. Koppen
+  krijgen vanzelf de cyaan punt, tekstlinks een pijl.
+- **Links:** alleen https, mailto en tel; `www.…`, een e-mailadres of een
+  telefoonnummer wordt vanzelf goed. Een link die niet klopt krijgt een oranje
+  rand en komt niet in de mail.
+- **Foto's en iconen:** een mail toont alleen plaatjes die online staan. Een
+  foto wordt in de browser verkleind tot 1200 px breed (of bijgesneden:
+  liggend, breed, vierkant) en gaat naar de [upload-service](uploads/README.md)
+  (Vercel Blob); de link komt in de HTML. Iconen komen uit de Icon Finder: wit
+  lijnicoon in een cyaan zeshoek, als PNG van 105 × 120 (getoond op 35 × 40).
+  Zonder upload-service werken de fotobank (de foto's van het brandbook, al
+  online) en een link naar een foto die al online staat. De link van de
+  service staat bovenin `js/newsletter/app.js` (`DEFAULT_UPLOAD_URL`); het
+  wachtwoord vult elke collega één keer in.
+- **Naar Brevo:** *kopieer html* (Ctrl + S) of *download .html*. Eerst een
+  controle: voorbeeldtekst, de voorvertoningstekst, links en foto's die niet
+  online staan, en de grootte (Gmail knipt vanaf 102 KB). Nooit tegenhouden.
+  De [handleiding](tools/brevo-handleiding.html) legt stap voor stap uit hoe
+  je de HTML in een campagne plakt, test en verstuurt.
+- **Opslaan:** het concept in deze browser (`pm-newsletter-v1`) en de bieb.
+
 ## E-mailtemplate (Brevo)
 
 `email/pure-minds-email.html` is de huisstijl-template voor e-mails in Brevo
@@ -1171,8 +1216,11 @@ pas geladen bij de eerste export, dus bewerken werkt ook zonder internet.
 laden van het GitHub-account van Pure Minds; de foto's in het voorbeeld komen
 uit `assets/styleguide/photos/`.
 
-- **In Brevo zetten:** Templates → New template → Add content → Start from
-  scratch → HTML custom code. Plak de hele inhoud van het bestand en sla op.
+- **Makkelijker:** maak je mail in de [Nieuwsbrief Maker](#nieuwsbrief-maker);
+  deze template is de basis daarvan.
+- **In Brevo zetten:** Marketing → Templates → Create template → Email
+  template → Add content → Start from scratch → HTML custom code. Plak de hele
+  inhoud van het bestand en sla op (Save & quit).
   Stuur jezelf eerst een test (Preview & test) en kijk in Gmail en Outlook.
 - **Blokken:** alles staat tussen `<!-- BLOK: … -->` en `<!-- EINDE BLOK -->`:
   kop met logo, opening op Inkt met de magenta hoofdknop, foto, tekst met

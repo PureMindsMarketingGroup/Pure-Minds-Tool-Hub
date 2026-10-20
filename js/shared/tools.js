@@ -157,6 +157,33 @@ window.PM_TOOLS = [
     },
   },
   {
+    id: 'newsletter',
+    name: 'Nieuwsbrief Maker',
+    short: 'nieuwsbrief',
+    href: 'tools/nieuwsbrief.html',
+    description: 'Nieuwsbrieven en mails in de huisstijl, blok voor blok, klaar om in Brevo te plakken.',
+    exports: ['HTML voor Brevo', 'kopiëren', '.html'],
+    tour: 'je eerste nieuwsbrief',
+    tone: 'light',
+    status: 'nieuw',
+    newUntil: '2026-12-15',
+    starts: [
+      { label: 'Nieuwsbrief', sub: 'e-mail · alle blokken', ratio: '3 / 5', params: { soort: 'nieuwsbrief' } },
+      { label: 'Korte mail', sub: 'e-mail · drie blokken', ratio: '3 / 4', params: { soort: 'kort' } },
+    ],
+    draft: {
+      key: 'pm-newsletter-v1',
+      // Naam van de mail, anders de kop van de opening (zolang het geen voorbeeldtekst is)
+      summary: (s) => {
+        const blocks = Array.isArray(s.blocks) ? s.blocks : [];
+        const opening = blocks.find((b) => b && b.type === 'opening' && b.title && b.title !== 'Hier komt de kop van je e-mail');
+        const title = (s.name || '').trim() || (opening ? opening.title : '');
+        const n = blocks.length;
+        return { title, sub: `e-mail · ${n} ${n === 1 ? 'blok' : 'blokken'}`, ratio: '3 / 5', noun: s.kind === 'kort' ? 'mail' : 'nieuwsbrief' };
+      },
+    },
+  },
+  {
     id: 'icons',
     name: 'Icon Finder',
     short: 'iconen',

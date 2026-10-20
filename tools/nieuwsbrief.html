@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="nl" data-root="../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nieuwsbrief Maker &middot; Pure Minds</title>
+<meta name="description" content="E-mails en nieuwsbrieven in de huisstijl van Pure Minds, klaar om in Brevo te plakken.">
+<meta name="theme-color" content="#1ab9e2">
+<link rel="icon" type="image/png" href="../assets/brand/favicon.png">
+<link rel="stylesheet" href="../css/global.css">
+<link rel="stylesheet" href="../css/editor.css">
+<link rel="stylesheet" href="../css/newsletter.css">
+</head>
+<body>
+<div class="bg-deco" aria-hidden="true"></div>
+
+<div class="topstrip">
+  <a href="https://www.pureminds.nl/" target="_blank" rel="noopener">pure minds</a>
+  <span class="topstrip__sep">|</span>interne tool: nieuwsbrief maker<span class="hide-sm"> voor e-mails in Brevo</span>
+</div>
+
+<header class="site-header">
+  <div class="container site-header__inner">
+    <div class="site-header__brand">
+      <a href="../index.html" aria-label="Naar de Generator Hub"><img src="../assets/brand/logo/PureMinds-zeshoek-logo-zwart.svg" alt="Pure Minds marketing group" width="80" height="92" class="site-header__logo"></a>
+      <span class="site-header__divider hide-sm" aria-hidden="true"></span>
+      <div class="site-header__title hide-sm">
+        <h1>Nieuwsbrief Maker</h1>
+        <p>E-mails in de huisstijl van Pure Minds, klaar om in Brevo te plakken.</p>
+      </div>
+    </div>
+    <nav class="toolnav" data-toolnav="newsletter" aria-label="Tools"></nav>
+  </div>
+</header>
+
+<div class="app" data-app="newsletter">
+
+  <!-- ============================================================
+       APPBALK: je mail, ongedaan maken, bieb, hulp en de ene hoofdactie
+       ============================================================ -->
+  <header class="appbar">
+    <div class="appbar__left">
+      <div class="appbar__doc" aria-live="polite">
+        <span class="appbar__title" id="docTitle">Nieuwe nieuwsbrief</span>
+        <span class="appbar__sub" id="docSub">7 blokken</span>
+      </div>
+      <span class="appbar__sep appbar__sep--name" aria-hidden="true"></span>
+      <button type="button" class="appbar__btn" id="undoBtn" aria-label="Ongedaan maken" title="Ongedaan maken (Ctrl + Z)" aria-keyshortcuts="Control+Z Meta+Z" disabled><svg class="ri" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.82843 6.99955L8.36396 9.53509L6.94975 10.9493L2 5.99955L6.94975 1.0498L8.36396 2.46402L5.82843 4.99955H13C17.4183 4.99955 21 8.58127 21 12.9996C21 17.4178 17.4183 20.9996 13 20.9996H4V18.9996H13C16.3137 18.9996 19 16.3133 19 12.9996C19 9.68584 16.3137 6.99955 13 6.99955H5.82843Z"/></svg></button>
+      <button type="button" class="appbar__btn" id="redoBtn" aria-label="Opnieuw" title="Opnieuw (Ctrl + Shift + Z)" aria-keyshortcuts="Control+Shift+Z Control+Y Meta+Shift+Z" disabled><svg class="ri" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.1716 6.99955H11C7.68629 6.99955 5 9.68584 5 12.9996C5 16.3133 7.68629 18.9996 11 18.9996H20V20.9996H11C6.58172 20.9996 3 17.4178 3 12.9996C3 8.58127 6.58172 4.99955 11 4.99955H18.1716L15.636 2.46402L17.0503 1.0498L22 5.99955L17.0503 10.9493L15.636 9.53509L18.1716 6.99955Z"/></svg></button>
+    </div>
+    <div class="appbar__right">
+      <!-- Bieb: je mail 14 dagen bewaren om hem later aan te passen (js/shared/library.js) -->
+      <button type="button" class="appbar__btn" id="libSave" data-tour="opslaan" title="Opslaan in je bieb"><svg class="ri" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 19V13H17V19H19V7.82843L16.1716 5H5V19H7ZM4 3H17L21 7V20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V4C3 3.44772 3.44772 3 4 3ZM9 15V19H15V15H9Z"/></svg><span class="appbar__txt">opslaan</span></button>
+      <div class="menu menu--lib">
+        <button type="button" class="appbar__btn" id="libBtn" aria-haspopup="dialog" aria-controls="libPop" title="Bieb: je opgeslagen ontwerpen, 14 dagen bewaard"><svg class="ri" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10H2V4.00293C2 3.44903 2.45531 3 2.9918 3H21.0082C21.556 3 22 3.43788 22 4.00293V10H21V20.0015C21 20.553 20.5551 21 20.0066 21H3.9934C3.44476 21 3 20.5525 3 20.0015V10ZM19 10H5V19H19V10ZM4 5V8H20V5H4ZM9 12H15V14H9V12Z"/></svg><span class="appbar__txt">bieb</span><span class="lib__count" data-lib-count></span></button>
+        <div class="popover lib" id="libPop" role="dialog" aria-labelledby="libTitle">
+          <h2 class="popover__title" id="libTitle">Bieb<span class="dot">.</span></h2>
+          <div class="popover__body" data-lib></div>
+        </div>
+      </div>
+      <div class="menu">
+        <button type="button" class="appbar__btn" data-help-menu aria-haspopup="menu" aria-controls="helpMenu" title="Rondleiding en sneltoetsen"><svg class="ri" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22ZM12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20ZM11 15H13V17H11V15ZM13 13.3551V14H11V12.5C11 11.9477 11.4477 11.5 12 11.5C12.8284 11.5 13.5 10.8284 13.5 10C13.5 9.17157 12.8284 8.5 12 8.5C11.2723 8.5 10.6656 9.01823 10.5288 9.70577L8.56731 9.31346C8.88637 7.70919 10.302 6.5 12 6.5C13.933 6.5 15.5 8.067 15.5 10C15.5 11.5855 14.4457 12.9248 13 13.3551Z"/></svg><span class="appbar__txt">hulp</span></button>
+        <div class="menu__list" id="helpMenu" role="menu" aria-label="Hulp">
+          <button type="button" class="menu__item" role="menuitem" data-action="tour"><svg class="ri" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22ZM12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20ZM16.5 7.5L14 14L7.5 16.5L10 10L16.5 7.5ZM12 13C12.5523 13 13 12.5523 13 12C13 11.4477 12.5523 11 12 11C11.4477 11 11 11.4477 11 12C11 12.5523 11.4477 13 12 13Z"/></svg><span data-label>rondleiding starten</span></button>
+          <a class="menu__item" role="menuitem" href="brevo-handleiding.html" target="_blank" rel="noopener"><svg class="ri" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 22H4C3.44772 22 3 21.5523 3 21V3C3 2.44772 3.44772 2 4 2H20C20.5523 2 21 2.44772 21 3V21C21 21.5523 20.5523 22 20 22ZM19 20V4H5V20H19ZM7 6H11V10H7V6ZM7 12H17V14H7V12ZM7 16H17V18H7V16ZM13 7H17V9H13V7Z"/></svg>handleiding Brevo</a>
+          <button type="button" class="menu__item" role="menuitem" data-action="sneltoetsen"><svg class="ri" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17H21V19H3V17ZM3 11H6V14H3V11ZM8 11H11V14H8V11ZM3 5H6V8H3V5ZM13 5H16V8H13V5ZM18 5H21V8H18V5ZM13 11H16V14H13V11ZM18 11H21V14H18V11ZM8 5H11V8H8V5Z"/></svg>sneltoetsen<kbd aria-hidden="true">?</kbd></button>
+        </div>
+      </div>
+
+      <!-- Kopiëren: de knop zet de HTML op je klembord; het pijltje toont downloaden en hoe je plakt in Brevo -->
+      <div class="split" data-tour="kopieer">
+        <button type="button" class="btn btn-primary" id="copyBtn" title="HTML kopiëren voor Brevo (Ctrl + S)" aria-keyshortcuts="Control+S Meta+S"><svg class="ri" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4V2H17V4H20.0066C20.5552 4 21 4.44495 21 4.9934V21.0066C21 21.5552 20.5551 22 20.0066 22H3.9934C3.44476 22 3 21.5551 3 21.0066V4.9934C3 4.44476 3.44495 4 3.9934 4H7ZM7 6H5V20H19V6H17V8H7V6ZM9 4V6H15V4H9Z"/></svg><span data-label>kopieer html</span></button>
+        <button type="button" class="btn btn-primary split__more" aria-haspopup="dialog" aria-controls="dlPop" aria-label="Meer: downloaden en zo plak je in Brevo"><svg class="ri" viewBox="0 0 24 24" aria-hidden="true"><path d="M11.9999 13.1714L16.9497 8.22168L18.3639 9.63589L11.9999 15.9999L5.63599 9.63589L7.0502 8.22168L11.9999 13.1714Z"/></svg></button>
+        <div class="popover dl" id="dlPop" role="dialog" aria-labelledby="dlTitle">
+          <h2 class="popover__title" id="dlTitle">Naar Brevo<span class="dot">.</span></h2>
+          <ul class="dl__list">
+            <li class="dl__row">
+              <button type="button" class="dl__opt" id="copyOpt" aria-describedby="copyWhat">
+                <svg class="ri" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4V2H17V4H20.0066C20.5552 4 21 4.44495 21 4.9934V21.0066C21 21.5552 20.5551 22 20.0066 22H3.9934C3.44476 22 3 21.5551 3 21.0066V4.9934C3 4.44476 3.44495 4 3.9934 4H7ZM7 6H5V20H19V6H17V8H7V6ZM9 4V6H15V4H9Z"/></svg>
+                <span class="dl__txt"><b data-label>HTML kopiëren</b><i id="copyWhat">om meteen in Brevo te plakken</i></span>
+              </button>
+              <button type="button" class="help" data-help="brevo"></button>
+            </li>
+            <li class="dl__row">
+              <button type="button" class="dl__opt" id="htmlBtn" aria-describedby="htmlWhat">
+                <svg class="ri" viewBox="0 0 24 24" aria-hidden="true"><path d="M24 12L18.3431 17.6569L16.9289 16.2426L21.1716 12L16.9289 7.75736L18.3431 6.34315L24 12ZM2.82843 12L7.07107 16.2426L5.65685 17.6569L0 12L5.65685 6.34315L7.07107 7.75736L2.82843 12ZM9.78845 21H7.66009L14.2116 3H16.3399L9.78845 21Z"/></svg>
+                <span class="dl__txt"><b data-label>download .html</b><i id="htmlWhat">als bestand, om te bewaren of door te sturen</i></span>
+              </button>
+              <button type="button" class="help" data-help="download-html"></button>
+            </li>
+          </ul>
+          <ol class="nb-steps">
+            <li>Brevo &rarr; <b>Campaigns</b> &rarr; <b>Create campaign</b> &rarr; <b>Email</b></li>
+            <li>Bij Design: <b>Start from scratch</b> &rarr; <b>HTML custom code</b></li>
+            <li>Plakken (<kbd>Ctrl</kbd> + <kbd>V</kbd>), <b>Save &amp; quit</b> en een testmail sturen</li>
+          </ol>
+          <a class="nb-guide" href="brevo-handleiding.html" target="_blank" rel="noopener">volledige handleiding, stap voor stap &rarr;</a>
+          <p class="popover__note"><b id="dlSum">21 KB</b> &middot; foto's en iconen staan online<span class="for-mouse"> &middot; <kbd>Ctrl</kbd> + <kbd>S</kbd> kopieert</span></p>
+        </div>
+
+        <!-- Controle vóór het kopiëren: voorbeeldtekst, lege links of foto's die niet online staan. Nooit tegenhouden -->
+        <div class="popover check" id="checkPop" role="alertdialog" aria-labelledby="checkTitle" aria-describedby="checkText" tabindex="-1" hidden>
+          <h2 class="popover__title" id="checkTitle">Even checken<span class="dot">.</span></h2>
+          <p class="check__text" id="checkText">Dit kun je nog aanpassen voor je mail de deur uitgaat:</p>
+          <ul class="check__list nb-check" id="checkList"></ul>
+          <div class="check__foot">
+            <button type="button" class="btn btn-outline btn-sm" id="checkGo">naar het blok</button>
+            <button type="button" class="btn btn-quiet btn-sm" id="checkAnyway">toch kopiëren</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       RAIL: één knop per onderdeel (volgorde uit PM_HELP.newsletter.sections)
+       ============================================================ -->
+  <nav class="rail" aria-label="Onderdelen van je mail">
+    <button class="rail__item" data-section="inhoud"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 11V5H5V11H19ZM19 13H5V19H19V13ZM4 3H20C20.5523 3 21 3.44772 21 4V20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V4C3 3.44772 3.44772 3 4 3Z"/></svg><span>Inhoud</span></button>
+    <button class="rail__item" data-section="blokken"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3H20C20.5523 3 21 3.44772 21 4V20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V4C3 3.44772 3.44772 3 4 3ZM5 5V19H19V5H5ZM11 11V7H13V11H17V13H13V17H11V13H7V11H11Z"/></svg><span>Blokken</span></button>
+    <button class="rail__item" data-section="mail"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7.23792L12.0718 14.338L4 7.21594V19H14V21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H21C21.5523 3 22 3.44772 22 4V13H20V7.23792ZM19.501 5H4.51146L12.0619 11.662L19.501 5ZM17.05 19.5485C17.0172 19.3706 17 19.1873 17 19C17 18.8127 17.0172 18.6294 17.05 18.4515L16.0359 17.866L17.0359 16.134L18.0505 16.7197C18.3278 16.4824 18.6489 16.2948 19 16.1707V15H21V16.1707C21.3511 16.2948 21.6722 16.4824 21.9495 16.7197L22.9641 16.134L23.9641 17.866L22.95 18.4515C22.9828 18.6294 23 18.8127 23 19C23 19.1873 22.9828 19.3706 22.95 19.5485L23.9641 20.134L22.9641 21.866L21.9495 21.2803C21.6722 21.5176 21.3511 21.7052 21 21.8293V23H19V21.8293C18.6489 21.7052 18.3278 21.5176 18.0505 21.2803L17.0359 21.866L16.0359 20.134L17.05 19.5485ZM20 20C20.5523 20 21 19.5523 21 19C21 18.4477 20.5523 18 20 18C19.4477 18 19 18.4477 19 19C19 19.5523 19.4477 20 20 20Z"/></svg><span>Mail</span></button>
+  </nav>
+
+  <!-- ============================================================
+       PANELEN: één tegelijk (koppen uit PM_HELP.newsletter.sections)
+       ============================================================ -->
+  <form class="panels" id="editor" autocomplete="off" novalidate>
+
+    <!-- Inhoud: de blokken onder elkaar; het open blok heeft zijn velden (js/newsletter/app.js) -->
+    <section class="panel" data-section="inhoud">
+      <div class="panel__body">
+        <p class="panel__lead">Klik op een blok om het aan te passen, hier of in de mail. <button type="button" class="help" data-help="blokken"></button></p>
+        <ol class="nb-list" id="blockList" aria-label="Blokken van je mail"></ol>
+        <button type="button" class="btn btn-quiet btn-sm nb-add" id="addBtn">+ blok toevoegen</button>
+      </div>
+    </section>
+
+    <!-- Blokken: een blok toevoegen, onder het blok dat open is -->
+    <section class="panel" data-section="blokken">
+      <div class="panel__body">
+        <p class="panel__lead" id="addLead">Kies een blok: het komt onder het blok dat open is.</p>
+        <div class="nb-types" id="typeGrid" data-tour="toevoegen" role="group" aria-labelledby="addLead"></div>
+      </div>
+    </section>
+
+    <!-- Mail: naam, voorvertoningstekst, foto's online en opnieuw beginnen -->
+    <section class="panel" data-section="mail">
+      <div class="panel__body">
+        <div class="field">
+          <label class="label" for="mName">Naam <i>alleen voor jou</i> <button type="button" class="help" data-help="naam"></button></label>
+          <input class="input" id="mName" data-mail="name" maxlength="120" placeholder="bijv. Nieuwsbrief november">
+        </div>
+        <div class="field">
+          <label class="label" for="mPre">Voorvertoningstekst <button type="button" class="help" data-help="voorvertoning"></button></label>
+          <textarea class="input" id="mPre" data-mail="preheader" rows="2" maxlength="200"></textarea>
+          <p class="field-hint" id="preCount" aria-live="polite"></p>
+        </div>
+
+        <div class="field">
+          <span class="label">Foto's online <button type="button" class="help" data-help="uploaden"></button></span>
+          <div class="notice nb-upload" id="uploadState" role="status"></div>
+          <button type="button" class="linkbtn" id="pwForget" hidden>wachtwoord opnieuw invullen</button>
+        </div>
+
+        <div class="field">
+          <span class="label" id="restartLabel">Opnieuw beginnen <button type="button" class="help" data-help="opnieuw"></button></span>
+          <div class="nb-restart" role="group" aria-labelledby="restartLabel">
+            <button type="button" class="btn btn-outline btn-sm" data-restart="nieuwsbrief">nieuwsbrief</button>
+            <button type="button" class="btn btn-outline btn-sm" data-restart="kort">korte mail</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </form>
+
+  <!-- ============================================================
+       PODIUM: de mail zoals de lezer hem ziet; klik op een blok om het aan te passen
+       ============================================================ -->
+  <main class="stage" id="stage">
+    <div class="stage__head">
+      <div class="stage__group">
+        <span class="pill pill-info" id="kindPill">Nieuwsbrief</span>
+        <span class="pill" id="sizePill">21 KB</span>
+        <button type="button" class="help" data-help="preview"></button>
+      </div>
+      <div class="stage__group">
+        <div class="seg seg--2 seg--sm nb-device" role="radiogroup" aria-label="Bekijk op">
+          <input type="radio" name="device" id="dev-computer" value="computer" checked><label for="dev-computer"><svg class="ri" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 16H20V5H4V16ZM13 18V20H17V22H7V20H11V18H2.9918C2.44405 18 2 17.5511 2 16.9925V4.00748C2 3.45107 2.45531 3 2.9918 3H21.0082C21.556 3 22 3.44892 22 4.00748V16.9925C22 17.5489 21.5447 18 21.0082 18H13Z"/></svg>computer</label>
+          <input type="radio" name="device" id="dev-telefoon" value="telefoon"><label for="dev-telefoon"><svg class="ri" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4V20H17V4H7ZM6 2H18C18.5523 2 19 2.44772 19 3V21C19 21.5523 18.5523 22 18 22H6C5.44772 22 5 21.5523 5 21V3C5 2.44772 5.44772 2 6 2ZM12 17C12.5523 17 13 17.4477 13 18C13 18.5523 12.5523 19 12 19C11.4477 19 11 18.5523 11 18C11 17.4477 11.4477 17 12 17Z"/></svg>telefoon</label>
+        </div>
+      </div>
+    </div>
+    <div class="stage__tools"><div id="tbar"></div></div>
+    <div class="stage__scroll" id="stageScroll">
+      <div class="nb-frame" id="frameWrap" data-tour="preview" data-shell-keep>
+        <iframe id="preview" title="Preview van je e-mail" sandbox="allow-same-origin"></iframe>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Fotobank: foto's van Pure Minds die al online staan (js/newsletter/app.js vult hem) -->
+<dialog class="nb-dialog" id="stockDialog" aria-labelledby="stockTitle">
+  <form method="dialog" class="nb-dialog__inner">
+    <header class="nb-dialog__head">
+      <h2 class="popover__title" id="stockTitle">Fotobank<span class="dot">.</span></h2>
+      <button class="iconbtn" value="cancel" aria-label="Sluiten">&times;</button>
+    </header>
+    <div class="nb-stock" id="stockGrid"></div>
+  </form>
+</dialog>
+
+<!-- Icoon kiezen: zoeken in de lijniconen van de Icon Finder -->
+<dialog class="nb-dialog nb-dialog--wide" id="iconDialog" aria-labelledby="iconTitle">
+  <form method="dialog" class="nb-dialog__inner">
+    <header class="nb-dialog__head">
+      <h2 class="popover__title" id="iconTitle">Icoon kiezen<span class="dot">.</span></h2>
+      <button class="iconbtn" value="cancel" aria-label="Sluiten">&times;</button>
+    </header>
+    <label class="sr-only" for="iconSearch">Zoek een icoon</label>
+    <input class="input" id="iconSearch" type="search" placeholder="zoek, bijv. raket, grafiek of klok" autocomplete="off">
+    <div class="nb-icons" id="iconGrid" role="listbox" aria-label="Iconen"></div>
+    <p class="field-hint" id="iconNote">Wit icoon in een cyaan zeshoek, zoals in de huisstijl.</p>
+  </form>
+</dialog>
+
+<!-- Wachtwoord voor uploaden: één keer per browser -->
+<dialog class="nb-dialog" id="pwDialog" aria-labelledby="pwTitle">
+  <form method="dialog" class="nb-dialog__inner" id="pwForm">
+    <header class="nb-dialog__head">
+      <h2 class="popover__title" id="pwTitle">Wachtwoord voor uploaden<span class="dot">.</span></h2>
+    </header>
+    <p class="nb-dialog__lead" id="pwLead">Foto's en iconen gaan naar de opslag van Pure Minds, zodat ze in elke mail werken. Vul één keer het wachtwoord in; deze browser onthoudt het. Weet je het niet? Vraag het aan je collega die de Tool Hub beheert.</p>
+    <label class="label" for="pwInput">Wachtwoord</label>
+    <input class="input" id="pwInput" type="password" autocomplete="current-password" required>
+    <div class="nb-dialog__foot">
+      <button class="btn btn-quiet btn-sm" value="cancel" formnovalidate>annuleren</button>
+      <button class="btn btn-primary btn-sm" value="ok">opslaan en uploaden</button>
+    </div>
+  </form>
+</dialog>
+
+<input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/gif" hidden>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="../js/shared/tools.js"></script>
+<script src="../js/shared/core.js"></script>
+<script src="../js/shared/library.js"></script>
+<script src="../js/shared/history.js"></script>
+<script src="../js/shared/shell.js"></script>
+<script src="../js/shared/help.js"></script>
+<script src="../js/shared/richfield.js"></script>
+<script src="../js/shared/toolbar.js"></script>
+<script src="../js/shared/tour.js"></script>
+<script src="../js/newsletter/help.js"></script>
+<script src="../js/newsletter/email.js"></script>
+<script src="../js/newsletter/app.js"></script>
+</body>
+</html>

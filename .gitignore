@@ -3,6 +3,8 @@ npm-debug.log*
 *.log
 .env
 *.env
+.env*.local
+.vercel/
 .history/
 
 # Python-cache

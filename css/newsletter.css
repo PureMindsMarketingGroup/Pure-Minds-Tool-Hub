@@ -1,0 +1,223 @@
+/**
+ * Nieuwsbrief Maker — toolspecifieke opmaak
+ * De indeling (appbalk, rail, panelen, podium, werkbalk) staat in css/editor.css,
+ * de gedeelde bouwstenen in css/global.css.
+ */
+
+/* --- Inhoud: de blokken als kaartjes; het open blok heeft zijn velden --- */
+
+.nb-list { display: flex; flex-direction: column; gap: .375rem; margin: 0; padding: 0; list-style: none; }
+.nb-card { border: 1px solid var(--pm-line); background: #fff; transition: border-color .15s, box-shadow .15s; }
+.nb-card:hover { border-color: var(--pm-border); }
+.nb-card.is-open { border-color: var(--pm-cyan); box-shadow: inset 3px 0 0 var(--pm-cyan), 0 12px 24px -20px rgba(16, 40, 60, .5); }
+.nb-card__head { display: flex; align-items: center; gap: .25rem; padding-right: .25rem; }
+.nb-card__toggle {
+  display: flex; align-items: center; gap: .625rem; flex: 1; min-width: 0;
+  padding: .55rem .5rem .55rem .65rem; background: none; border: 0; text-align: left; cursor: pointer;
+}
+.nb-card__toggle:focus-visible { outline: none; box-shadow: var(--ring); }
+.nb-card__txt { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
+.nb-card__name { font-size: .8125rem; font-weight: 700; }
+.nb-card__sum { font-size: .75rem; color: var(--pm-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nb-card__acts { display: flex; align-items: center; gap: .125rem; flex: none; }
+.nb-card__acts .iconbtn { width: 1.875rem; height: 1.875rem; color: var(--pm-muted); }
+.nb-card__acts .iconbtn:hover:not(:disabled) { color: var(--pm-ink); background: var(--pm-soft); }
+.nb-card__acts .iconbtn:disabled { opacity: .3; cursor: default; }
+.nb-card__acts svg { width: 1.05rem; height: 1.05rem; fill: currentColor; }
+.nb-card:not(.is-open) .nb-card__acts .nb-only-open { display: none; }
+.nb-card__body { display: flex; flex-direction: column; gap: .875rem; padding: .375rem .875rem 1rem; border-top: 1px solid var(--pm-line); }
+.nb-card__body .field { margin: 0; }
+.nb-add { align-self: flex-start; margin-top: .75rem; }
+.nb-fixed { margin: .25rem 0 0; font-size: .75rem; color: var(--pm-muted); }
+
+/* Kleine schets van een blok (kaartje en blokkeuze) */
+.nb-art {
+  display: grid; align-content: center; gap: 2px; flex: none;
+  width: 2.25rem; height: 1.6rem; padding: 3px; background: #fff; box-shadow: inset 0 0 0 1px var(--pm-line);
+}
+.nb-art i { display: block; height: 2px; background: #c9d3db; }
+.nb-art--opening { background: var(--pm-ink); box-shadow: none; }
+.nb-art--opening i { background: #6d747a; }
+.nb-art--opening i:nth-child(1) { height: 4px; width: 80%; background: #fff; }
+.nb-art--opening i:nth-child(3) { width: 45%; height: 4px; background: var(--pm-magenta); margin-top: 1px; }
+.nb-art--foto { padding: 0; background: #a9bac6; box-shadow: none; }
+.nb-art--foto i { display: none; }
+.nb-art--tekst i:nth-child(1) { width: 70%; height: 3px; background: var(--pm-ink); }
+.nb-art--tekst i:nth-child(4) { width: 40%; background: var(--pm-cyan); }
+.nb-art--fototekst { grid-template-columns: 40% 1fr; grid-template-rows: repeat(3, 2px); column-gap: 3px; }
+.nb-art--fototekst i:nth-child(1) { grid-row: 1 / 4; height: auto; background: #a9bac6; }
+.nb-art--fototekst i:nth-child(2) { background: var(--pm-ink); }
+.nb-art--punten { grid-template-columns: repeat(3, 1fr); column-gap: 3px; background: var(--pm-soft); }
+.nb-art--punten i { height: 6px; width: 6px; background: var(--pm-cyan); clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
+.nb-art--resultaat { background: var(--pm-ink); box-shadow: inset 3px 0 0 var(--pm-cyan); padding-left: 6px; }
+.nb-art--resultaat i { background: #6d747a; }
+.nb-art--resultaat i:nth-child(2) { height: 5px; width: 55%; background: var(--pm-cyan); }
+.nb-art--afsluiter i:nth-child(1) { width: 70%; height: 3px; background: var(--pm-ink); }
+.nb-art--afsluiter i:nth-child(3) { width: 40%; height: 4px; background: none; box-shadow: inset 0 0 0 1px var(--pm-ink); margin-top: 1px; }
+
+/* --- Blokken toevoegen --- */
+
+.nb-types { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
+.nb-type {
+  display: flex; flex-direction: column; align-items: flex-start; gap: .375rem; min-width: 0;
+  padding: .625rem .65rem .7rem; border: 1px solid var(--pm-line); background: #fff; text-align: left; cursor: pointer;
+  transition: border-color .15s, background-color .15s, transform .15s;
+}
+.nb-type .nb-art { width: 100%; height: 3.25rem; padding: 6px 8px; gap: 4px; }
+.nb-type .nb-art i { height: 3px; }
+.nb-type .nb-art--fototekst { grid-template-rows: repeat(3, 3px); column-gap: 6px; }
+.nb-type .nb-art--punten i { height: 12px; width: 11px; justify-self: center; }
+.nb-type .nb-art--opening i:nth-child(1), .nb-type .nb-art--opening i:nth-child(3) { height: 6px; }
+.nb-type .nb-art--resultaat i:nth-child(2) { height: 9px; }
+.nb-type__name { font-size: .8125rem; font-weight: 700; line-height: 1.3; }
+.nb-type__sub { font-size: .75rem; color: var(--pm-muted); line-height: 1.35; }
+.nb-type:hover { border-color: var(--pm-cyan); background: var(--pm-soft); }
+.nb-type:active { transform: translateY(1px); }
+.nb-type:focus-visible { outline: none; box-shadow: var(--ring); border-color: var(--pm-cyan); }
+
+/* --- Velden in een blok --- */
+
+.nb-link { display: grid; grid-template-columns: minmax(0, 1fr); gap: .375rem; }
+.nb-link .input:nth-child(2):not(:placeholder-shown):invalid,
+.nb-link .input.is-bad, .input.is-bad { border-color: #e0951f; background: #fdf7ec; }
+.nb-bad { margin: .25rem 0 0; font-size: .75rem; color: #8f5600; }
+.nb-bad[hidden] { display: none; }
+.nb-point { display: flex; flex-direction: column; gap: .5rem; padding: .625rem; border: 1px solid var(--pm-line); background: var(--pm-zebra); }
+.nb-point__head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; font-size: .75rem; font-weight: 700; color: var(--pm-muted); }
+.nb-icon-pick { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.nb-icon-pick__img { width: 1.75rem; height: 2rem; flex: none; object-fit: contain; }
+.nb-points-foot { display: flex; gap: .5rem; flex-wrap: wrap; }
+
+/* Foto: miniatuur, knoppen en de status van het uploaden */
+.nb-img { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); gap: .75rem; align-items: start; }
+.nb-img__thumb {
+  position: relative; display: block; width: 100%; aspect-ratio: 4 / 3; padding: 0; overflow: hidden;
+  border: 1px dashed var(--pm-border); background: var(--pm-canvas) center / cover no-repeat; cursor: pointer;
+}
+.nb-img__thumb:hover, .nb-img.is-over .nb-img__thumb { border-color: var(--pm-cyan); border-style: solid; }
+.nb-img__thumb:focus-visible { outline: none; box-shadow: var(--ring); }
+.nb-img__thumb.is-busy::after {
+  content: ''; position: absolute; inset: 0; background: rgba(255, 255, 255, .55);
+  animation: nb-busy 1s ease-in-out infinite;
+}
+@keyframes nb-busy { 50% { opacity: .2; } }
+.nb-img__acts { display: flex; flex-direction: column; align-items: flex-start; gap: .375rem; min-width: 0; }
+.nb-img__acts .btn { white-space: nowrap; }
+.nb-img__state { font-size: .75rem; color: var(--pm-muted); line-height: 1.35; overflow-wrap: anywhere; }
+.nb-img__state.is-ok { color: #00704f; }
+.nb-img__state.is-err { color: #a3311f; }
+.nb-img.is-over { outline: 2px dashed var(--pm-cyan); outline-offset: 4px; }
+
+/* Vorm (vier keuzes) en de link naar een foto die al online staat */
+.nb-shape { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.nb-shape label { padding-left: .25rem; padding-right: .25rem; font-size: .75rem; }
+.nb-more { font-size: .8125rem; }
+.nb-more summary { cursor: pointer; color: var(--pm-blue); font-weight: 700; font-size: .75rem; }
+.nb-more[open] summary { margin-bottom: .5rem; }
+.nb-more .field { margin: 0; }
+.stage__head .pill-warn { background: #fdf7ec; box-shadow: inset 0 0 0 1px #e0951f; color: #8f5600; }
+
+/* --- Mail --- */
+
+.nb-upload { font-size: .8125rem; line-height: 1.45; }
+.nb-upload b { font-weight: 700; }
+.nb-restart { display: flex; gap: .5rem; flex-wrap: wrap; }
+
+/* --- Naar Brevo: de stappen en de controle --- */
+
+.dl { width: 25rem; }
+.dl__list { display: flex; flex-direction: column; gap: .375rem; margin: 0; padding: 0; list-style: none; }
+.dl__row { display: flex; align-items: center; gap: .25rem; }
+.dl__opt {
+  display: flex; align-items: center; gap: .75rem; flex: 1; min-width: 0; min-height: 3.25rem;
+  padding: .55rem .75rem; border: 1px solid var(--pm-line); background: #fff; text-align: left;
+  transition: border-color .15s, background-color .15s;
+}
+.dl__opt svg { width: 1.5rem; height: 1.5rem; flex: none; color: var(--pm-blue); fill: currentColor; }
+.dl__txt { display: flex; flex-direction: column; min-width: 0; line-height: 1.35; }
+.dl__txt b { font-size: .875rem; font-weight: 700; }
+.dl__txt i { font-style: normal; font-size: .75rem; color: var(--pm-muted); }
+.dl__opt:hover:not(:disabled) { border-color: var(--pm-cyan); background: var(--pm-soft); }
+.dl__opt:focus-visible { outline: none; box-shadow: var(--ring); border-color: var(--pm-cyan); }
+#copyOpt { border-left: 3px solid var(--pm-magenta); }   /* hetzelfde als de grote knop */
+.dl__opt.is-done { border-color: var(--pm-green); background: #e3f4ee; }
+.dl__opt.is-done b { color: #00704f; }
+.nb-steps { margin: .875rem 0 0; padding: .625rem .75rem .625rem 2rem; background: var(--pm-soft); font-size: .8125rem; line-height: 1.6; }
+.nb-steps b { font-weight: 700; }
+.nb-guide { display: inline-block; margin-top: .625rem; font-size: .8125rem; font-weight: 700; color: var(--pm-ink); text-decoration: none; border-bottom: 2px solid var(--pm-cyan); }
+.nb-guide:hover { background: var(--pm-soft); }
+.dl .popover__note { margin-top: .75rem; }
+
+.check { width: 25rem; border-top-color: #e0951f; }
+.check__text { font-size: .875rem; line-height: 1.5; }
+.check__list { display: flex; flex-direction: column; gap: .25rem; margin: .75rem 0 0; padding: 0; list-style: none; max-height: 16rem; overflow: auto; }
+.nb-check button {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: .5rem;
+  width: 100%; padding: .5rem .65rem; border: 1px solid var(--pm-line); border-left: 3px solid #e0951f;
+  background: #fdf7ec; text-align: left; font-size: .8125rem; line-height: 1.4;
+}
+.nb-check button.is-info { border-left-color: var(--pm-cyan); background: var(--pm-soft); }
+.nb-check button:hover { border-color: #e0951f; }
+.nb-check button:focus-visible { outline: none; box-shadow: var(--ring); }
+.nb-check__go { font-size: .75rem; font-weight: 700; color: var(--pm-blue); white-space: nowrap; }
+.check__foot { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+
+/* --- Podium: de mail in een iframe, zoals in een mailprogramma --- */
+
+.nb-device { min-width: 13rem; }
+.nb-device .ri { width: 1rem; height: 1rem; fill: currentColor; }
+.nb-frame {
+  width: 100%; max-width: 680px; margin: 0 auto; background: #edf3f7;
+  box-shadow: 0 0 0 1px var(--pm-line), 0 24px 48px -32px rgba(16, 40, 60, .45);
+  transition: max-width .25s ease;
+}
+.nb-frame iframe { display: block; width: 100%; height: 1200px; border: 0; background: #edf3f7; }
+.nb-frame.is-phone { max-width: 390px; border-radius: 18px; overflow: hidden; box-shadow: 0 0 0 10px var(--pm-ink), 0 24px 48px -24px rgba(16, 40, 60, .55); margin-top: 10px; margin-bottom: 10px; }
+@media (prefers-reduced-motion: reduce) { .nb-frame { transition: none; } }
+
+/* --- Vensters: fotobank, icoon kiezen, wachtwoord --- */
+
+.nb-dialog { width: min(34rem, calc(100vw - 2rem)); max-height: calc(100vh - 3rem); padding: 0; border: 0; border-top: 4px solid var(--pm-cyan); box-shadow: 0 30px 60px -20px rgba(16, 40, 60, .5); color: var(--pm-ink); }
+.nb-dialog--wide { width: min(46rem, calc(100vw - 2rem)); }
+.nb-dialog::backdrop { background: rgba(48, 48, 48, .45); }
+.nb-dialog__inner { display: flex; flex-direction: column; gap: .75rem; padding: 1.25rem 1.25rem 1.5rem; }
+.nb-dialog__head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.nb-dialog__head .popover__title { margin: 0; }
+.nb-dialog__lead { margin: 0; font-size: .875rem; line-height: 1.55; color: var(--pm-muted); }
+.nb-dialog__foot { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .25rem; }
+
+.nb-stock { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
+.nb-stock button { display: block; padding: 0; border: 2px solid transparent; background: var(--pm-canvas); aspect-ratio: 3 / 2; overflow: hidden; cursor: pointer; }
+.nb-stock img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.nb-stock button:hover, .nb-stock button:focus-visible { outline: none; border-color: var(--pm-cyan); }
+
+.nb-icons { display: grid; grid-template-columns: repeat(auto-fill, minmax(4.25rem, 1fr)); gap: .375rem; max-height: 22rem; min-height: 8rem; overflow: auto; align-content: start; }
+.nb-icons button {
+  display: flex; flex-direction: column; align-items: center; gap: .25rem; padding: .5rem .25rem .375rem;
+  border: 1px solid var(--pm-line); background: #fff; cursor: pointer; font-size: .6875rem; color: var(--pm-muted); line-height: 1.2;
+}
+.nb-icons button span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nb-icons svg { width: 2.1rem; height: 2.4rem; }
+.nb-icons button:hover, .nb-icons button:focus-visible { outline: none; border-color: var(--pm-cyan); background: var(--pm-soft); color: var(--pm-ink); }
+.nb-icons__empty { grid-column: 1 / -1; padding: 1.5rem .5rem; font-size: .875rem; color: var(--pm-muted); text-align: center; }
+
+/* --- Tablet en telefoon --- */
+
+@media (max-width: 1023px) {
+  .nb-frame { max-width: 100%; }
+  .nb-frame.is-phone { max-width: 390px; }
+}
+@media (max-width: 639px) {
+  .nb-device { min-width: 0; }
+  .nb-device label { font-size: 0; gap: 0; }
+  .nb-device label .ri { width: 1.15rem; height: 1.15rem; }
+  .nb-img { grid-template-columns: 5rem minmax(0, 1fr); }
+  .nb-stock { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* De appbalk past op een telefoon: kopieer html zonder icoon, het menu en de controle binnen beeld */
+  #copyBtn .ri { display: none; }
+  #copyBtn { padding-left: .8rem; padding-right: .8rem; }
+  .dl, .check { width: calc(100vw - 1.5rem); }
+}
+@media (max-width: 420px) {
+  #redoBtn { display: none; }   /* opnieuw: zelden nodig op een telefoon; ongedaan maken blijft */
+}
