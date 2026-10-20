@@ -56,6 +56,7 @@ zodat de browser de export niet blokkeert.
 ```
 index.html                    de hub: maken (een kaart per tool) en checken (de technische tools),
                               en de uitleg bij de Consent Check (<dialog>)
+email/                        de e-mailtemplate voor Brevo, met plaatjes in email/img/
 handtekeningen/                de e-mailhandtekeningen: index.html (kies je naam) en
                               een pagina per collega; plaatjes in assets/handtekeningen/
 tools/
@@ -1162,6 +1163,33 @@ jsPDF 4.2.1, svg2pdf.js 2.8.1, docx 9.7.1 (Word), JSZip 3.10.1
 (PowerPoint, zips) en pdf-lib 1.17.1 (de lagen in het brandbook) komen van
 jsDelivr, met een vaste versie en SRI-hash (`js/shared/core.js`). Ze worden
 pas geladen bij de eerste export, dus bewerken werkt ook zonder internet.
+
+## E-mailtemplate (Brevo)
+
+`email/pure-minds-email.html` is de huisstijl-template voor e-mails in Brevo
+(nieuwsbrief, aankondiging, uitnodiging). De plaatjes staan in `email/img/` en
+laden van het GitHub-account van Pure Minds; de foto's in het voorbeeld komen
+uit `assets/styleguide/photos/`.
+
+- **In Brevo zetten:** Templates → New template → Add content → Start from
+  scratch → HTML custom code. Plak de hele inhoud van het bestand en sla op.
+  Stuur jezelf eerst een test (Preview & test) en kijk in Gmail en Outlook.
+- **Blokken:** alles staat tussen `<!-- BLOK: … -->` en `<!-- EINDE BLOK -->`:
+  kop met logo, opening op Inkt met de magenta hoofdknop, foto, tekst met
+  tussenkop, foto naast tekst, drie punten met een cyaan zeshoek, resultaat
+  (zoals de case-post), afsluiter met een rustige knop en de voet. Dupliceer de
+  template per mailing en verwijder of kopieer blokken; kop en voet blijven.
+- **Huisstijl:** Inkt voor tekst, cyaan alleen als accent (op wit nooit als
+  tekst), één magenta knop per mail. Pure Minds Sans waar de mailapp dat kan
+  (Apple Mail, iPhone), anders Open Sans, anders Arial.
+- **Brevo-codes:** `{{ contact.FIRSTNAME }}` (voornaam, met "daar" als hij
+  ontbreekt), `{{ mirror }}` (bekijk online), `{{ unsubscribe }}` (afmelden,
+  verplicht) en `{{ update_profile }}`.
+- **Eigen foto's:** 1200 px breed (scherp op retina), in Brevo uploaden of op
+  een vaste plek online zetten, en de `src` vervangen. Een `alt` erbij.
+- **Werkt overal:** tabellen en inline stijlen; de knoppen werken ook in
+  Outlook (VML) en de kolommen staan op een telefoon onder elkaar. Ongeveer
+  27 KB: ruim onder de grens waarboven Gmail een mail afknipt (102 KB).
 
 ## E-mailhandtekeningen
 
