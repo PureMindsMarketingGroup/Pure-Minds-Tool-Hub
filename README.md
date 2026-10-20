@@ -92,7 +92,7 @@ js/
   shared/brand.js             huisstijl als gegevens, plus controles (PM.brand)
   shared/history.js           ongedaan maken en opnieuw (PM.history)
   shared/library.js           de bieb: ontwerpen 14 dagen bewaren (PM.library)
-  shared/service.js           de server van de hub: adres, wachtwoord, verzoeken (PM.service)
+  shared/service.js           de server van de hub: adres en verzoeken, wachtwoord alleen als Vercel erom vraagt (PM.service)
   shared/ai.js                het paneel AI in de makers, vanzelf opslaan na de AI (PM.ai)
   shared/shell.js             indeling zoals Canva: rail, één paneel, podium (PM.shell)
   shared/help.js              [?]-uitleg naast instellingen (PM.help)
@@ -1236,9 +1236,9 @@ die van `email/pure-minds-email.html` en komt uit `js/newsletter/email.js`.
   (Vercel Blob); de link komt in de HTML. Iconen komen uit de Icon Finder: wit
   lijnicoon in een cyaan zeshoek, als PNG van 105 × 120 (getoond op 35 × 40).
   Zonder upload-service werken de fotobank (de foto's van het brandbook, al
-  online) en een link naar een foto die al online staat. De link van de
-  service staat bovenin `js/newsletter/app.js` (`DEFAULT_UPLOAD_URL`); het
-  wachtwoord vult elke collega één keer in.
+  online) en een link naar een foto die al online staat. Het adres van de
+  server staat in `js/shared/service.js` (`DEFAULT_SERVICE_URL`); een
+  wachtwoord is niet nodig.
 - **Naar Brevo:** *kopieer html* (Ctrl + S) of *download .html*. Eerst een
   controle: voorbeeldtekst, de voorvertoningstekst, links en foto's die niet
   online staan, en de grootte (Gmail knipt vanaf 102 KB). Nooit tegenhouden.

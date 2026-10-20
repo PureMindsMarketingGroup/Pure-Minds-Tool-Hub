@@ -253,11 +253,14 @@ test('de maker laadt, staat in het register en linkt naar de handleiding voor Br
   for (const id of ['stap-1', 'stap-2', 'stap-3', 'stap-4', 'stap-5', 'stap-6', 'aanpassen']) assert.ok(guide.includes(`id="${id}"`), id);
 });
 
-test('upload-service: wachtwoord, herkomst, alleen echte JPG en PNG, hoogstens 4 MB', async () => {
+test('upload-service: herkomst, wachtwoord als het is ingesteld, alleen echte JPG en PNG, hoogstens 4 MB', async () => {
   const C = await import(pathToFileURL(path.join(root, 'uploads/lib/check.js')).href);
   const ok = { origin: 'https://puremindsmarketinggroup.github.io', password: 'geheim-wachtwoord', expected: 'geheim-wachtwoord', type: 'image/jpeg', length: 1000 };
   assert.deepEqual(C.checkRequest(ok), { ok: true, type: 'image/jpeg' });
-  assert.equal(C.checkRequest({ ...ok, expected: '' }).status, 500, 'nog geen wachtwoord ingesteld');
+  // Zonder APP_PASSWORD: geen wachtwoord nodig, maar wel vanaf de Tool Hub (een browser stuurt Origin mee)
+  assert.deepEqual(C.checkRequest({ ...ok, expected: '', password: null }), { ok: true, type: 'image/jpeg' });
+  assert.equal(C.checkRequest({ ...ok, expected: '', origin: null }).status, 403, 'zonder herkomst (geen browser): nee');
+  assert.equal(C.checkRequest({ ...ok, expected: '', origin: 'https://evil.example' }).status, 403);
   assert.equal(C.checkRequest({ ...ok, password: 'fout' }).status, 401);
   assert.equal(C.checkRequest({ ...ok, password: null }).status, 401);
   assert.equal(C.checkRequest({ ...ok, origin: 'https://jelger1.github.io' }).status, 403);

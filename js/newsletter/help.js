@@ -97,7 +97,7 @@
     },
     'uploaden': {
       title: 'Foto’s online',
-      text: 'Een mail kan alleen plaatjes tonen die online staan. Je foto’s en iconen gaan daarom naar de opslag van Pure Minds bij Vercel. Het wachtwoord vul je één keer in; deze browser onthoudt het.',
+      text: 'Een mail kan alleen plaatjes tonen die online staan. Je foto’s en iconen gaan daarom vanzelf naar de opslag van Pure Minds bij Vercel, met een vaste link die in je mail komt.',
     },
     'opnieuw': {
       title: 'Opnieuw beginnen',

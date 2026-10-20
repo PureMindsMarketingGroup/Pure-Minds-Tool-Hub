@@ -14,13 +14,18 @@ Bestanden:
 
 - `api/upload.js`: foto's (`GET` = status, `POST` = uploaden)
 - `api/generate.js`: de AI (`GET` = status, `POST` = maken of aanpassen)
-- `lib/check.js`: wachtwoord, alleen JPG en PNG, hoogstens 4 MB, alleen vanaf de Tool Hub
+- `lib/check.js`: alleen vanaf de Tool Hub, alleen JPG en PNG, hoogstens 4 MB (en een wachtwoord als dat is ingesteld)
 - `lib/ai.js`: de JSON-schema's per formaat, de technische regels en het verzoek aan Claude
 - `vercel.json`: de AI mag 300 seconden duren (een grote presentatie duurt een minuut of twee)
 - `public/index.html`: een korte uitleg als iemand de link opent
 
-Alleen wie het wachtwoord kent, kan uploaden of de AI gebruiken. Een foto kan iedereen met de link lezen: zo
-werkt een plaatje in een mail.
+Er is geen wachtwoord: de server accepteert alleen verzoeken vanaf de Tool Hub
+(`puremindsmarketinggroup.github.io`), met een rem per kwartier. Wil je later toch een wachtwoord, zet dan
+`APP_PASSWORD` in Vercel. De hub vraagt het dan vanzelf, één keer per browser. Een foto kan iedereen met de link
+lezen: zo werkt een plaatje in een mail.
+
+**Zet een maandlimiet bij Anthropic** (console.anthropic.com → *Settings* → *Limits*). Zonder wachtwoord is het
+adres van de AI in principe door iedereen te gebruiken die het vindt; de limiet houdt de kosten in de hand.
 
 ## Instellen
 
@@ -32,7 +37,7 @@ De hub gebruikt dat adres al (`js/shared/service.js`).
 2. **Opslag:** *Storage* → *Create* → **Blob**, en koppel hem aan dit project. Vercel zet
    `BLOB_READ_WRITE_TOKEN` dan zelf klaar.
 3. **Environment Variables** (*Settings*):
-   - `APP_PASSWORD`: het wachtwoord dat je met collega's deelt (minstens 12 tekens)
+   - `APP_PASSWORD` (optioneel): alleen als je een wachtwoord wilt; collega's vullen het dan één keer in
    - `ANTHROPIC_API_KEY`: de API-sleutel van Anthropic. Alleen hier invullen, nooit in de code of in een chat.
    - `AI_PROMPT`, `AI_PROMPT_PRESENTATIE`, `AI_PROMPT_INSTA`, `AI_PROMPT_EMAIL`: hoe Pure Minds schrijft
      (tone of voice, en wat een goede slide, post of mail is). Deze teksten staan bewust niet in deze openbare
@@ -40,10 +45,8 @@ De hub gebruikt dat adres al (`js/shared/service.js`).
      reserve uit `lib/ai.js`.
    - Optioneel `AI_MODEL` (standaard `claude-opus-5-5`).
 4. **Redeploy:** *Deployments* → de bovenste → *…* → *Redeploy*. Pas dan gelden de instellingen.
-5. **Testen:** `/api/upload` geeft `{"ok":true,"blob":true,"password":true}` en `/api/generate` geeft
+5. **Testen:** `/api/upload` geeft `{"ok":true,"blob":true,...}` en `/api/generate` geeft
    `{"ok":true,"ai":true,...}`.
-
-Elke collega vult het wachtwoord één keer in, bij de eerste upload of AI-opdracht. De browser onthoudt het.
 
 ## Goed om te weten
 
@@ -55,8 +58,8 @@ Elke collega vult het wachtwoord één keer in, bij de eerste upload of AI-opdra
 - **Niets weggooien wat al verstuurd is.** Een foto in een verstuurde mail moet online blijven, anders ziet de
   lezer een leeg vlak. Ruim de opslag (*Storage → Blob → Browser*) alleen op als je zeker weet dat een bestand
   nergens meer in staat.
-- **Wachtwoord wijzigen:** pas `APP_PASSWORD` aan en doe *Redeploy*. Collega's krijgen bij hun volgende upload
-  of AI-opdracht de vraag om het nieuwe wachtwoord.
+- **Wachtwoord aan of uit:** zet of verwijder `APP_PASSWORD` en doe *Redeploy*. Staat het aan, dan vraagt de
+  hub het bij de volgende upload of AI-opdracht (en opnieuw als het verandert).
 - **Prompts aanpassen:** wijzig de waarde in Vercel, *Save* en *Redeploy*. Aan de code hoeft niets te
   veranderen.
 - **Vercel bouwt bij elke push opnieuw.** Het project hangt aan de hele repo, dus een push naar de hub geeft

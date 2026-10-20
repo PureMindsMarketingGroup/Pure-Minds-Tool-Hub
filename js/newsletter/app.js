@@ -998,7 +998,7 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
   }
 
   /* ---------------------------------------------------------------------------
-     Uploaden via de server van de Tool Hub (wachtwoord: PM.service, één keer per browser)
+     Uploaden via de server van de Tool Hub (PM.service; een wachtwoord alleen als Vercel erom vraagt)
      ------------------------------------------------------------------------- */
 
   async function upload(blob, name) {
@@ -1018,13 +1018,13 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
     el.uploadState.textContent = 'Even kijken of uploaden klaarstaat…';
     const st = await PM.service.status('/api/upload');
     const was = uploadOk;
-    uploadOk = !!(st && st.ok && st.blob && st.password);
+    uploadOk = !!(st && st.ok && st.blob);
     if (uploadOk) {
-      el.uploadState.innerHTML = `<b>Staat klaar.</b> Je foto’s en iconen gaan vanzelf online. ${PM.service.hasPassword() ? 'Het wachtwoord is ingevuld in deze browser.' : 'Het wachtwoord vraagt de tool bij je eerste upload.'}`;
+      el.uploadState.innerHTML = '<b>Staat klaar.</b> Je foto’s en iconen gaan vanzelf online.';
     } else {
       el.uploadState.className = 'notice notice-warn nb-upload';
       el.uploadState.innerHTML = st && st.ok
-        ? '<b>Uploaden is nog niet helemaal ingesteld</b> (opslag of wachtwoord in Vercel, zie uploads/README.md). Kies tot die tijd foto’s uit de fotobank, of plak een link naar een foto die al online staat.'
+        ? '<b>Uploaden is nog niet helemaal ingesteld</b> (de opslag in Vercel, zie uploads/README.md). Kies tot die tijd foto’s uit de fotobank, of plak een link naar een foto die al online staat.'
         : '<b>Uploaden staat nog niet aan.</b> Kies tot die tijd foto’s uit de fotobank, of plak een link naar een foto die al online staat.';
     }
     syncPwLink();

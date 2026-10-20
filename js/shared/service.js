@@ -4,14 +4,14 @@
    De hub zelf staat op GitHub Pages en heeft geen server. Wat wel een server
    nodig heeft (foto's online zetten voor een mail, de AI van Claude), draait
    in één Vercel-project: de map uploads/ in deze repo (zie uploads/README.md).
-   Eén wachtwoord voor alles (APP_PASSWORD in Vercel); elke collega vult het
-   één keer in, deze browser onthoudt het.
+   Een wachtwoord is niet nodig. Zet iemand later APP_PASSWORD in Vercel, dan
+   vraagt de hub het vanzelf (één keer per browser) zodra de server erom vraagt.
 
      PM.service.ready                  staat er een adres? (anders: niet ingesteld)
      PM.service.url(pad)               volledig adres, zoals url('/api/upload')
-     PM.service.request(pad, opties)   fetch met het wachtwoord; vraagt het bij de eerste
-                                       keer en opnieuw als het niet klopt. Geeft de JSON
-                                       terug, of gooit een Error met een zin voor de gebruiker
+     PM.service.request(pad, opties)   fetch; vraagt een wachtwoord alleen als de server
+                                       erom vraagt (401). Geeft de JSON terug, of gooit een
+                                       Error met een zin voor de gebruiker
                                        (err.cancelled: de gebruiker gaf geen wachtwoord)
      PM.service.status(pad)            GET zonder wachtwoord: { ok, ... } of null
      PM.service.hasPassword()
@@ -83,12 +83,13 @@
   async function request(path, { method = 'POST', body = null, headers = {}, signal } = {}) {
     if (!base()) throw new Error('De server van de Tool Hub is nog niet ingesteld.');
     let pw = PM.store.get(PW_KEY, '');
-    for (let attempt = 0; attempt < 3; attempt++) {
-      if (!pw) pw = await askPassword(attempt > 0);
-      if (!pw) throw Object.assign(new Error('Zonder wachtwoord kan het niet.'), { cancelled: true });
+    for (let attempt = 0; attempt < 4; attempt++) {
+      // Eerst zonder (of met het bewaarde) wachtwoord; pas na een 401 vragen
+      if (!pw && attempt > 0) pw = await askPassword(attempt > 1);
+      if (!pw && attempt > 0) throw Object.assign(new Error('Zonder wachtwoord kan het niet.'), { cancelled: true });
       let res;
       try {
-        res = await fetch(url(path), { method, body, signal, headers: { ...headers, 'x-app-password': pw } });
+        res = await fetch(url(path), { method, body, signal, headers: pw ? { ...headers, 'x-app-password': pw } : headers });
       } catch (err) {
         if (err && err.name === 'AbortError') throw err;
         throw new Error('De server van de Tool Hub is niet bereikbaar. Controleer je internet en probeer het opnieuw.');

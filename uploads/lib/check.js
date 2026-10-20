@@ -2,10 +2,11 @@
    check.js — de controles van de upload-service, zonder Vercel (getest in
    tests/newsletter.test.js)
    -----------------------------------------------------------------------------
-   Wat mag erin: alleen JPG en PNG, hoogstens 4 MB, met het wachtwoord uit
-   APP_PASSWORD, en alleen vanaf de Tool Hub (of je eigen computer bij het
-   testen). Een bestand moet ook echt een JPG of PNG zijn: de eerste bytes
-   tellen, niet alleen wat de browser zegt.
+   Wat mag erin: alleen JPG en PNG, hoogstens 4 MB, en alleen vanaf de Tool
+   Hub (of je eigen computer bij het testen). Een wachtwoord is optioneel: staat
+   APP_PASSWORD in Vercel, dan moet het mee; anders niet. Een bestand moet ook
+   echt een JPG of PNG zijn: de eerste bytes tellen, niet alleen wat de browser
+   zegt.
    ============================================================================= */
 import { createHash, timingSafeEqual } from 'node:crypto';
 
@@ -44,11 +45,15 @@ export function sniff(bytes) {
   return null;
 }
 
-// Vóór het lezen van het bestand: wachtwoord, soort en grootte uit de kop van het verzoek
+// Vóór het lezen van het bestand: herkomst, wachtwoord (als dat is ingesteld), soort en grootte.
+// Zonder wachtwoord moet het verzoek uit de Tool Hub komen (een browser stuurt Origin altijd mee)
 export function checkRequest({ origin, password, expected, type, length }) {
-  if (!expected) return { ok: false, status: 500, error: 'De upload-service heeft nog geen wachtwoord (APP_PASSWORD in Vercel).' };
-  if (origin && !allowedOrigin(origin)) return { ok: false, status: 403, error: 'Uploaden kan alleen vanuit de Tool Hub.' };
-  if (!passwordOk(password, expected)) return { ok: false, status: 401, error: 'Het wachtwoord klopt niet.' };
+  if (origin && !allowedOrigin(origin)) return { ok: false, status: 403, error: 'Dit kan alleen vanuit de Tool Hub.' };
+  if (expected) {
+    if (!passwordOk(password, expected)) return { ok: false, status: 401, error: 'Het wachtwoord klopt niet.' };
+  } else if (!origin) {
+    return { ok: false, status: 403, error: 'Dit kan alleen vanuit de Tool Hub.' };
+  }
   const clean = String(type || '').split(';')[0].trim().toLowerCase();
   if (!TYPES[clean]) return { ok: false, status: 415, error: 'Alleen JPG en PNG.' };
   if (length > MAX_BYTES) return { ok: false, status: 413, error: 'Het bestand is groter dan 4 MB.' };

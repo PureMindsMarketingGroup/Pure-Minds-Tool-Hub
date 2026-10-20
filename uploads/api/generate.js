@@ -3,9 +3,10 @@
    -----------------------------------------------------------------------------
      GET  /api/generate   staat de AI klaar? { ok, ai, password, prompts }
      POST /api/generate   JSON { format, mode, content, wish?, instruction?, current?, target? }
-                          met het wachtwoord in x-app-password -> { data, usage } of { error }
+                          -> { data, usage } of { error }
 
-   Zelfde Vercel-project en wachtwoord als de uploads (APP_PASSWORD). De sleutel
+   Zelfde Vercel-project als de uploads: alleen vanaf de Tool Hub, en een
+   wachtwoord (x-app-password) alleen als APP_PASSWORD in Vercel staat. De sleutel
    van Anthropic staat alleen in Vercel (ANTHROPIC_API_KEY), net als de prompts
    (AI_PROMPT, AI_PROMPT_PRESENTATIE, AI_PROMPT_INSTA, AI_PROMPT_EMAIL). Het
    schema en de technische regels staan in lib/ai.js. Een grote presentatie kan

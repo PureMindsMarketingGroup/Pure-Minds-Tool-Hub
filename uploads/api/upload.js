@@ -1,16 +1,17 @@
 /* =============================================================================
    api/upload.js — foto's en iconen uit de Nieuwsbrief Maker online zetten
    -----------------------------------------------------------------------------
-   De maker stuurt een JPG of PNG (al verkleind tot 1200 px breed) met het
-   wachtwoord in de kop x-app-password. Deze functie zet hem in Vercel Blob
-   en geeft de vaste, openbare link terug: die komt in de HTML voor Brevo.
+   De maker stuurt een JPG of PNG (al verkleind tot 1200 px breed). Deze
+   functie zet hem in Vercel Blob en geeft de vaste, openbare link terug: die
+   komt in de HTML voor Brevo. Alleen vanaf de Tool Hub; een wachtwoord
+   (x-app-password) alleen als APP_PASSWORD in Vercel staat.
 
-     GET  /api/upload   staat de service klaar? { ok, blob, password }
-     POST /api/upload   body = het bestand; koppen content-type, x-app-password,
-                        x-file-name -> { url } of { error }
+     GET  /api/upload   staat de service klaar? { ok, blob, password } (password: is er een nodig)
+     POST /api/upload   body = het bestand; koppen content-type, x-file-name
+                        (en x-app-password als dat nodig is) -> { url } of { error }
 
    Instellen in Vercel: zie uploads/README.md. Nodig: een Blob-opslag
-   (BLOB_READ_WRITE_TOKEN zet Vercel zelf) en APP_PASSWORD.
+   (BLOB_READ_WRITE_TOKEN zet Vercel zelf).
    ============================================================================= */
 import { put } from '@vercel/blob';
 import { corsHeaders, checkRequest, checkBody, blobPath, rateLimiter } from '../lib/check.js';
