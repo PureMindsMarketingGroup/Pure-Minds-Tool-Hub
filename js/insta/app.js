@@ -1331,9 +1331,10 @@
   }
 
   // Eén carousel-slide uit de AI; foto en uitsnede van de slide die er stond blijven
+  // Een les krijgt zijn nummer van de tool (01, 02): een "1." of "2)" van de AI ervoor eraf
   const slideFromAI = (x, prev) => ({
     ...(prev || slideOf({})),
-    title: txt(x && x.titel),
+    title: x && x.soort === 'les' ? txt(x.titel).replace(/^\d{1,2}\s*[.):-]\s+/, '') : txt(x && x.titel),
     body: txt(x && x.tekst),
     numbered: !!(x && x.soort === 'les'),
   });

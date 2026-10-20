@@ -193,3 +193,13 @@ test('geen tool-aanroep: één tweede poging in hetzelfde gesprek, met het antwo
   assert.equal(next.tools, body.tools);
   assert.equal(body.messages.length, 1, 'het eerste verzoek blijft zoals het was');
 });
+
+test('carousel: de AI zet geen nummer voor een les, en de maker haalt het weg als het er toch staat', async () => {
+  const A = await load();
+  assert.match(A.FORMATS.insta.element.properties.titel.description, /zonder nummer/);
+  assert.ok(read('js/insta/app.js').includes("x.soort === 'les' ? txt(x.titel).replace(/^\\d{1,2}\\s*[.):-]\\s+/, '')"), 'nummer eraf bij een les');
+  const strip = (t) => t.replace(/^\d{1,2}\s*[.):-]\s+/, '');
+  assert.equal(strip('1. Vul je profiel in'), 'Vul je profiel in');
+  assert.equal(strip('12) Snel op mobiel'), 'Snel op mobiel');
+  assert.equal(strip('3 tips voor je site'), '3 tips voor je site', 'een getal dat bij de zin hoort blijft');
+});

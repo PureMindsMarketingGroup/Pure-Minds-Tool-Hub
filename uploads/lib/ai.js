@@ -82,7 +82,7 @@ const CAROUSEL_SLIDE = {
   required: ['soort', 'titel', 'tekst'],
   properties: {
     soort: { type: 'string', enum: ['hook', 'les', 'afsluiter'], description: 'hook = de eerste slide die doet swipen, les = een genummerde les of tip, afsluiter = de laatste slide met een actie.' },
-    titel: str('Titel van de slide. **Dubbele sterretjes** = nadruk in cyaan (hoogstens één keer).', 70),
+    titel: str('Titel van de slide, zonder nummer ervoor: de tool nummert de lessen zelf (01, 02 …). **Dubbele sterretjes** = nadruk in cyaan (hoogstens één keer).', 70),
     tekst: str('Tekst eronder. **vet** mag; een regel die begint met "- " wordt een opsommingspunt. Kort: dit staat op een plaatje.', 220),
   },
 };
