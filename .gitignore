@@ -18,3 +18,7 @@ __pycache__/
 # Voorstel en Positionering te bouwen, de tool heeft ze niet nodig
 /assets/positioneringPresentaties/
 /assets/voorstelPresentaties/
+
+# Vercel CLI: koppeling met het project en gedownloade variabelen (nooit naar GitHub)
+.vercel
+.env*
