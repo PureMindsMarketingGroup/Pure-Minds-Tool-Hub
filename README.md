@@ -1190,8 +1190,9 @@ de editor: de AI vult hun velden, en daarna pas je alles gewoon aan.
   het formaat en eventueel een wens ("voor ondernemers, hoogstens 8 slides"). Je gaat naar de maker en de AI
   begint meteen. In elke maker kan het ook direct, in het paneel **AI** in de rail.
 - **Altijd JSON:** de server (`uploads/api/generate.js`) geeft Claude één tool met een vast schema
-  (`uploads/lib/ai.js`: `vul_presentatie`, `vul_post`, `vul_mail`) en dwingt hem die te gebruiken. Elk
-  antwoord past dus in de velden. De maker zet de JSON in zijn eigen toestand: slides met layout, titel,
+  (`uploads/lib/ai.js`: `vul_presentatie`, `vul_post`, `vul_mail`) en laat hem alleen daarmee antwoorden.
+  Opus 5.5 denkt eerst na en staat dan geen gedwongen tool toe; antwoordt hij toch in tekst, dan vraagt de
+  server het één keer opnieuw. Structured outputs van Anthropic kan niet: voor deze schema's "te complex". De maker zet de JSON in zijn eigen toestand: slides met layout, titel,
   punten, tabel en **sprekersnotities**; een post of carousel met **caption, hashtags en een fotosuggestie**
   (`state.social`); een mail met **onderwerp**, voorvertoning en blokken. Foto's kiest de mens. De AI zegt
   welke passen, en een mail begint met foto's uit de fotobank.

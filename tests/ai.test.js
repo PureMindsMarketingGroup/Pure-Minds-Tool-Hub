@@ -44,13 +44,14 @@ test('drie formaten, elk met een tool en een geldig schema; het element past bij
   for (const t of A.FORMATS.email.element.properties.type.enum) assert.ok(E.BLOCKS[t], `blok ${t}`);
 });
 
-test('maken: Opus, de tool verplicht, de content tussen tags, de technische regels altijd', async () => {
+test('maken: Opus, één tool (auto: Opus 5.5 staat geen gedwongen tool toe), de content tussen tags, de regels altijd', async () => {
   const A = await load();
   const body = A.buildRequest({ format: 'presentatie', mode: 'generate', content: 'Notities over SEO voor de klant.', wish: '6 slides' });
   assert.equal(body.model, 'claude-opus-5-5');
   assert.equal(body.tools.length, 1);
   assert.equal(body.tools[0].name, 'vul_presentatie');
-  assert.deepEqual(body.tool_choice, { type: 'tool', name: 'vul_presentatie' });
+  assert.deepEqual(body.tool_choice, { type: 'auto' });
+  assert.ok(body.max_tokens >= 12000, 'ruimte voor het nadenken vooraf');
   assert.equal(body.tools[0].input_schema, A.FORMATS.presentatie.schema);
   const msg = body.messages[0].content;
   assert.match(msg, /<content>\nNotities over SEO voor de klant\.\n<\/content>/);
@@ -79,15 +80,15 @@ test('aanpassen: het huidige ontwerp en de instructie; één element met zijn ei
   const A = await load();
   const current = { onderwerp: 'Hoi', voorvertoning: 'x', blokken: [{ type: 'opening', kop: 'A' }, { type: 'tekst', kop: 'B' }] };
   const all = A.buildRequest({ format: 'email', mode: 'refine', instruction: 'korter', current });
-  assert.equal(all.tool_choice.name, 'vul_mail');
+  assert.equal(all.tools[0].name, 'vul_mail');
   assert.match(all.messages[0].content, /<huidig>[\s\S]*"kop": "B"[\s\S]*<\/huidig>/);
   assert.match(all.messages[0].content, /<instructie>\nkorter\n<\/instructie>/);
   const one = A.buildRequest({ format: 'email', mode: 'refine', instruction: 'formeler', current, target: 1 });
-  assert.equal(one.tool_choice.name, 'pas_blok_aan');
+  assert.equal(one.tools[0].name, 'pas_blok_aan');
   assert.equal(one.tools[0].input_schema, A.FORMATS.email.element);
   assert.match(one.messages[0].content, /Pas alleen blok 2/);
   const slide = A.buildRequest({ format: 'insta', mode: 'refine', instruction: 'x', current: { slides: [{}, {}] }, target: 0 });
-  assert.equal(slide.tool_choice.name, 'pas_carousel_slide_aan');
+  assert.equal(slide.tools[0].name, 'pas_carousel_slide_aan');
 });
 
 test('invoer: formaat, lengte, instructie en een bestaand element', async () => {
@@ -176,4 +177,19 @@ test('debounce: na de AI één keer opslaan na de laatste wijziging, en niet mee
   saver.stop();
   await new Promise((r) => setTimeout(r, 80));
   assert.equal(saves.length, 1, 'na stop niet meer');
+});
+
+test('geen tool-aanroep: één tweede poging in hetzelfde gesprek, met het antwoord erbij', async () => {
+  const A = await load();
+  const body = A.buildRequest({ format: 'email', mode: 'generate', content: 'x'.repeat(40) });
+  const text = { content: [{ type: 'thinking', thinking: 'h', signature: 's' }, { type: 'text', text: 'Hier is je mail: ...' }], stop_reason: 'end_turn' };
+  assert.equal(A.hasToolCall(text, 'vul_mail'), false);
+  assert.equal(A.hasToolCall({ content: [{ type: 'tool_use', name: 'vul_mail', input: {} }] }, 'vul_mail'), true);
+  const next = A.followUp(body, text);
+  assert.equal(next.messages.length, 3);
+  assert.equal(next.messages[1].role, 'assistant');
+  assert.equal(next.messages[1].content, text.content, 'het nadenken gaat ongewijzigd mee terug');
+  assert.match(next.messages[2].content, /vul_mail/);
+  assert.equal(next.tools, body.tools);
+  assert.equal(body.messages.length, 1, 'het eerste verzoek blijft zoals het was');
 });

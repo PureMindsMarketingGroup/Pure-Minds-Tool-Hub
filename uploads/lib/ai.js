@@ -4,13 +4,18 @@
    -----------------------------------------------------------------------------
    Claude (Opus) krijgt ruwe content (notities, een transcript, losse ideeën)
    en vult daarmee een presentatie, een Instagram-post of een e-mail. Het
-   antwoord is altijd JSON volgens een vast schema: we geven Claude één tool
-   (vul_presentatie, vul_post of vul_mail) en dwingen hem die te gebruiken
-   (tool_choice). De maker zet die JSON in zijn eigen velden.
+   antwoord is JSON volgens een vast schema: we geven Claude één tool
+   (vul_presentatie, vul_post of vul_mail) en laten hem alleen daarmee
+   antwoorden. Opus 5.5 denkt eerst na en staat dan geen gedwongen tool toe
+   (tool_choice "tool" of "any"); de regels zeggen het daarom, en schiet hij
+   toch in gewone tekst, dan vraagt de server het één keer opnieuw
+   (followUp). Structured outputs (output_config) kan niet: voor deze
+   schema's te complex. De maker maakt elk antwoord daarna nog netjes.
 
      FORMATS                       presentatie, insta, email: tool, schema, element
      buildRequest(input, env)      de body voor POST /v1/messages
-     readResponse(format, body)    { data } of { error } uit het antwoord van Claude
+     followUp(body, antwoord)      tweede poging als er geen tool-aanroep kwam
+     readResponse(body, tool)      { data } of { error } uit het antwoord van Claude
      checkInput(input)             { ok } of { ok: false, status, error }
 
    Twee soorten verzoeken:
@@ -249,13 +254,29 @@ export function buildRequest(input, env = {}) {
 
   return {
     model: env.AI_MODEL || MODEL,
-    max_tokens: 8000,
+    max_tokens: 16000,   // inclusief het nadenken vooraf
     system: systemPrompt(input.format, env),
     tools: [tool],
-    tool_choice: { type: 'tool', name: tool.name },
+    tool_choice: { type: 'auto' },
     messages: [{ role: 'user', content: text }],
   };
 }
+
+// Kwam er tekst in plaats van de tool: het gesprek voortzetten met de vraag om de tool (één keer)
+export function followUp(body, answer) {
+  const tool = body.tools[0].name;
+  return {
+    ...body,
+    messages: [
+      ...body.messages,
+      { role: 'assistant', content: answer.content },
+      { role: 'user', content: `Antwoord alleen door ${tool} aan te roepen, met alle velden uit het schema. Schrijf geen tekst.` },
+    ],
+  };
+}
+
+// Heeft het antwoord een aanroep van de tool?
+export const hasToolCall = (answer, tool) => !!(answer && Array.isArray(answer.content) && answer.content.some((b) => b && b.type === 'tool_use' && b.name === tool));
 
 /* ---------------------------------------------------------------------------
    Het antwoord van Claude lezen

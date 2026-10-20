@@ -13,7 +13,7 @@
    een minuut of twee duren; vercel.json geeft deze functie 300 seconden.
    ============================================================================= */
 import { corsHeaders, checkRequest, rateLimiter } from '../lib/check.js';
-import { FORMATS, checkInput, buildRequest, readResponse, apiError } from '../lib/ai.js';
+import { FORMATS, checkInput, buildRequest, followUp, hasToolCall, readResponse, apiError } from '../lib/ai.js';
 
 const limit = rateLimiter({ limit: 40, windowMs: 15 * 60 * 1000 });
 const MAX_BODY = 400 * 1024;
@@ -68,9 +68,10 @@ export async function POST(request) {
   if (!checked.ok) return json({ error: checked.error }, checked.status, headers);
 
   const body = buildRequest(input, process.env);
+  const tool = body.tools[0].name;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 280 * 1000);
-  try {
+  const ask = async (payload) => {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -78,15 +79,23 @@ export async function POST(request) {
         'x-api-key': process.env.ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01',
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(payload),
       signal: controller.signal,
     });
-    const answer = await res.json().catch(() => ({}));
+    return { res, answer: await res.json().catch(() => ({})) };
+  };
+  try {
+    let { res, answer } = await ask(body);
+    // Tekst in plaats van de tool (zelden): één keer opnieuw vragen, in hetzelfde gesprek
+    if (res.ok && !hasToolCall(answer, tool) && answer.stop_reason !== 'max_tokens') {
+      console.warn('geen tool-aanroep, tweede poging');
+      ({ res, answer } = await ask(followUp(body, answer)));
+    }
     if (!res.ok) {
       console.error('anthropic', res.status, JSON.stringify(answer).slice(0, 500));
       return json({ error: apiError(res.status) }, 502, headers);
     }
-    const out = readResponse(answer, body.tool_choice.name);
+    const out = readResponse(answer, tool);
     if (out.error) return json({ error: out.error }, 502, headers);
     return json({ data: out.data, format: input.format, scoped: Number.isInteger(input.target), usage: answer.usage || null, model: answer.model || body.model }, 200, headers);
   } catch (err) {
