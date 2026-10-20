@@ -178,13 +178,16 @@ const FALLBACK = {
   email: 'Maak een mail die de lezer in een paar seconden scant: één hoofdboodschap, korte blokken, één duidelijke actie.',
 };
 
+// Een prompt uit Vercel; uit een .env-bestand kan een nieuwe regel als letterlijk \n binnenkomen
+const fromEnv = (v) => String(v || '').replace(/\\n/g, '\n').trim();
+
 export function systemPrompt(format, env = {}) {
   const f = FORMATS[format];
   return [
     BASE,
     `Je maakt nu: een ${f.name}, met de tool ${f.tool}.`,
-    String(env.AI_PROMPT || '').trim() || FALLBACK.algemeen,
-    String(env[f.env] || '').trim() || FALLBACK[format],
+    fromEnv(env.AI_PROMPT) || FALLBACK.algemeen,
+    fromEnv(env[f.env]) || FALLBACK[format],
   ].join('\n\n');
 }
 

@@ -70,6 +70,9 @@ test('de prompts uit Vercel komen in de system prompt; zonder prompts een korte 
   assert.match(bare, /online marketingbureau/);
   assert.ok(bare.length < 2500, 'de reserve is kort; de echte prompts staan in Vercel');
   assert.equal(A.buildRequest({ format: 'email', mode: 'generate', content: 'x'.repeat(30) }, { AI_MODEL: 'claude-sonnet-5-5' }).model, 'claude-sonnet-5-5');
+  // Uit een .env-bestand: \n als letterlijke tekens wordt een echte nieuwe regel
+  const fromFile = A.buildRequest({ format: 'insta', mode: 'generate', content: 'x'.repeat(30) }, { AI_PROMPT: 'Regel 1\\nRegel 2' }).system;
+  assert.ok(fromFile.includes('Regel 1\nRegel 2'));
 });
 
 test('aanpassen: het huidige ontwerp en de instructie; één element met zijn eigen schema', async () => {
