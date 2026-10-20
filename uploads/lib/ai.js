@@ -145,7 +145,7 @@ const BLOK = {
     cijferTekst: str('Alleen resultaat: wat het cijfer betekent.', 80),
     fotoIdee: str('foto en fototekst: welke foto past, in het Nederlands. Wordt ook de beschrijving (alt-tekst) van de foto.', 160),
     fotoZoek: str('foto en fototekst: zoektermen in het Engels (2 tot 5 woorden) voor een passende foto uit een fotobank, zoals "team meeting laptop office". Concreet en beeldend; geen merknamen of tekst.', 60),
-    fotoKant: { type: 'string', enum: ['links', 'rechts'], description: 'Alleen fototekst: aan welke kant de foto staat. Wissel af als er meer fototekst-blokken zijn.' },
+    fotoKant: { type: 'string', enum: ['links', 'rechts', 'boven'], description: 'Alleen fototekst: waar de foto staat: links of rechts naast de tekst, of boven de tekst (over de breedte, voor een langere tekst). Wissel af als er meer fototekst-blokken zijn.' },
   },
 };
 

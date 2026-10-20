@@ -61,6 +61,14 @@
       title: 'Foto',
       text: 'Kies een foto van je computer, sleep hem hierheen of plak hem (Ctrl + V). De tool verkleint hem en zet hem online, zodat hij in elke mail werkt. Uit de fotobank of een link naar een foto mag ook.',
     },
+    'foto-erbij': {
+      title: 'Foto erbij',
+      text: 'Maak van je tekstblok in één klik een blok met foto: links of rechts naast de tekst, of boven de tekst over de hele breedte. Je tekst en link blijven staan. Daarna kies je de foto; met foto weghalen is het weer een tekstblok.',
+    },
+    'foto-plek': {
+      title: 'Waar staat de foto?',
+      text: 'Links of rechts: naast een korte tekst. Boven: over de hele breedte, met de tekst eronder; mooi bij een langere tekst. Op een telefoon staat de foto altijd boven de tekst. Foto weghalen maakt er weer een tekstblok van.',
+    },
     'vorm': {
       title: 'Vorm van de foto',
       text: 'Zoals hij is: de hele foto. Liggend, breed of vierkant: de tool snijdt hem bij, vanuit het midden. Staande foto? Kies liggend, anders wordt je mail heel lang. Geldt voor foto’s die je hier uploadt.',

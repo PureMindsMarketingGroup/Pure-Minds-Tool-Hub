@@ -15,6 +15,9 @@
      PMEmail.normalize(toestand)      opgeslagen toestand netjes maken
      PMEmail.starter(soort)           'nieuwsbrief' (alle blokken) of 'kort'
      PMEmail.block(type)              een nieuw blok met voorbeeldtekst
+     PMEmail.convert(blok, soort, o)  een blok omzetten met behoud van tekst, link, foto en id:
+                                      tekst -> fototekst (o.side: links, rechts, boven), fototekst
+                                      -> tekst (foto weghalen), foto -> fototekst (tekst erbij)
      PMEmail.BLOCKS                   de blokken: naam, uitleg, standaardinhoud
      PMEmail.safeUrl(link)            alleen https, http, mailto en tel ('' = afgekeurd)
      PMEmail.safeImg(src)             alleen https (in de preview ook blob:)
@@ -90,7 +93,7 @@
     },
     fototekst: {
       name: 'Foto en tekst',
-      sub: 'naast elkaar, op een telefoon onder elkaar',
+      sub: 'foto links, rechts of boven de tekst',
       make: () => ({
         img: stock('werkplek-bureau.jpg'),
         side: 'links',
@@ -124,6 +127,9 @@
     },
   };
   const TYPES = Object.keys(BLOCKS);
+
+  // Waar de foto staat in een blok foto en tekst; boven = over de breedte, boven de tekst
+  const SIDES = ['links', 'rechts', 'boven'];
 
   let counter = 0;
   const uid = () => `b${Date.now().toString(36)}${(counter++).toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -184,7 +190,7 @@
           };
         });
         while (out.items.length < 2) out.items.push({ icon: null, title: '', text: '' });
-      } else if (key === 'side') out.side = o.side === 'rechts' ? 'rechts' : 'links';
+      } else if (key === 'side') out.side = SIDES.includes(o.side) ? o.side : 'links';
       else if (key === 'url') out.url = str(o.url, 1000);
       else out[key] = key in o ? str(o[key]) : value;
     }
@@ -386,6 +392,19 @@ ${td('font-size:13px;line-height:16px;font-weight:700;letter-spacing:1.5px;text-
     },
 
     fototekst(b, o, pad) {
+      // Foto boven de tekst: over de hele breedte (520), de tekst eronder zoals een tekstblok
+      if (b.side === 'boven') {
+        const img = photo(b.img, b.id, 520, o);
+        const body = paragraphs(b.body);
+        const link = textLink(b.link);
+        const rows = [];
+        if (img) rows.push(`<tr><td style="padding:0 0 ${b.title.trim() || body.length || link ? 22 : 0}px 0;">${img}</td></tr>`);
+        if (b.title.trim()) rows.push(`<tr>${td('font-size:22px;line-height:28px;font-weight:700;color:#303030;padding:0 0 12px 0;', heading(b.title, o), ' class="pm-h2"')}</tr>`);
+        body.forEach((p, i) => rows.push(`<tr>${td(`font-size:16px;line-height:26px;color:#303030;padding:0 0 ${i === body.length - 1 && !link ? 0 : 16}px 0;`, inline(p, o))}</tr>`));
+        if (link) rows.push(`<tr>${td('font-size:16px;line-height:26px;font-weight:700;padding:4px 0 0 0;', link)}</tr>`);
+        if (!rows.length) return '';
+        return `<td class="pm-px" style="padding:${pad.top}px 40px ${pad.bottom}px 40px;">${table(rows.join('\n'))}</td>`;
+      }
       const right = b.side === 'rechts';
       const img = photo(b.img, b.id, 224, o);
       const body = paragraphs(b.body);
@@ -649,7 +668,26 @@ ${o.preview ? FOOTER.replace('<td class="pm-px"', '<td data-pm-vast="voet" class
     return issues;
   }
 
-  const PMEmail = { build, check, normalize, starter, block, BLOCKS, TYPES, STARTERS, STOCK, SAMPLE_PREHEADER, safeUrl, safeImg, inline, bytes, MAX_BLOCKS, SITE };
+  /* ---------------------------------------------------------------------------
+     Een blok omzetten met behoud van de inhoud: foto erbij, foto weghalen, tekst erbij
+     ------------------------------------------------------------------------- */
+
+  function convert(b, to, { side } = {}) {
+    const next = block(to);
+    next.id = b.id;
+    const text = { title: typeof b.title === 'string' ? b.title : '', body: typeof b.body === 'string' ? b.body : '', link: b.link ? { ...b.link } : { text: '', url: '' } };
+    if (to === 'fototekst') {
+      Object.assign(next, b.type === 'foto' ? { title: '', body: '', link: { text: '', url: '' } } : text);
+      next.side = SIDES.includes(side) ? side : 'links';
+      // Een foto die er al was blijft; anders een lege plek (de preview zegt "kies een foto")
+      next.img = b.img ? { ...b.img } : { src: '', alt: '' };
+    } else if (to === 'tekst') {
+      Object.assign(next, text);
+    }
+    return next;
+  }
+
+  const PMEmail = { build, check, normalize, starter, block, convert, BLOCKS, TYPES, STARTERS, STOCK, SIDES, SAMPLE_PREHEADER, safeUrl, safeImg, inline, bytes, MAX_BLOCKS, SITE };
   global.PMEmail = PMEmail;
   if (typeof module !== 'undefined' && module.exports) module.exports = PMEmail;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -84,7 +84,7 @@
 
   /* ---------------------------------------------------------------------------
      Zoeken en kiezen: een rij foto's voor de open post, slide of blok
-       opties.target()          { label, orientation, query, width } of null (geen fotoplek)
+       opties.target()          { label, orientation, query, locale, width } of null (geen fotoplek)
        opties.apply(file, foto) de foto plaatsen (zoals een upload)
      ------------------------------------------------------------------------- */
 
@@ -116,7 +116,7 @@
       forEl.textContent = t ? `Voor ${t.label}. Klik op een foto om hem te plaatsen.` : 'Open eerst een slide of blok met een plek voor een foto.';
       if (t && t.query && !typed && t.query !== lastQuery && root.offsetParent !== null) {
         q.value = t.query;
-        run(t.query, 'en-US');
+        run(t.query, t.locale || 'en-US');
       }
     }
 

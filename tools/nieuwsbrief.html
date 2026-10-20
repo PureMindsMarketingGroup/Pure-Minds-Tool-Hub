@@ -212,13 +212,19 @@
   </main>
 </div>
 
-<!-- Fotobank: foto's van Pure Minds die al online staan (js/newsletter/app.js vult hem) -->
-<dialog class="nb-dialog" id="stockDialog" aria-labelledby="stockTitle">
+<!-- Foto kiezen: een eigen foto uploaden, online zoeken (Unsplash) of uit de fotobank van Pure Minds (js/newsletter/app.js) -->
+<dialog class="nb-dialog nb-dialog--wide" id="stockDialog" aria-labelledby="stockTitle">
   <form method="dialog" class="nb-dialog__inner">
     <header class="nb-dialog__head">
-      <h2 class="popover__title" id="stockTitle">Fotobank<span class="dot">.</span></h2>
+      <h2 class="popover__title" id="stockTitle">Foto kiezen<span class="dot">.</span></h2>
       <button class="iconbtn" value="cancel" aria-label="Sluiten">&times;</button>
     </header>
+    <div class="nb-choose">
+      <button type="button" class="btn btn-outline btn-sm" id="stockUploadBtn">upload een eigen foto</button>
+      <span class="field-hint">of sleep hem op het blok, of plak hem met Ctrl + V</span>
+    </div>
+    <section class="nb-choose__search ai-photos" id="stockSearch" hidden></section>
+    <h3 class="nb-choose__title">Foto’s van Pure Minds</h3>
     <div class="nb-stock" id="stockGrid"></div>
   </form>
 </dialog>

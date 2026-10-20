@@ -1223,10 +1223,17 @@ alleen tekst, foto's, iconen en links aan. Kop (logo, "bekijk online") en voet
 die van `email/pure-minds-email.html` en komt uit `js/newsletter/email.js`.
 
 - **Blokken:** opening (kop, intro, magenta hoofdknop), foto, tekst, foto en
-  tekst (foto links of rechts), punten (twee of drie, met een zeshoek of
-  icoon), resultaat en afsluiter (rustige knop). Toevoegen bij *Blokken*
-  (onder het open blok), verschuiven, kopiëren en weggooien op het kaartje.
-  Hoogstens 30 blokken.
+  tekst (foto links, rechts of boven de tekst), punten (twee of drie, met een
+  zeshoek of icoon), resultaat en afsluiter (rustige knop). Toevoegen bij
+  *Blokken* (onder het open blok), verschuiven, kopiëren en weggooien op het
+  kaartje. Hoogstens 30 blokken.
+- **Omzetten zonder overtypen** (`PMEmail.convert`): een tekstblok krijgt met
+  *foto erbij* in één klik een foto links, rechts of boven; *foto weghalen*
+  maakt er weer een tekstblok van; een fotoblok krijgt met *tekst erbij* tekst
+  onder de foto. Tekst, link en foto blijven staan.
+- **Foto kiezen:** één venster met een eigen foto uploaden, online zoeken
+  (Unsplash, zoekwoorden uit de kop van het blok) en de foto's van Pure Minds.
+  Een foto van Unsplash snijdt Unsplash zelf bij in de gekozen vorm.
 - **Tekst:** `**vet**`, `{voornaam}` (Brevo: `{{ contact.FIRSTNAME }}`, anders
   "daar"), `[tekst](link)` en een witregel voor een nieuwe alinea. Koppen
   krijgen vanzelf de cyaan punt, tekstlinks een pijl.

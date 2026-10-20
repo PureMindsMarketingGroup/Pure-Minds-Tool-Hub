@@ -330,10 +330,10 @@ html { scrollbar-width: none; }
     return `<div class="field" data-img-field>
   <span class="label">Foto <button type="button" class="help" data-help="foto"></button></span>
   <div class="nb-img" data-drop>
-    <button type="button" class="nb-img__thumb${pending[b.id] ? ' is-busy' : ''}" data-act="pick" aria-label="Foto kiezen" style="${src ? `background-image:url('${esc(src)}')` : ''}"></button>
+    <button type="button" class="nb-img__thumb${pending[b.id] ? ' is-busy' : ''}" data-act="choose" aria-label="Foto kiezen" style="${src ? `background-image:url('${esc(src)}')` : ''}"></button>
     <div class="nb-img__acts">
-      <button type="button" class="btn btn-outline btn-sm" data-act="pick">${img.src ? 'andere foto' : 'foto kiezen'}</button>
-      <button type="button" class="btn btn-quiet btn-xs" data-act="stock">uit de fotobank</button>
+      <button type="button" class="btn btn-outline btn-sm" data-act="choose">${img.src ? 'andere foto' : 'foto kiezen'}</button>
+      ${b.type === 'fototekst' ? '<button type="button" class="linkbtn" data-act="remove-photo">foto weghalen</button>' : ''}
       <span class="nb-img__state ${state0[0]}" data-img-state>${state0[1]}</span>
     </div>
   </div>
@@ -352,7 +352,7 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
   }
 
   function imgState(img) {
-    if (!img.src) return ['', canUpload() ? 'Sleep een foto hierheen of plak hem (Ctrl + V).' : 'Kies een foto uit de fotobank, of plak een link.'];
+    if (!img.src) return ['', canUpload() ? 'Kies een foto, of sleep hem hierheen of plak hem (Ctrl + V).' : 'Kies een foto, of plak een link.'];
     if (!E.safeImg(img.src)) return ['is-err', 'Deze link werkt niet in een mail: hij moet met https:// beginnen.'];
     const size = img.w && img.h ? ` · ${img.w} × ${img.h} px` : '';
     if (img.src.startsWith(E.SITE)) return ['is-ok', `fotobank, staat online${size}`];
@@ -378,16 +378,29 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
 <div class="nb-points-foot">${items.length < 3 ? '<button type="button" class="btn btn-quiet btn-sm" data-act="point-add">+ punt</button>' : ''}</div>`;
   }
 
+  const SIDE_ART = {
+    links: '<span class="nb-side nb-side--links" aria-hidden="true"><i></i><b></b></span>',
+    rechts: '<span class="nb-side nb-side--rechts" aria-hidden="true"><i></i><b></b></span>',
+    boven: '<span class="nb-side nb-side--boven" aria-hidden="true"><i></i><b></b></span>',
+  };
+
   function sideField(b) {
     const id = fid();
     return `<div class="field">
-  <span class="label" id="${id}">Foto staat</span>
-  <div class="seg seg--2 seg--sm" role="radiogroup" aria-labelledby="${id}">
-    ${['links', 'rechts'].map((s) => { const r = fid(); return `<input type="radio" name="side-${esc(b.id)}" id="${r}" value="${s}" data-k="side"${b.side === s ? ' checked' : ''}><label for="${r}">${s}</label>`; }).join('')}
+  <span class="label" id="${id}">Foto staat <button type="button" class="help" data-help="foto-plek"></button></span>
+  <div class="seg seg--3 seg--sm nb-sides" role="radiogroup" aria-labelledby="${id}">
+    ${E.SIDES.map((s) => { const r = fid(); return `<input type="radio" name="side-${esc(b.id)}" id="${r}" value="${s}" data-k="side"${b.side === s ? ' checked' : ''}><label for="${r}">${SIDE_ART[s]}${s}</label>`; }).join('')}
   </div>
   <p class="field-hint">Op een telefoon staat de foto altijd boven de tekst.</p>
 </div>`;
   }
+
+  // Een tekstblok: in één klik foto erbij, links, rechts of boven (de tekst blijft)
+  const addPhotoRow = () => `<div class="nb-convert" role="group" aria-label="Foto erbij">
+  <span class="nb-convert__label">Foto erbij</span>
+  ${E.SIDES.map((s) => `<button type="button" class="nb-convert__btn" data-act="add-photo" data-side="${s}" title="Foto ${s === 'boven' ? 'boven de tekst' : `${s} naast de tekst`}">${SIDE_ART[s]}${s}</button>`).join('')}
+  <button type="button" class="help" data-help="foto-erbij"></button>
+</div>`;
 
   function fieldsFor(b) {
     switch (b.type) {
@@ -397,9 +410,11 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
           + text(b, 'intro', 'Intro', { rows: 4 })
           + link(b, 'button', 'Magenta knop', { help: 'hoofdknop', textPh: 'plan een gesprek' });
       case 'foto':
-        return imageField(b) + input(b, 'url', 'Link achter de foto', { max: 1000, opt: true, help: 'fotolink', ph: 'https://…', type: 'url' });
+        return imageField(b) + input(b, 'url', 'Link achter de foto', { max: 1000, opt: true, help: 'fotolink', ph: 'https://…', type: 'url' })
+          + '<div class="nb-convert"><button type="button" class="nb-convert__btn" data-act="add-text">+ tekst erbij</button><span class="field-hint">de foto komt dan boven de tekst</span></div>';
       case 'tekst':
-        return input(b, 'title', 'Tussenkop', { max: 120, help: 'kop', opt: true })
+        return addPhotoRow()
+          + input(b, 'title', 'Tussenkop', { max: 120, help: 'kop', opt: true })
           + text(b, 'body', 'Tekst', { rows: 6 })
           + `<p class="field-hint">Een link in de tekst? Typ [tekst](link). <button type="button" class="help" data-help="tekstlink"></button></p>`
           + link(b, 'link', 'Link onder de tekst', { textPh: 'Lees verder' });
@@ -505,7 +520,10 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
     else if (act === 'dup') duplicate(id);
     else if (act === 'del') remove(id);
     else if (act === 'pick') pickFile(id);
-    else if (act === 'stock') openStock(id);
+    else if (act === 'stock' || act === 'choose') openChooser(id);
+    else if (act === 'add-photo') convertBlock(id, 'fototekst', { side: btn.dataset.side, choose: true });
+    else if (act === 'remove-photo') convertBlock(id, 'tekst');
+    else if (act === 'add-text') convertBlock(id, 'fototekst', { side: 'boven', focus: 'title' });
     else if (act === 'icon') openIcons(id, i);
     else if (act === 'icon-off') {
       b.items[i].icon = null;
@@ -535,6 +553,27 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
       else if (card) card.scrollIntoView({ block: 'nearest' });
     }
     scrollPreviewTo(selected);
+  }
+
+  // Een blok omzetten met behoud van tekst, link en foto (PMEmail.convert); één stap om ongedaan te maken
+  function convertBlock(id, to, { side, choose = false, focus = '' } = {}) {
+    const i = indexOf(id);
+    if (i < 0) return;
+    const from = state.blocks[i];
+    state.blocks[i] = E.convert(from, to, { side });
+    selected = id;
+    changed(null);
+    renderList();
+    render();
+    if (to === 'tekst') {
+      PM.toast('Foto weggehaald: het is nu een tekstblok. Je tekst staat er nog.', false, { label: 'ongedaan maken', run: () => history.undo() });
+    } else if (choose && !state.blocks[i].img.src) {
+      openChooser(id);
+    }
+    if (focus) {
+      const f = $(`[data-id="${CSS.escape(id)}"] [data-k="${focus}"]`, el.list);
+      if (f) f.focus();
+    }
   }
 
   function move(id, dir) {
@@ -783,10 +822,36 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
   }
 
   // Een andere vorm: opnieuw bijsnijden uit het origineel en online zetten
+  // Een foto van Unsplash snijdt Unsplash zelf bij (imgix: fit=crop&ar=3:2); de link blijft bij hen
+  function unsplashShape(src, shapeId) {
+    const u = new URL(src);
+    ['w', 'h', 'fit', 'ar', 'crop', 'q', 'fm'].forEach((k) => u.searchParams.delete(k));
+    u.searchParams.set('w', '1200');
+    const shape = SHAPES.find((s) => s.id === shapeId);
+    if (shape && shape.ratio) {
+      u.searchParams.set('fit', 'crop');
+      u.searchParams.set('ar', shapeId);
+      u.searchParams.set('crop', 'faces,entropy');
+    } else u.searchParams.set('fit', 'max');
+    u.searchParams.set('q', '80');
+    u.searchParams.set('fm', 'jpg');
+    return u.toString();
+  }
+
   async function setShape(id, shapeId) {
     const b = find(id);
     if (!b) return;
     b.img.shape = shapeId;
+    if (/^https:\/\/images\.unsplash\.com\//.test(b.img.src)) {
+      b.img.src = unsplashShape(b.img.src, shapeId);
+      b.img.w = undefined;
+      b.img.h = undefined;
+      changed(null);
+      refreshCard(id);
+      render();
+      measure(id, b.img.src);   // de nieuwe hoogte, voor Outlook
+      return;
+    }
     changed(null);
     let orig = b.img.orig ? await PM.idb.get(b.img.orig) : null;
     // Een foto uit de fotobank staat op deze site: die kan de tool ook bijsnijden
@@ -858,9 +923,59 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
 
   let stockFor = null;
   el.stockGrid.innerHTML = E.STOCK.map((p, i) => `<button type="button" data-stock="${i}" aria-label="${esc(p.alt)}"><img src="${PM.url(`assets/styleguide/photos/${p.file}`)}" alt="" loading="lazy"></button>`).join('');
-  function openStock(id) {
+
+  // Zoekwoorden voor de fotobank uit de kop of tekst van het blok (Nederlands)
+  const STOP = new Set('de het een en van in op met voor naar om te is je jij we wij ons onze dat die dit wat hoe bij aan uit zo of als ook nog meer'.split(' '));
+  const keywords = (text) => String(text || '').replace(/\*\*|\[|\]\([^)]*\)/g, ' ').toLowerCase()
+    .replace(/[^\p{L}\p{N}\s-]/gu, ' ').split(/\s+/).filter((w) => w.length > 2 && !STOP.has(w)).slice(0, 4).join(' ');
+
+  function openChooser(id) {
+    const b = find(id);
+    if (!b || !b.img) return;
     stockFor = id;
+    const upload = $('#stockUploadBtn');
+    upload.disabled = !canUpload();
+    upload.title = canUpload() ? '' : 'Foto’s uploaden staat nog niet aan';
+    const box = $('#stockSearch');
+    box.hidden = true;
+    if (PM.photos) {
+      PM.photos.ready().then((on) => {
+        if (!on || stockFor !== id) return;
+        box.hidden = false;
+        const fromAi = b.img.query || '';
+        const picker = PM.photos.picker(box, {
+          tool: 'nbkies',
+          target: () => ({ label: 'dit blok', orientation: 'landscape', query: fromAi || keywords(b.title || b.body), locale: fromAi ? 'en-US' : 'nl-NL', width: 1600 }),
+          apply: async (file, photo) => {
+            el.stockDialog.close();
+            await placePhoto(id, file, photo);
+          },
+        });
+        PM.help.init(box, 'newsletter');
+        picker.refresh();
+      });
+    }
     el.stockDialog.showModal();
+  }
+  const openStock = openChooser;
+  $('#stockUploadBtn').addEventListener('click', () => {
+    el.stockDialog.close();
+    pickFile(stockFor);
+  });
+
+  // Een foto uit de fotobank (online gezocht) in een blok: Unsplash op hun eigen link, anders online zetten
+  async function placePhoto(id, file, photo) {
+    const b = find(id);
+    if (!b || !b.img) return;
+    if (photo.provider === 'unsplash') {
+      linkPhoto(b, photo, b.img.alt && !E.STOCK.some((p) => p.src === b.img.src) ? b.img.alt : photo.alt);
+      changed(null);
+      renderList();
+      render();
+      return;
+    }
+    if (!canUpload()) { PM.toast('Foto’s uploaden staat nog niet aan.', true); return; }
+    await uploadPhoto(id, file, { alt: b.img.alt || photo.alt });
   }
   el.stockGrid.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-stock]');
@@ -1230,7 +1345,7 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
     const link = (text, url, fallback = '') => ({ text: txt(text), url: txt(url) || (txt(text) ? fallback : '') });
     if (type === 'opening') Object.assign(b, { label: txt(x.label) || b.label, title: txt(x.kop), intro: txt(x.tekst), button: link(x.knopTekst, x.knopLink, 'https://www.pureminds.nl/contact/') });
     if (type === 'tekst') Object.assign(b, { title: txt(x.kop), body: txt(x.tekst), link: link(x.linkTekst, x.linkLink) });
-    if (type === 'fototekst') Object.assign(b, { title: txt(x.kop), body: txt(x.tekst), link: link(x.linkTekst, x.linkLink), side: x.fotoKant === 'rechts' ? 'rechts' : 'links' });
+    if (type === 'fototekst') Object.assign(b, { title: txt(x.kop), body: txt(x.tekst), link: link(x.linkTekst, x.linkLink), side: E.SIDES.includes(x.fotoKant) ? x.fotoKant : 'links' });
     if (type === 'punten') {
       const items = (Array.isArray(x.punten) ? x.punten : []).slice(0, 3).map((p, i) => ({
         icon: b.items[i] ? b.items[i].icon : null,
@@ -1344,19 +1459,7 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
           const b = find(selected);
           return b && b.img ? { label: `${E.BLOCKS[b.type].name.toLowerCase()} (blok ${indexOf(b.id) + 1})`, orientation: 'landscape', query: b.img.query || '', width: 1600 } : null;
         },
-        apply: async (file, photo) => {
-          const b = find(selected);
-          if (!b || !b.img) return;
-          if (photo.provider === 'unsplash') {
-            linkPhoto(b, photo, b.img.alt || photo.alt);
-            changed(null);
-            renderList();
-            render();
-            return;
-          }
-          if (!canUpload()) { PM.toast('Foto’s uploaden staat nog niet aan.', true); return; }
-          await uploadPhoto(b.id, file, { alt: b.img.alt || photo.alt });
-        },
+        apply: (file, photo) => placePhoto(selected, file, photo),
       },
       lib,
       saver: aiSaver,

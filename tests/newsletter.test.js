@@ -309,3 +309,47 @@ test('upload-service: geen geheimen in de repo, en Vercel krijgt alleen de map u
   const ignore = read('.gitignore');
   assert.ok(ignore.includes('.env*.local') && ignore.includes('.vercel/'));
 });
+
+test('blok omzetten: foto erbij (links, rechts, boven), foto weghalen en tekst erbij houden tekst, link, foto en id', () => {
+  const t = E.block('tekst');
+  t.title = 'Mijn kop';
+  t.body = 'Mijn **tekst**.';
+  t.link = { text: 'Lees meer', url: 'https://pureminds.nl' };
+  for (const side of ['links', 'rechts', 'boven']) {
+    const ft = E.convert(t, 'fototekst', { side });
+    assert.equal(ft.type, 'fototekst');
+    assert.equal(ft.id, t.id, 'zelfde blok (selectie en preview blijven)');
+    assert.equal(ft.side, side);
+    assert.deepEqual([ft.title, ft.body, ft.link.url], ['Mijn kop', 'Mijn **tekst**.', 'https://pureminds.nl']);
+    assert.equal(ft.img.src, '', 'nog geen foto: de maker opent Foto kiezen');
+  }
+  const ft = E.convert(t, 'fototekst', { side: 'boven' });
+  ft.img = { src: 'https://images.unsplash.com/photo-1?ixid=x&w=1200', alt: 'Taarten', w: 1200, h: 800 };
+  const back = E.convert(ft, 'tekst');
+  assert.equal(back.type, 'tekst');
+  assert.equal(back.id, t.id);
+  assert.deepEqual([back.title, back.body, back.link.text], ['Mijn kop', 'Mijn **tekst**.', 'Lees meer']);
+  assert.equal(back.img, undefined, 'een tekstblok heeft geen foto');
+  const foto = E.block('foto');
+  const withText = E.convert(foto, 'fototekst', { side: 'boven' });
+  assert.equal(withText.img.src, foto.img.src, 'de foto blijft');
+  assert.equal(withText.title, '');
+  assert.equal(E.convert(t, 'fototekst', { side: 'schuin' }).side, 'links');
+  assert.equal(E.normalize({ blocks: [ft] }).blocks[0].side, 'boven');
+});
+
+test('foto boven de tekst: 520 breed binnen de marge, tekst eronder, alles in balans', () => {
+  const s = E.starter('kort');
+  const ft = E.convert(s.blocks[1], 'fototekst', { side: 'boven' });
+  ft.img = { src: 'https://images.unsplash.com/photo-1?ixid=x&w=1200', alt: 'Taarten in een vitrine', w: 1200, h: 800 };
+  s.blocks[1] = ft;
+  const html = E.build(s);
+  assert.match(html, /<img class="pm-img-full" src="https:\/\/images\.unsplash\.com\/photo-1\?ixid=x&amp;w=1200" width="520" height="347" alt="Taarten in een vitrine"/);
+  assert.ok(html.indexOf('width="520" height="347"') < html.indexOf('Een tussenkop die de alinea samenvat'), 'foto boven de kop');
+  assert.equal(count(html, '<table'), count(html, '</table>'));
+  assert.equal(count(html, '<tr'), count(html, '</tr>'));
+  // Zonder foto (nog niet gekozen): alleen de tekst in de export, een grijs vlak in de preview
+  ft.img = { src: '', alt: '' };
+  assert.ok(!E.build(s).includes('width="520"'));
+  assert.ok(E.build(s, { preview: true }).includes('kies een foto'));
+});
