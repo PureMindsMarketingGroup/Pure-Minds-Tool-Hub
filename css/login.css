@@ -1,0 +1,50 @@
+/**
+ * Inloggen (login.html): één kaart in het midden, in de stijl van de hub.
+ * Gedeelde bouwstenen (velden, knoppen, kop) staan in css/global.css.
+ */
+
+.login { display: flex; flex-direction: column; align-items: center; gap: 1.25rem; padding-top: clamp(1.5rem, 8vh, 4.5rem); padding-bottom: 3rem; }
+
+.login__card {
+  width: min(27rem, 100%);
+  padding: 1.75rem 1.5rem 1.25rem;
+  background: #fff;
+  border-top: 4px solid var(--pm-cyan);
+  box-shadow: 0 30px 60px -30px rgba(16, 40, 60, .35);
+}
+@media (min-width: 640px) { .login__card { padding: 2.25rem 2.25rem 1.5rem; } }
+
+.login__title { font-size: clamp(1.625rem, 4vw, 2rem); font-weight: 800; line-height: 1.15; letter-spacing: -.02em; }
+.login__lead { margin-top: .5rem; font-size: .9375rem; line-height: 1.55; color: var(--pm-muted); text-wrap: pretty; }
+.login__lead b { color: var(--pm-ink); }
+
+.login__msg {
+  margin-top: 1rem; padding: .625rem .75rem;
+  border-left: 3px solid var(--pm-magenta); background: #fbe8ee; color: #9e1744;
+  font-size: .875rem; font-weight: 700; line-height: 1.5; text-wrap: pretty;
+}
+.login__msg.is-ok { border-left-color: var(--pm-green); background: #e3f4ee; color: #00704f; }
+
+.login__form { display: flex; flex-direction: column; gap: 1rem; margin-top: 1.25rem; }
+.login .input { font-size: 1rem; }   /* 16 px: geen inzoomen op een iPhone */
+
+.login__pw { position: relative; display: block; }
+.login__pw .input { padding-right: 3rem; }
+.login__eye {
+  position: absolute; top: 0; right: 0; bottom: 0; width: 2.75rem;
+  display: grid; place-items: center; border: 0; background: none; color: var(--pm-muted);
+}
+.login__eye svg { width: 1.15rem; height: 1.15rem; fill: currentColor; }
+.login__eye:hover { color: var(--pm-ink); }
+.login__eye:focus-visible { outline: 3px solid rgba(26, 185, 226, .5); outline-offset: -3px; }
+
+.login__submit { width: 100%; margin-top: .25rem; padding: .75rem 1rem; font-size: .9375rem; }
+.login__submit:disabled { opacity: .7; cursor: progress; }
+
+.login__sent { margin-top: 1.25rem; }
+
+.login__alt { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .25rem 1rem; margin-top: 1rem; }
+.login__alt:empty { display: none; }
+.login__alt .linkbtn { margin: 0 -.5rem; min-height: 2.75rem; font-size: .8125rem; }
+
+.login__note { width: min(27rem, 100%); font-size: .75rem; line-height: 1.5; color: var(--pm-muted); text-align: center; text-wrap: pretty; }

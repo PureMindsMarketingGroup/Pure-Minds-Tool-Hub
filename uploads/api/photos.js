@@ -7,14 +7,16 @@
      GET /api/photos?track=<download_location>
                                            een foto wordt gebruikt: Unsplash een download melden (API-regels)
 
-   Alleen vanaf de Tool Hub (en met een wachtwoord als APP_PASSWORD in Vercel
-   staat). De sleutel (UNSPLASH_ACCESS_KEY, anders PEXELS_API_KEY) blijft hier;
+   Alleen vanaf de Tool Hub, en alleen voor een ingelogde collega van de
+   teamlijst (lib/team.js). De sleutel (UNSPLASH_ACCESS_KEY, anders PEXELS_API_KEY) blijft hier;
    de browser haalt de foto zelf op. Zie lib/photos.js.
    ============================================================================= */
 import { corsHeaders, checkOrigin, rateLimiter } from '../lib/check.js';
+import { checkLogin } from '../lib/team.js';
 import { PROVIDERS, pickProvider, checkQuery, searchRequest, mapResults, trackUrl, providerError } from '../lib/photos.js';
 
 const limit = rateLimiter({ limit: 120, windowMs: 15 * 60 * 1000 });
+const remember = new Map();   // inlogbewijzen die net goed waren
 
 function json(body, status, headers, cache = 'no-store') {
   return new Response(JSON.stringify(body), {
@@ -34,8 +36,10 @@ export async function GET(request) {
   const provider = pickProvider(process.env);
   if (!params.has('q') && !params.has('track')) return json({ ok: true, photos: !!provider, provider }, 200, headers);
 
-  const verdict = checkOrigin({ origin, password: request.headers.get('x-app-password'), expected: process.env.APP_PASSWORD });
+  const verdict = checkOrigin({ origin });
   if (!verdict.ok) return json({ error: verdict.error }, verdict.status, headers);
+  const login = await checkLogin(request.headers.get('authorization'), { remember });
+  if (!login.ok) return json({ error: login.error }, login.status, headers);
   if (!provider) return json({ error: 'Foto’s zoeken staat nog niet aan: de sleutel van de fotobank ontbreekt in Vercel (UNSPLASH_ACCESS_KEY).' }, 500, headers);
   const key = process.env[PROVIDERS[provider].env];
   const ip = (request.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'onbekend';
@@ -64,7 +68,7 @@ export async function GET(request) {
       return json({ error: providerError(provider, res.status) }, 502, headers);
     }
     // Dezelfde zoekvraag kort bewaren: scheelt zoekvragen (Unsplash: 50 per uur om te beginnen)
-    return json({ provider, photos: mapResults(provider, data) }, 200, headers, 'public, max-age=600');
+    return json({ provider, photos: mapResults(provider, data) }, 200, headers, 'private, max-age=600');
   } catch (err) {
     console.error('fotobank mislukt', err);
     return json({ error: `${PROVIDERS[provider].name} is niet bereikbaar. Probeer het zo nog eens.` }, 502, headers);

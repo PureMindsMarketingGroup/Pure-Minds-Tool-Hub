@@ -1,21 +1,23 @@
 /* =============================================================================
    api/generate.js — ruwe content naar een presentatie, post of e-mail (Claude)
    -----------------------------------------------------------------------------
-     GET  /api/generate   staat de AI klaar? { ok, ai, password, prompts }
+     GET  /api/generate   staat de AI klaar? { ok, ai, prompts }
      POST /api/generate   JSON { format, mode, content, wish?, instruction?, current?, target? }
                           -> { data, usage } of { error }
 
-   Zelfde Vercel-project als de uploads: alleen vanaf de Tool Hub, en een
-   wachtwoord (x-app-password) alleen als APP_PASSWORD in Vercel staat. De sleutel
+   Zelfde Vercel-project als de uploads: alleen vanaf de Tool Hub, en alleen
+   voor een ingelogde collega van de teamlijst (lib/team.js). De sleutel
    van Anthropic staat alleen in Vercel (ANTHROPIC_API_KEY), net als de prompts
    (AI_PROMPT, AI_PROMPT_PRESENTATIE, AI_PROMPT_INSTA, AI_PROMPT_EMAIL). Het
    schema en de technische regels staan in lib/ai.js. Een grote presentatie kan
    een minuut of twee duren; vercel.json geeft deze functie 300 seconden.
    ============================================================================= */
 import { corsHeaders, checkOrigin, rateLimiter } from '../lib/check.js';
+import { checkLogin } from '../lib/team.js';
 import { FORMATS, checkInput, buildRequest, followUp, hasToolCall, readResponse, apiError } from '../lib/ai.js';
 
 const limit = rateLimiter({ limit: 40, windowMs: 15 * 60 * 1000 });
+const remember = new Map();   // inlogbewijzen die net goed waren
 const MAX_BODY = 400 * 1024;
 
 function json(body, status, headers) {
@@ -34,7 +36,6 @@ export function GET(request) {
   return json({
     ok: true,
     ai: !!env.ANTHROPIC_API_KEY,
-    password: !!env.APP_PASSWORD,
     prompts: ['AI_PROMPT', 'AI_PROMPT_PRESENTATIE', 'AI_PROMPT_INSTA', 'AI_PROMPT_EMAIL'].filter((k) => !!env[k]),
   }, 200, corsHeaders(request.headers.get('origin')));
 }
@@ -42,8 +43,10 @@ export function GET(request) {
 export async function POST(request) {
   const origin = request.headers.get('origin');
   const headers = corsHeaders(origin);
-  const verdict = checkOrigin({ origin, password: request.headers.get('x-app-password'), expected: process.env.APP_PASSWORD });
+  const verdict = checkOrigin({ origin });
   if (!verdict.ok) return json({ error: verdict.error }, verdict.status, headers);
+  const login = await checkLogin(request.headers.get('authorization'), { remember });
+  if (!login.ok) return json({ error: login.error }, login.status, headers);
   if (!/^application\/json/i.test(request.headers.get('content-type') || '')) return json({ error: 'Stuur JSON.' }, 415, headers);
   if (!process.env.ANTHROPIC_API_KEY) return json({ error: 'De AI staat nog niet aan: ANTHROPIC_API_KEY ontbreekt in Vercel.' }, 500, headers);
 

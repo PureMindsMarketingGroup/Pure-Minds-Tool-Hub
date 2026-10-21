@@ -53,6 +53,46 @@ test('wanneer opgeslagen: vandaag en gisteren met de tijd, zodat je twee versies
   assert.equal(L.savedText(NOW - 5 * DAY, NOW), 'opgeslagen 5 dagen geleden');
 });
 
+test('wie het opsloeg: "door Ashley", of "door jou"', () => {
+  assert.equal(L.savedText(NOW - 60 * 1000, NOW, 'Ashley'), 'opgeslagen vandaag om 14:59 door Ashley');
+  assert.equal(L.savedText(NOW - 5 * DAY, NOW, 'jou'), 'opgeslagen 5 dagen geleden door jou');
+  const e = { by: 'Ashley', byId: 'u1' };
+  assert.equal(L.byWho(e, 'u1'), 'jou');
+  assert.equal(L.byWho(e, 'u2'), 'Ashley');
+  assert.equal(L.byWho({ by: '' }, 'u1'), '');
+});
+
+test('een regel uit Supabase wordt een ontwerp in de lijst', () => {
+  const row = {
+    id: 'abc-123', tool: 'presentation', slot: 'voorstel', title: 'Voorstel **Bakkerij**', sub: 'voorstel · 9 slides', noun: 'voorstel',
+    ratio: '16 / 9', thumb: 'data:image/jpeg;base64,xx', files: ['slide:a'], updated_at: '2026-10-21T13:05:12.123456+00:00',
+    updated_by: 'u1', updated_by_name: 'Ashley', expires_at: '2026-11-04T13:05:12.123456+00:00',
+  };
+  const e = L.fromRow(row);
+  assert.equal(e.title, 'Voorstel Bakkerij');
+  assert.equal(e.savedAt, Date.UTC(2026, 9, 21, 13, 5, 12, 123));
+  assert.equal(e.expires, Date.UTC(2026, 10, 4, 13, 5, 12, 123));
+  assert.equal(e.rev, row.updated_at);
+  assert.equal(e.by, 'Ashley');
+  assert.deepEqual(e.files, ['slide:a']);
+  assert.equal(L.prune([e], e.savedAt).keep.length, 1, 'past in de lijst');
+  assert.equal(L.fromRow({ ...row, title: '', files: null }).title, 'Zonder titel');
+});
+
+test('bestanden van een ontwerp: <id>/<sleutel> met alleen veilige tekens', () => {
+  assert.equal(L.filePath('abc', 'insta:photo:x1'), 'abc/insta_photo_x1');
+  assert.equal(L.filePath('abc', '../../geheim'), 'abc/.._.._geheim');
+  assert.ok(!L.filePath('abc', 'a/b').slice(4).includes('/'), 'blijft in de map van het ontwerp');
+});
+
+test('heeft iemand het ontwerp intussen opgeslagen? alleen als we weten welke versie je had', () => {
+  const row = { updated_at: '2026-10-21T13:05:12+00:00' };
+  assert.equal(L.changedSince({ rev: '2026-10-21T13:05:12+00:00' }, row), false);
+  assert.equal(L.changedSince({ rev: '2026-10-21T12:00:00+00:00' }, row), true);
+  assert.equal(L.changedSince({ rev: null }, row), false, 'oude bieb zonder versie: geen vraag');
+  assert.equal(L.changedSince(null, row), false);
+});
+
 test('titels zonder nadruk-tekens en dubbele spaties', () => {
   assert.equal(L.cleanTitle('Onze nieuwe **Google Ads-audit**  is live'), 'Onze nieuwe Google Ads-audit is live');
   assert.equal(L.cleanTitle(null), '');

@@ -31,9 +31,9 @@
      PM.ai.keepSaved(lib)            na de AI: elke wijziging vanzelf in de bieb (debounce);
                                      geeft { start, stop, touch }
 
-   Bewaren: in deze browser, zoals alles in de hub. Na de AI staat het
+   Bewaren: in de bieb van het team (js/shared/library.js). Na de AI staat het
    resultaat meteen in de bieb, als nieuw ontwerp (wat er open stond en
-   gewijzigd was, eerst ook). Elke wijziging daarna komt er na 1,5 seconde
+   gewijzigd was, eerst ook). Elke wijziging daarna komt er na 3 seconden
    rust vanzelf overheen, tot je een ander ontwerp opent of opnieuw begint.
    ============================================================================= */
 (function (global) {
@@ -62,7 +62,7 @@
     },
     'ai-bewaren': {
       title: 'Vanzelf bewaard',
-      text: 'Na de AI staat je ontwerp meteen in je bieb. Elke aanpassing daarna, van jou of van de AI, gaat er vanzelf in. Je vorige ontwerp gaat niet verloren: dat staat ook in je bieb, en ongedaan maken werkt gewoon.',
+      text: 'Na de AI staat je ontwerp meteen in de bieb, ook voor je collega’s. Elke aanpassing daarna, van jou of van de AI, gaat er vanzelf in. Je vorige ontwerp gaat niet verloren: dat staat ook in de bieb, en ongedaan maken werkt gewoon.',
     },
   };
 
@@ -83,7 +83,7 @@
      Na de AI: elke wijziging vanzelf in de bieb, met een debounce
      ------------------------------------------------------------------------- */
 
-  function keepSaved(lib, { delay = 1500 } = {}) {
+  function keepSaved(lib, { delay = 3000 } = {}) {
     let on = false;
     let timer = 0;
     const flush = () => {
@@ -128,7 +128,7 @@
 ${opts.wishField || ''}
 <div class="ai-go">
   <button type="button" class="btn btn-outline" data-ai-make><svg class="ri" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4.4375C15.3462 4.4375 16.4375 3.34619 16.4375 2H17.5625C17.5625 3.34619 18.6538 4.4375 20 4.4375V5.5625C18.6538 5.5625 17.5625 6.65381 17.5625 8H16.4375C16.4375 6.65381 15.3462 5.5625 14 5.5625V4.4375ZM1 11C4.31371 11 7 8.31371 7 5H9C9 8.31371 11.6863 11 15 11V13C11.6863 13 9 15.6863 9 19H7C7 15.6863 4.31371 13 1 13V11ZM4.87601 12C6.18717 12.7276 7.27243 13.8128 8 15.124 8.72757 13.8128 9.81283 12.7276 11.124 12 9.81283 11.2724 8.72757 10.1872 8 8.87601 7.27243 10.1872 6.18717 11.2724 4.87601 12ZM17.25 14C17.25 15.7949 15.7949 17.25 14 17.25V18.75C15.7949 18.75 17.25 20.2051 17.25 22H18.75C18.75 20.2051 20.2051 18.75 22 18.75V17.25C20.2051 17.25 18.75 15.7949 18.75 14H17.25Z"/></svg><span data-label>maak met AI</span></button>
-  <p class="field-hint">Vervangt je huidige ${esc(noun)}. Die gaat eerst naar je bieb, en ongedaan maken kan altijd. <button type="button" class="help" data-help="ai-bewaren"></button></p>
+  <p class="field-hint">Vervangt je huidige ${esc(noun)}. Die gaat eerst naar de bieb, en ongedaan maken kan altijd. <button type="button" class="help" data-help="ai-bewaren"></button></p>
 </div>
 <div class="ai-busy" data-ai-busy hidden role="status"><span class="ai-busy__hex" aria-hidden="true"></span><span data-ai-busy-text>De AI is bezig…</span></div>
 
@@ -236,11 +236,11 @@ ${opts.wishField || ''}
         if (opts.lib) await opts.lib.save({ quiet: true, asNew: true });
         if (opts.saver) opts.saver.start();
         const n = photos ? photos.size : 0;
-        PM.toast(`Je ${noun} is ingevuld${n ? `, met ${n === 1 ? 'een foto' : `${n} foto’s`} van ${PM.photos.providerName()},` : ''} en staat in je bieb. Lees hem na en pas aan wat je wilt.`, false, opts.undo ? { label: 'ongedaan maken', run: opts.undo } : null);
+        PM.toast(`Je ${noun} is ingevuld${n ? `, met ${n === 1 ? 'een foto' : `${n} foto’s`} van ${PM.photos.providerName()},` : ''} en staat in de bieb. Lees hem na en pas aan wat je wilt.`, false, opts.undo ? { label: 'ongedaan maken', run: opts.undo } : null);
         if (picker) picker.refresh();
         if (PM.tour) PM.tour.signal('ai');
       } catch (err) {
-        if (!(err && err.cancelled)) PM.toast(err.message || 'De AI lukte niet. Probeer het opnieuw.', true);
+        PM.toast(err.message || 'De AI lukte niet. Probeer het opnieuw.', true);
       } finally {
         stop();
         setBusy('');
@@ -281,7 +281,7 @@ ${opts.wishField || ''}
         }
         PM.toast(t ? `${t.label} is aangepast.` : `Je ${noun} is aangepast.`, false, opts.undo ? { label: 'ongedaan maken', run: opts.undo } : null);
       } catch (err) {
-        if (!(err && err.cancelled)) PM.toast(err.message || 'Aanpassen lukte niet. Probeer het opnieuw.', true);
+        PM.toast(err.message || 'Aanpassen lukte niet. Probeer het opnieuw.', true);
       } finally {
         stop();
         setBusy('');

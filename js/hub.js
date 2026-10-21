@@ -74,14 +74,20 @@
     return { at: seen, title: title || 'Zonder titel', noun: info.noun || 'ontwerp', ratio: info.ratio };
   }
 
-  // De bieb: wat je in deze browser bewaard hebt (js/shared/library.js), nieuwste eerst
+  // De bieb van het team (js/shared/library.js), nieuwste eerst. Eerst uit het geheugen van deze
+  // browser; zodra Supabase antwoordt (het event pm-library) opnieuw
   const LIB = window.PM.library;
   const BIEB_SHOWN = 3;
+  const me = () => {
+    const who = window.PM.account && window.PM.account.current();
+    return who ? who.id : null;
+  };
 
   function bieb(tool) {
     const list = LIB && live(tool) ? LIB.list(tool.id) : [];
     if (!list.length) return '';
     const now = Date.now();
+    const meId = me();
     const base = url(tool.href);
     const item = (e) => {
       const n = LIB.daysLeft(e, now);
@@ -98,19 +104,32 @@
           <span class="bieb__art" aria-hidden="true">${art}</span>
           <span class="bieb__text">
             <span class="bieb__title">${esc(e.title)}</span>
-            <span class="bieb__meta"><span class="bieb__left${n <= 2 ? ' is-soon' : ''}">${esc(LIB.leftText(n))}</span> · ${esc(LIB.savedText(e.savedAt, now))}</span>
+            <span class="bieb__meta"><span class="bieb__left${n <= 2 ? ' is-soon' : ''}">${esc(LIB.leftText(n))}</span> · ${esc(LIB.savedText(e.savedAt, now, LIB.byWho(e, meId)))}</span>
           </span>
         </a></li>`;
     };
     const more = list.length > BIEB_SHOWN
-      ? `<a class="bieb__more" href="${esc(`${base}?bieb=lijst`)}">alle ${list.length} in je bieb${ICON.arrow}</a>`
+      ? `<a class="bieb__more" href="${esc(`${base}?bieb=lijst`)}">alle ${list.length} in de bieb${ICON.arrow}</a>`
       : '';
     return `
       <div class="bieb">
-        <p class="bieb__head">${ICON.bieb}in je bieb <span class="bieb__count">${list.length}</span><span class="bieb__note">· ${LIB.DAYS} dagen bewaard</span></p>
+        <p class="bieb__head">${ICON.bieb}in de bieb <span class="bieb__count">${list.length}</span><span class="bieb__note">· van het team, ${LIB.DAYS} dagen bewaard</span></p>
         <ul class="bieb__list">${list.slice(0, BIEB_SHOWN).map(item).join('')}</ul>
         ${more}
       </div>`;
+  }
+
+  // De bieb van een tool, en "of begin iets nieuws" als er iets boven de formaten staat
+  function savedPart(tool, hasDraft) {
+    const saved = bieb(tool);
+    return `${saved}${hasDraft || saved ? '<p class="maker__or">of begin iets nieuws</p>' : ''}`;
+  }
+
+  function syncBieb() {
+    document.querySelectorAll('[data-bieb]').forEach((box) => {
+      const tool = tools.find((t) => t.id === box.dataset.bieb);
+      if (tool) box.innerHTML = savedPart(tool, box.hasAttribute('data-draft'));
+    });
   }
 
   const tourDone = (tool) => {
@@ -179,8 +198,8 @@
         </span>
         <span class="draft__go" aria-hidden="true">${ICON.arrow}</span>
       </a>` : '';
-    const saved = soon ? '' : bieb(tool);
-    const or = draft || saved ? '<p class="maker__or">of begin iets nieuws</p>' : '';
+    // De bieb en "of begin iets nieuws" in een eigen vak: dat tekent opnieuw als de bieb binnen is
+    const saved = soon ? '' : `<div class="maker__saved" data-bieb="${esc(tool.id)}"${draft ? ' data-draft' : ''}>${savedPart(tool, !!draft)}</div>`;
 
     const body = soon ? '' : tool.search ? searchForm(tool) : formats(tool);
     const exports = (tool.exports || []).join(' · ');
@@ -195,7 +214,6 @@
         </div>
         ${draft}
         ${saved}
-        ${or}
         ${body}
         ${exports || help ? `<div class="maker__foot">${exports ? `<span class="maker__exports">${esc(exports)}</span>` : ''}${help}</div>` : ''}
       </li>`;
@@ -403,4 +421,8 @@
   render();
   initGuides();
   showHash();
+  if (LIB) {
+    window.addEventListener('pm-library', syncBieb);
+    LIB.refresh().catch(() => {});
+  }
 })();

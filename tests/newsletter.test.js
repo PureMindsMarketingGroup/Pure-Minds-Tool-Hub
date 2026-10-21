@@ -253,16 +253,13 @@ test('de maker laadt, staat in het register en linkt naar de handleiding voor Br
   for (const id of ['stap-1', 'stap-2', 'stap-3', 'stap-4', 'stap-5', 'stap-6', 'aanpassen']) assert.ok(guide.includes(`id="${id}"`), id);
 });
 
-test('upload-service: herkomst, wachtwoord als het is ingesteld, alleen echte JPG en PNG, hoogstens 4 MB', async () => {
+test('upload-service: herkomst, alleen echte JPG en PNG, hoogstens 4 MB (inloggen: tests/account.test.js)', async () => {
   const C = await import(pathToFileURL(path.join(root, 'uploads/lib/check.js')).href);
-  const ok = { origin: 'https://puremindsmarketinggroup.github.io', password: 'geheim-wachtwoord', expected: 'geheim-wachtwoord', type: 'image/jpeg', length: 1000 };
+  const ok = { origin: 'https://puremindsmarketinggroup.github.io', type: 'image/jpeg', length: 1000 };
   assert.deepEqual(C.checkRequest(ok), { ok: true, type: 'image/jpeg' });
-  // Zonder APP_PASSWORD: geen wachtwoord nodig, maar wel vanaf de Tool Hub (een browser stuurt Origin mee)
-  assert.deepEqual(C.checkRequest({ ...ok, expected: '', password: null }), { ok: true, type: 'image/jpeg' });
-  assert.equal(C.checkRequest({ ...ok, expected: '', origin: null }).status, 403, 'zonder herkomst (geen browser): nee');
-  assert.equal(C.checkRequest({ ...ok, expected: '', origin: 'https://evil.example' }).status, 403);
-  assert.equal(C.checkRequest({ ...ok, password: 'fout' }).status, 401);
-  assert.equal(C.checkRequest({ ...ok, password: null }).status, 401);
+  // Vanaf de Tool Hub (een browser stuurt Origin mee)
+  assert.equal(C.checkRequest({ ...ok, origin: null }).status, 403, 'zonder herkomst (geen browser): nee');
+  assert.equal(C.checkRequest({ ...ok, origin: 'https://evil.example' }).status, 403);
   assert.equal(C.checkRequest({ ...ok, origin: 'https://jelger1.github.io' }).status, 403);
   assert.equal(C.checkRequest({ ...ok, origin: 'https://evil.example' }).status, 403);
   assert.ok(C.checkRequest({ ...ok, origin: 'http://127.0.0.1:8765' }).ok, 'testen op je eigen computer');
@@ -287,7 +284,7 @@ test('upload-service: herkomst, wachtwoord als het is ingesteld, alleen echte JP
 
   const cors = C.corsHeaders('https://puremindsmarketinggroup.github.io');
   assert.equal(cors['Access-Control-Allow-Origin'], 'https://puremindsmarketinggroup.github.io');
-  assert.ok(cors['Access-Control-Allow-Headers'].includes('x-app-password'));
+  assert.ok(cors['Access-Control-Allow-Headers'].includes('authorization'), 'het inlogbewijs mag mee');
   assert.ok(!('Access-Control-Allow-Origin' in C.corsHeaders('https://evil.example')));
 
   const limit = C.rateLimiter({ limit: 2, windowMs: 1000 });
@@ -302,7 +299,7 @@ test('upload-service: geen geheimen in de repo, en Vercel krijgt alleen de map u
   assert.equal(pkg.type, 'module');
   assert.ok(pkg.dependencies['@vercel/blob']);
   const api = read('uploads/api/upload.js');
-  assert.match(api, /process\.env\.APP_PASSWORD/);
+  assert.match(api, /checkLogin\(request\.headers\.get\('authorization'\)/, 'alleen voor het team');
   assert.match(api, /process\.env\.BLOB_READ_WRITE_TOKEN/);
   assert.match(api, /export async function POST/);
   assert.ok(!/vercel_blob_rw_[A-Za-z0-9]/.test(api + read('uploads/lib/check.js') + read('uploads/README.md')), 'geen token');

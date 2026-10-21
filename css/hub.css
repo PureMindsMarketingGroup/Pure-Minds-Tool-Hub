@@ -53,6 +53,7 @@
 .maker__link:focus-visible { outline: 3px solid var(--pm-blue); outline-offset: 2px; }
 .maker__desc { flex-basis: 100%; font-size: .8125rem; line-height: 1.5; color: var(--pm-muted); text-wrap: pretty; }
 .maker__or { margin: -.375rem 0 -.5rem; font-size: .75rem; font-weight: 700; color: var(--pm-muted); }
+.maker__saved { display: contents; }   /* de bieb en "of begin iets nieuws": js/hub.js tekent ze opnieuw */
 @media (pointer: coarse), (max-width: 639px) {
   .maker__link { display: inline-flex; align-items: center; min-height: 2.75rem; }
 }
@@ -136,7 +137,8 @@
 .bieb__img img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .bieb__text { display: flex; flex-direction: column; flex: 1; min-width: 0; line-height: 1.3; }
 .bieb__title { font-size: .875rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bieb__meta { font-size: .75rem; color: var(--pm-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bieb__meta { font-size: .75rem; color: var(--pm-muted); }
+.bieb__left { white-space: nowrap; }
 .bieb__left.is-soon { color: #8f5600; font-weight: 700; }
 .bieb__more { display: inline-flex; align-items: center; gap: .3rem; align-self: flex-start; font-size: .75rem; font-weight: 700; color: var(--pm-blue); text-decoration: none; }
 .bieb__more:hover { text-decoration: underline; }

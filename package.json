@@ -9,6 +9,7 @@
     "brand": "node scripts/build-brand-data.js",
     "icons": "node scripts/build-icon-data.js && node scripts/build-icon-tags.js",
     "photos": "node scripts/build-styleguide-photos.js",
+    "supabase": "node scripts/setup-supabase.mjs",
     "test": "node --test tests/*.test.js"
   },
   "engines": {

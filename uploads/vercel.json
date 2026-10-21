@@ -3,5 +3,8 @@
   "functions": {
     "api/generate.js": { "maxDuration": 300 },
     "api/upload.js": { "maxDuration": 30 }
-  }
+  },
+  "crons": [
+    { "path": "/api/keepalive", "schedule": "0 6 * * *" }
+  ]
 }

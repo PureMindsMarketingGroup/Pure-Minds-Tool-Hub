@@ -17,18 +17,23 @@ Bestanden:
 - `api/generate.js`: de AI (`GET` = status, `POST` = maken of aanpassen)
 - `api/photos.js`: foto's zoeken (`GET` = status, `GET ?q=` = zoeken, `GET ?track=` = download melden bij Unsplash)
 - `lib/photos.js`: de zoekvraag en het antwoord van Unsplash en Pexels (alleen foto's van hun eigen beeldserver)
-- `lib/check.js`: alleen vanaf de Tool Hub, alleen JPG en PNG, hoogstens 4 MB (en een wachtwoord als dat is ingesteld)
+- `lib/check.js`: alleen vanaf de Tool Hub, alleen JPG en PNG, hoogstens 4 MB
+- `lib/team.js`: alleen een ingelogde collega van de teamlijst (vraagt het aan Supabase, zie hieronder)
+- `api/keepalive.js`: houdt Supabase wakker (elke ochtend, de cron in `vercel.json`)
 - `lib/ai.js`: de JSON-schema's per formaat, de technische regels en het verzoek aan Claude
-- `vercel.json`: de AI mag 300 seconden duren (een grote presentatie duurt een minuut of twee)
+- `vercel.json`: de AI mag 300 seconden duren (een grote presentatie duurt een minuut of twee), en de cron
+  van `api/keepalive.js`
 - `public/index.html`: een korte uitleg als iemand de link opent
 
-Er is geen wachtwoord: de server accepteert alleen verzoeken vanaf de Tool Hub
-(`puremindsmarketinggroup.github.io`), met een rem per kwartier. Wil je later toch een wachtwoord, zet dan
-`APP_PASSWORD` in Vercel. De hub vraagt het dan vanzelf, één keer per browser. Een foto kan iedereen met de link
-lezen: zo werkt een plaatje in een mail.
+**Alleen voor het team.** De hub stuurt bij elk verzoek het inlogbewijs mee van de collega die ingelogd is
+(`Authorization: Bearer …`, zie [Inloggen](../README.md#inloggen)). De server vraagt Supabase of dat bewijs geldt
+en of die collega op de teamlijst staat (`lib/team.js`, een goed antwoord blijft vijf minuten onthouden). Verder
+alleen vanaf de Tool Hub (`puremindsmarketinggroup.github.io`), met een rem per kwartier. De status (`GET` zonder
+zoekvraag) kan zonder inloggen: die verklapt niets. Een foto kan iedereen met de link lezen: zo werkt een plaatje
+in een mail.
 
-**Zet een maandlimiet bij Anthropic** (console.anthropic.com → *Settings* → *Limits*). Zonder wachtwoord is het
-adres van de AI in principe door iedereen te gebruiken die het vindt; de limiet houdt de kosten in de hand.
+**Zet toch een maandlimiet bij Anthropic** (console.anthropic.com → *Settings* → *Limits*): een vangnet voor als
+er iets misgaat.
 
 ## Instellen
 
@@ -40,7 +45,8 @@ De hub gebruikt dat adres al (`js/shared/service.js`).
 2. **Opslag:** *Storage* → *Create* → **Blob**, en koppel hem aan dit project. Vercel zet
    `BLOB_READ_WRITE_TOKEN` dan zelf klaar.
 3. **Environment Variables** (*Settings*):
-   - `APP_PASSWORD` (optioneel): alleen als je een wachtwoord wilt; collega's vullen het dan één keer in
+   - `SUPABASE_URL` en `SUPABASE_PUBLISHABLE_KEY` (optioneel): staan al in `lib/team.js` (ze zijn openbaar);
+     alleen nodig als de hub ooit naar een ander Supabase-project verhuist
    - `ANTHROPIC_API_KEY`: de API-sleutel van Anthropic. Alleen hier invullen, nooit in de code of in een chat.
    - `AI_PROMPT`, `AI_PROMPT_PRESENTATIE`, `AI_PROMPT_INSTA`, `AI_PROMPT_EMAIL`: hoe Pure Minds schrijft
      (tone of voice, en wat een goede slide, post of mail is). Deze teksten staan bewust niet in deze openbare
@@ -70,8 +76,8 @@ De hub gebruikt dat adres al (`js/shared/service.js`).
 - **Niets weggooien wat al verstuurd is.** Een foto in een verstuurde mail moet online blijven, anders ziet de
   lezer een leeg vlak. Ruim de opslag (*Storage → Blob → Browser*) alleen op als je zeker weet dat een bestand
   nergens meer in staat.
-- **Wachtwoord aan of uit:** zet of verwijder `APP_PASSWORD` en doe *Redeploy*. Staat het aan, dan vraagt de
-  hub het bij de volgende upload of AI-opdracht (en opnieuw als het verandert).
+- **Wie mag:** de teamlijst in Supabase (tabel `team`). Weghalen uit de lijst sluit iemand binnen vijf minuten
+  ook hier buiten.
 - **Prompts aanpassen:** wijzig de waarde in Vercel, *Save* en *Redeploy*. Aan de code hoeft niets te
   veranderen.
 - **Vercel bouwt bij elke push opnieuw.** Het project hangt aan de hele repo, dus een push naar de hub geeft

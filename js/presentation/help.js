@@ -275,7 +275,7 @@
     {
       id: 'opslaan', target: 'opslaan',
       title: 'Sla je presentatie op',
-      text: 'Klik op opslaan: je presentatie blijft 14 dagen in je bieb. Pas je hem later aan? Sla dan opnieuw op en kies: vorige versie overschrijven of als nieuw opslaan.',
+      text: 'Klik op opslaan: je presentatie blijft 14 dagen in de bieb, ook voor je collega’s. Pas je hem later aan? Sla dan opnieuw op en kies: vorige versie overschrijven of als nieuw opslaan.',
       doe: { event: 'click', hint: 'Klik op opslaan' },
     },
     {
@@ -378,7 +378,7 @@ window.PM_HELP.voorstel = {
     {
       id: 'opslaan', target: 'opslaan',
       title: 'Sla je voorstel op',
-      text: 'Klik op opslaan: je voorstel blijft 14 dagen in je bieb. Pas je het later aan? Sla dan opnieuw op en kies: vorige versie overschrijven of als nieuw opslaan.',
+      text: 'Klik op opslaan: je voorstel blijft 14 dagen in de bieb, ook voor je collega’s. Pas je het later aan? Sla dan opnieuw op en kies: vorige versie overschrijven of als nieuw opslaan.',
       doe: { event: 'click', hint: 'Klik op opslaan' },
     },
     {
@@ -391,7 +391,7 @@ window.PM_HELP.voorstel = {
     {
       id: 'klaar',
       title: 'Je voorstel is klaar',
-      text: 'Alles staat alleen in deze browser, niet op een andere computer. Wisselen bij Soort bewaart je andere presentatie. Check vóór het versturen de lijst bij Voorstel; de PowerPoint blijft bewerkbaar.\n\nDeze rondleiding staat onder hulp.',
+      text: 'Opslaan zet het in de teambieb. Wisselen bij Soort bewaart je andere presentatie. Check vóór het versturen de lijst bij Voorstel; de PowerPoint blijft bewerkbaar.\n\nDeze rondleiding staat onder hulp.',
     },
   ],
 };
@@ -440,7 +440,7 @@ window.PM_HELP.positionering = {
     {
       id: 'opslaan', target: 'opslaan',
       title: 'Sla je positionering op',
-      text: 'Klik op opslaan: je positionering blijft 14 dagen in je bieb. Pas je hem later aan? Sla dan opnieuw op en kies: vorige versie overschrijven of als nieuw opslaan.',
+      text: 'Klik op opslaan: je positionering blijft 14 dagen in de bieb, ook voor je collega’s. Pas je hem later aan? Sla dan opnieuw op en kies: vorige versie overschrijven of als nieuw opslaan.',
       doe: { event: 'click', hint: 'Klik op opslaan' },
     },
     {
@@ -453,7 +453,7 @@ window.PM_HELP.positionering = {
     {
       id: 'klaar',
       title: 'Je positionering is klaar',
-      text: 'Alles staat alleen in deze browser. Wisselen bij Soort bewaart je voorstel en je presentatie. Tip: eerst de canvassen in trefwoorden, dan per blok de toelichting in zinnen.\n\nDeze rondleiding staat onder hulp.',
+      text: 'Opslaan zet het in de teambieb. Wisselen bij Soort bewaart je voorstel en je presentatie. Tip: eerst de canvassen in trefwoorden, dan per blok de toelichting in zinnen.\n\nDeze rondleiding staat onder hulp.',
     },
   ],
 };

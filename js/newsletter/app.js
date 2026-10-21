@@ -75,7 +75,6 @@
     pre: $('#mPre'),
     preCount: $('#preCount'),
     uploadState: $('#uploadState'),
-    pwForget: $('#pwForget'),
     fileInput: $('#fileInput'),
     stockDialog: $('#stockDialog'),
     stockGrid: $('#stockGrid'),
@@ -811,8 +810,7 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
         ? `Foto staat online, maar hij is klein (${prepared.w} px breed): in de mail kan hij wazig worden.`
         : `Foto staat online. ${extra.keepAlt || extra.alt ? '' : 'Beschrijf hem nog in een paar woorden.'}`);
     } catch (err) {
-      if (err && err.cancelled) PM.toast('Niet geüpload: zonder wachtwoord kan het niet.', true);
-      else PM.toast(err.message || 'Uploaden lukte niet.', true);
+      PM.toast(err.message || 'Uploaden lukte niet.', true);
     } finally {
       URL.revokeObjectURL(pending[id]);
       delete pending[id];
@@ -1086,8 +1084,7 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
       b.items[i].icon = { src: url, name };
       changed(null);
     } catch (err) {
-      if (err && err.cancelled) PM.toast('Niet geüpload: zonder wachtwoord kan het niet.', true);
-      else PM.toast(err.message || 'Het icoon kon niet online.', true);
+      PM.toast(err.message || 'Het icoon kon niet online.', true);
     } finally {
       if (pending[key]) URL.revokeObjectURL(pending[key]);
       delete pending[key];
@@ -1115,7 +1112,7 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
   }
 
   /* ---------------------------------------------------------------------------
-     Uploaden via de server van de Tool Hub (PM.service; een wachtwoord alleen als Vercel erom vraagt)
+     Uploaden via de server van de Tool Hub (PM.service, met het inlogbewijs)
      ------------------------------------------------------------------------- */
 
   async function upload(blob, name) {
@@ -1123,12 +1120,9 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
       body: blob,
       headers: { 'content-type': blob.type, 'x-file-name': String(name).slice(0, 120) },
     });
-    syncPwLink();
     if (!data.url) throw new Error('Uploaden lukte niet.');
     return data.url;
   }
-
-  const syncPwLink = () => { el.pwForget.hidden = !PM.service.hasPassword() || !uploadOk; };
 
   async function syncUploadState() {
     el.uploadState.className = 'notice nb-upload';
@@ -1144,14 +1138,8 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
         ? '<b>Uploaden is nog niet helemaal ingesteld</b> (de opslag in Vercel, zie uploads/README.md). Kies tot die tijd foto’s uit de fotobank, of plak een link naar een foto die al online staat.'
         : '<b>Uploaden staat nog niet aan.</b> Kies tot die tijd foto’s uit de fotobank, of plak een link naar een foto die al online staat.';
     }
-    syncPwLink();
     if (was !== uploadOk) renderList();   // de keuze voor de vorm hoort alleen bij uploaden
   }
-  el.pwForget.addEventListener('click', async () => {
-    PM.service.forget();
-    await PM.service.askPassword();
-    syncUploadState();
-  });
 
   /* ---------------------------------------------------------------------------
      Naar Brevo: kopiëren of downloaden, met een controle vooraf (nooit tegenhouden)

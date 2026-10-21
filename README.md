@@ -7,7 +7,9 @@ Daarnaast vier technische tools voor websites, ads en SEO; zie
 [Techniek & analyse](#techniek--analyse).
 Plain HTML, CSS en JavaScript: geen framework, geen buildstap.
 
-**Live:** https://puremindsmarketinggroup.github.io/Pure-Minds-Tool-Hub/
+**Live:** https://puremindsmarketinggroup.github.io/Pure-Minds-Tool-Hub/ (alleen voor het team: je logt in
+met je eigen account, zie [Inloggen](#inloggen)). Wat je opslaat, staat in de [bieb van het
+team](#de-bieb): een collega kan het openen en verder aanpassen.
 
 > **Verhuisd (oktober 2026)** van `github.com/Jelger1/Pure-Minds-Tool-Hub` naar
 > `github.com/PureMindsMarketingGroup/Pure-Minds-Tool-Hub`, het account van
@@ -57,6 +59,8 @@ zodat de browser de export niet blokkeert.
 ```
 index.html                    de hub: maken (een kaart per tool) en checken (de technische tools),
                               en de uitleg bij de Consent Check (<dialog>)
+login.html                    inloggen, account maken, wachtwoord vergeten (js/login.js, css/login.css)
+supabase/teambieb.sql         de database van Supabase: teamlijst, ontwerpen, bestanden, beveiliging
 email/                        de e-mailtemplate voor Brevo, met plaatjes in email/img/
 uploads/                      de server van de hub (Vercel, Root Directory uploads): foto's
                               online zetten (Vercel Blob) en de AI (Claude); zie uploads/README.md
@@ -76,6 +80,7 @@ css/
   editor.css                  editor-bouwstenen: appbalk, rail, paneel, podium,
                               werkbalk, [?]-uitleg, rondleiding, sneltoetsen
   hub.css                     dashboard
+  login.css                   de inlogpagina
   insta.css                   Insta Post Maker
   document.css                Document Maker + het A4-briefpapier
   presentation.css            Presentation Maker
@@ -84,12 +89,14 @@ css/
   newsletter.css              Nieuwsbrief Maker
   handleiding.css             handleidingen (leespagina)
 js/
+  login.js                    de inlogpagina: inloggen, account maken, wachtwoord vergeten en kiezen
+  shared/account.js           inloggen (Supabase) en de deur van elke pagina; in de <head> (PM.account)
   shared/tools.js             register van alle tools (hub + toolwisselaar)
   shared/core.js              gedeelde hulpfuncties (window.PM)
   shared/brand.js             huisstijl als gegevens, plus controles (PM.brand)
   shared/history.js           ongedaan maken en opnieuw (PM.history)
-  shared/library.js           de bieb: ontwerpen 14 dagen bewaren (PM.library)
-  shared/service.js           de server van de hub: adres en verzoeken, wachtwoord alleen als Vercel erom vraagt (PM.service)
+  shared/library.js           de bieb van het team: ontwerpen 14 dagen bewaren in Supabase (PM.library)
+  shared/service.js           de server van de hub: adres en verzoeken, met het inlogbewijs (PM.service)
   shared/ai.js                het paneel AI in de makers, vanzelf opslaan na de AI (PM.ai)
   shared/photos.js            passende foto's uit een fotobank (Unsplash) zoeken en plaatsen (PM.photos)
   shared/shell.js             indeling zoals Canva: rail, één paneel, podium (PM.shell)
@@ -151,6 +158,7 @@ assets/icons/                 Remix-iconen per categorie, lijnstijl (bron voor d
   Zeshoek/                    alle iconen in de zeshoek, één map per kleurvariant
   Los/                        alle iconen zonder zeshoek, één map per huiskleur (cyaan, inkt, magenta, blauw, wit)
 scripts/build-brand-data.js   maakt brand-data.js en pdf-fonts.js
+scripts/setup-supabase.mjs    zet Supabase klaar: database, inloggen, mails (npm run supabase)
 scripts/build-icon-data.js    maakt js/icons/icon-data.js uit assets/icons/
 scripts/build-icon-tags.js    maakt js/icons/icon-tags.js uit scripts/icon-words/
 scripts/icon-words/           nl.json (Nederlands woordenboek), remix-tags.json
@@ -1202,8 +1210,8 @@ de editor: de AI vult hun velden, en daarna pas je alles gewoon aan.
   alles of alleen de open slide of het open blok (`target`: dan krijgt Claude het schema van één element).
   Wat je zelf schreef, blijft zoveel mogelijk staan. Met de hand aanpassen kan altijd, en ongedaan maken
   werkt voor elke AI-stap.
-- **Bewaren:** in de browser, zoals de hele hub. Na de AI staat het resultaat meteen als nieuw ontwerp in de
-  bieb. Wat er open stond en gewijzigd was, gaat er eerst ook in. Elke wijziging daarna komt er na 1,5 seconde
+- **Bewaren:** in de bieb van het team. Na de AI staat het resultaat meteen als nieuw ontwerp in de
+  bieb. Wat er open stond en gewijzigd was, gaat er eerst ook in. Elke wijziging daarna komt er na 3 seconden
   rust vanzelf overheen (`PM.ai.keepSaved`, een debounce), tot je een ander ontwerp opent of opnieuw begint.
 - **Sprekersnotities:** elk slide heeft ze (Inhoud, onderaan). Ze staan niet op de slide, maar komen in de
   PowerPoint (en Google Slides) bij Notities. Zonder notities blijft het .pptx-bestand precies zoals het was.
@@ -1247,8 +1255,8 @@ die van `email/pure-minds-email.html` en komt uit `js/newsletter/email.js`.
   lijnicoon in een cyaan zeshoek, als PNG van 105 × 120 (getoond op 35 × 40).
   Zonder upload-service werken de fotobank (de foto's van het brandbook, al
   online) en een link naar een foto die al online staat. Het adres van de
-  server staat in `js/shared/service.js` (`DEFAULT_SERVICE_URL`); een
-  wachtwoord is niet nodig.
+  server staat in `js/shared/service.js` (`DEFAULT_SERVICE_URL`); je
+  inlog gaat vanzelf mee.
 - **Naar Brevo:** *kopieer html* (Ctrl + S) of *download .html*. Eerst een
   controle: voorbeeldtekst, de voorvertoningstekst, links en foto's die niet
   online staan, en de grootte (Gmail knipt vanaf 102 KB). Nooit tegenhouden.
@@ -1311,39 +1319,100 @@ kan gebruiken. Zoekmachines slaan de pagina's over (`noindex`).
 
 ## Opslag
 
-Teksten en instellingen staan in `localStorage`, afbeeldingen (handtekening,
-slidefoto's) in IndexedDB, allebei alleen in de eigen browser. Foto's en het
-klantlogo van de Insta Post Maker en van een voorstel of positionering worden
-ook bewaard.
+Waar je aan werkt, staat in je eigen browser: teksten en instellingen in
+`localStorage`, afbeeldingen (handtekening, slidefoto's, het klantlogo) in
+IndexedDB. Wat je **opslaat**, gaat naar de bieb van het team in Supabase.
 
 ### De bieb
 
-In de drie makers staan rechtsboven **opslaan** en **bieb**
+In de vier makers staan rechtsboven **opslaan** en **bieb**
 (`js/shared/library.js`). Opslaan zet je ontwerp in de bieb om het later nog
-aan te passen, in plaats van het opnieuw te maken. Een ontwerp blijft 14 dagen
-staan na de laatste keer opslaan; daarna ruimt elke pagina met de bieb het op.
-Het dashboard toont per maker wat er in je bieb staat (een klik opent het via
+aan te passen, in plaats van het opnieuw te maken. De bieb is van het hele
+team: een collega ziet je ontwerp (met *door Ashley* erbij), opent het en werkt
+verder. Een ontwerp blijft 14 dagen staan na de laatste keer opslaan. Het
+dashboard toont per maker wat er in de bieb staat (een klik opent het via
 `?bieb=<id>`). De rondleiding van elke maker heeft een stap *Sla je … op*.
 
-- **Opslag:** de lijst in `localStorage` (`pm-library-v1`, met een kleine
-  miniatuur), het ontwerp in IndexedDB (`library:<id>`) met eigen kopieën van
-  foto's, logo's en handtekening. Alleen in deze browser, niet gedeeld.
+- **Opslag:** Supabase (zie [Inloggen](#inloggen)). Het ontwerp staat in de
+  tabel `designs` (de toestand van de maker, titel, miniatuur, wie en wanneer),
+  de foto's, logo's en handtekeningen erin in de opslag `designs`, als
+  `<id>/<sleutel>`. Openen zet ze in de IndexedDB van je browser, onder
+  dezelfde sleutel. De lijst staat ook in `localStorage`
+  (`pm-library-team-v1`), zodat dashboard en maker hem meteen tonen; daarna
+  komt de stand van nu (het event `pm-library`). Uitloggen haalt die lijst weg.
 - **Overschrijven of nieuw:** staat het ontwerp nog niet in de bieb, dan slaat
   opslaan het meteen op. Staat het er al en is er iets veranderd, dan vraagt
   opslaan: *vorige versie overschrijven* of *opslaan als nieuw ontwerp*. Zonder
   wijzigingen begint alleen de 14 dagen opnieuw. *Alles wissen* of *nieuw*
   koppelt los. Een stip op opslaan: er zijn wijzigingen die nog niet in de
   bieb staan.
+- **Tegelijk aan hetzelfde ontwerp:** de bieb onthoudt welke versie je opende
+  (`updated_at`). Heeft een collega het intussen opgeslagen, dan zegt opslaan
+  dat (*Ashley heeft … intussen ook aangepast*), met *opslaan als nieuw ontwerp*
+  als eerste keuze. Wie en wanneer zet de database zelf; alleen een andere
+  inhoud telt, langer bewaren of weggooien niet.
 - **Vanzelf, nooit overschrijven:** een download slaat alleen op wat nog niet
   in de bieb staat. Open je een ander ontwerp terwijl het open ontwerp
-  gewijzigd is, dan komt dat eerst als nieuwe versie in de bieb. Openen is één
-  stap om ongedaan te maken.
+  gewijzigd is, dan komt dat eerst als nieuw ontwerp in de bieb. Heeft een
+  collega het ontwerp intussen opgeslagen, dan wordt vanzelf opslaan (na de AI)
+  een nieuw ontwerp. Openen haalt altijd de nieuwste versie en is één stap om
+  ongedaan te maken.
+- **Weggooien:** voor het hele team, met ongedaan maken. Weggooien zet een
+  ontwerp op verlopen; een dag na het verlopen ruimt de bieb het op, met de
+  bestanden (hoogstens eens per zes uur per browser).
+- **Uit de oude bieb:** wat er nog in de bieb van alleen je browser stond
+  (`pm-library-v1`, van vóór het inloggen), verhuist de eerste keer vanzelf
+  naar de bieb van het team.
 - **Presentaties:** alleen de soort die openstaat (presentatie, voorstel of
   positionering), elk met een eigen plek. Een andere soort openen werkt als
   wisselen: wat openstaat gaat naar Soort.
 - **Een maker koppelen:** knoppen `#libSave` en `#libBtn` met `#libPop` in de
   appbalk, en `PM.library.attach({ tool, getState, fileKeys, apply, thumb,
   undo, close, openId })`; roep `touch()` bij elke wijziging, `detach()` bij een
-  nieuw ontwerp en `autoSave()` na een download.
+  nieuw ontwerp en `autoSave()` na een download. Een nieuwe maker moet ook in de
+  lijst van tools in `supabase/teambieb.sql` (`designs.tool`).
 
 Vervang je een logo in `assets/brand/`, draai dan `npm run brand`.
+
+## Inloggen
+
+De hub is alleen voor het team. Elke pagina heeft in de `<head>` een deur
+(`js/shared/account.js`): zonder sessie in je browser ga je meteen naar
+`login.html`, en na het inloggen terug naar waar je was. Rechtsboven in de kop
+staat wie er ingelogd is, met **uitloggen**. De e-mailtemplate (`email/`) en de
+handtekeningen (`handtekeningen/`) hebben geen deur: die staan in verstuurde
+mails.
+
+- **Supabase** (project `PureMindsMarketingGroup`, eu-west-1, gratis) doet het
+  inloggen, de database en de opslag van de bieb. De hub praat er rechtstreeks
+  mee via supabase-js (jsDelivr, vaste versie met SRI-hash).
+- **Account maken:** zelf, op de inlogpagina, met je e-mailadres van het werk
+  en een wachtwoord van minstens 10 tekens. Daarna een mail om het adres te
+  bevestigen. Alleen adressen op de **teamlijst** (tabel `team`) kunnen een
+  account maken; een ander adres krijgt *staat niet op de teamlijst*.
+  **Wachtwoord vergeten** stuurt een link om een nieuw te kiezen.
+- **Een collega toevoegen of weghalen:** Supabase → *Table Editor* → `team`
+  (e-mailadres in kleine letters, en de naam die de bieb toont). Weghalen uit
+  `team` sluit iemand meteen buiten de bieb en de server; het account zelf
+  verwijder je bij *Authentication* → *Users*.
+- **Beveiliging:** de echte deur zit in de database. Row Level Security laat
+  alleen een ingelogde collega van de teamlijst lezen of schrijven, ook in de
+  opslag van de bestanden. Wie en wanneer zet de database zelf. De server van
+  de hub (AI, foto's uploaden en zoeken) vraagt Supabase bij elk verzoek of het
+  inlogbewijs van een teamlid is (`uploads/lib/team.js`). De code van de hub
+  zelf is openbaar (deze repo, GitHub Pages); de publieke sleutel in
+  `account.js` geeft zonder inloggen nergens toegang toe.
+- **Mails:** via Brevo (SMTP), in het Nederlands en in de huisstijl
+  (`scripts/setup-supabase.mjs`). Zonder eigen mailserver stuurt Supabase alleen
+  naar leden van de organisatie in Supabase.
+- **Instellen of bijwerken:** zet in `.env.local` (nooit in de repo)
+  `SUPABASE_ACCESS_TOKEN` (supabase.com → *Account* → *Access Tokens*),
+  `BREVO_SMTP_LOGIN`, `BREVO_SMTP_KEY` en `MAIL_FROM`, en draai
+  `npm run supabase`. Dat zet de database (`supabase/teambieb.sql`), de
+  adressen van de hub, de wachtwoordregel, de mailserver en de mails. Opnieuw
+  draaien kan altijd.
+- **Wakker blijven:** een gratis Supabase-project slaapt na 7 dagen zonder
+  verkeer. De server van de hub roept het elke ochtend aan
+  (`uploads/api/keepalive.js`, een cron in `uploads/vercel.json`).
+- **Ruimte:** de gratis versie heeft 1 GB voor bestanden en 500 MB database.
+  Met 14 dagen bewaren is dat ruim; kijk bij twijfel in Supabase onder *Usage*.

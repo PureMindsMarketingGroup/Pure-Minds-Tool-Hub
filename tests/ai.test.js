@@ -116,9 +116,10 @@ test('antwoord: de tool-aanroep wordt de data; te lang of geen tool geeft een zi
   assert.match(A.apiError(529), /overbelast/);
 });
 
-test('de functie: zelfde wachtwoord als de uploads, de sleutel alleen uit Vercel, 300 seconden', () => {
+test('de functie: alleen voor het team (inloggen, zoals de uploads), de sleutel alleen uit Vercel, 300 seconden', () => {
   const api = read('uploads/api/generate.js');
-  assert.match(api, /process\.env\.APP_PASSWORD/);
+  assert.match(api, /checkLogin\(request\.headers\.get\('authorization'\)/);
+  assert.ok(!/APP_PASSWORD|x-app-password/.test(api), 'geen wachtwoord meer: inloggen');
   assert.match(api, /'x-api-key': process\.env\.ANTHROPIC_API_KEY/);
   assert.match(api, /https:\/\/api\.anthropic\.com\/v1\/messages/);
   assert.match(api, /export async function POST/);
@@ -246,13 +247,16 @@ test('foto’s: de AI geeft zoektermen per fotoplek; de server zoekt bij Unsplas
   assert.equal(list[0].src, 'https://images.pexels.com/photos/1/pexels-photo-1.jpeg');
   assert.match(P.providerError('unsplash', 401), /UNSPLASH_ACCESS_KEY/);
   const C = await import(pathToFileURL(path.join(root, 'uploads/lib/check.js')).href);
-  assert.deepEqual(C.checkOrigin({ origin: 'https://puremindsmarketinggroup.github.io', expected: '' }), { ok: true });
-  assert.equal(C.checkOrigin({ origin: null, expected: '' }).status, 403);
-  assert.equal(C.checkOrigin({ origin: 'https://puremindsmarketinggroup.github.io', expected: 'geheim', password: 'fout' }).status, 401);
+  assert.deepEqual(C.checkOrigin({ origin: 'https://puremindsmarketinggroup.github.io' }), { ok: true });
+  assert.equal(C.checkOrigin({ origin: null }).status, 403);
+  assert.equal(C.checkOrigin({ origin: 'https://evil.example' }).status, 403);
   const api = read('uploads/api/photos.js');
   assert.match(api, /pickProvider\(process\.env\)/);
   assert.match(api, /params\.has\('track'\)/, 'downloadmelding voor Unsplash');
   assert.match(api, /checkOrigin\(/);
+  assert.match(api, /checkLogin\(request\.headers\.get\('authorization'\)/, 'alleen voor het team');
+  // De status (zonder zoekvraag) kan zonder inloggen: de makers kijken zo of het klaarstaat
+  assert.ok(api.indexOf("if (!params.has('q') && !params.has('track'))") < api.indexOf('checkLogin('));
 });
 
 test('foto’s in de makers: photos.js vóór ai.js, en elke maker geeft fotoplekken en een doel', () => {

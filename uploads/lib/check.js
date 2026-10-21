@@ -3,12 +3,11 @@
    tests/newsletter.test.js)
    -----------------------------------------------------------------------------
    Wat mag erin: alleen JPG en PNG, hoogstens 4 MB, en alleen vanaf de Tool
-   Hub (of je eigen computer bij het testen). Een wachtwoord is optioneel: staat
-   APP_PASSWORD in Vercel, dan moet het mee; anders niet. Een bestand moet ook
+   Hub (of je eigen computer bij het testen). Wie het mag (een ingelogde
+   collega van de teamlijst), controleert lib/team.js. Een bestand moet ook
    echt een JPG of PNG zijn: de eerste bytes tellen, niet alleen wat de browser
    zegt.
    ============================================================================= */
-import { createHash, timingSafeEqual } from 'node:crypto';
 
 export const MAX_BYTES = 4 * 1024 * 1024;
 export const TYPES = { 'image/jpeg': 'jpg', 'image/png': 'png' };
@@ -20,20 +19,12 @@ export const allowedOrigin = (origin) => !!origin && ORIGINS.some((re) => re.tes
 export function corsHeaders(origin) {
   const headers = {
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'content-type, x-app-password, x-file-name',
+    'Access-Control-Allow-Headers': 'content-type, authorization, x-file-name',
     'Access-Control-Max-Age': '600',
     Vary: 'Origin',
   };
   if (allowedOrigin(origin)) headers['Access-Control-Allow-Origin'] = origin;
   return headers;
-}
-
-// Wachtwoord vergelijken in vaste tijd (via een hash, dan zijn de lengtes gelijk)
-export function passwordOk(given, expected) {
-  if (!expected || typeof given !== 'string' || !given) return false;
-  const a = createHash('sha256').update(given).digest();
-  const b = createHash('sha256').update(String(expected)).digest();
-  return timingSafeEqual(a, b);
 }
 
 // Is het echt een JPG of PNG? De eerste bytes van het bestand
@@ -45,26 +36,16 @@ export function sniff(bytes) {
   return null;
 }
 
-// Alleen de herkomst en het wachtwoord (als dat is ingesteld): voor de AI en het zoeken van foto's
-export function checkOrigin({ origin, password, expected }) {
-  if (origin && !allowedOrigin(origin)) return { ok: false, status: 403, error: 'Dit kan alleen vanuit de Tool Hub.' };
-  if (expected) {
-    if (!passwordOk(password, expected)) return { ok: false, status: 401, error: 'Het wachtwoord klopt niet.' };
-  } else if (!origin) {
-    return { ok: false, status: 403, error: 'Dit kan alleen vanuit de Tool Hub.' };
-  }
+// Alleen vanuit de Tool Hub (een browser stuurt Origin altijd mee): voor de AI en het zoeken van foto's
+export function checkOrigin({ origin }) {
+  if (!allowedOrigin(origin)) return { ok: false, status: 403, error: 'Dit kan alleen vanuit de Tool Hub.' };
   return { ok: true };
 }
 
-// Vóór het lezen van het bestand: herkomst, wachtwoord (als dat is ingesteld), soort en grootte.
-// Zonder wachtwoord moet het verzoek uit de Tool Hub komen (een browser stuurt Origin altijd mee)
-export function checkRequest({ origin, password, expected, type, length }) {
-  if (origin && !allowedOrigin(origin)) return { ok: false, status: 403, error: 'Dit kan alleen vanuit de Tool Hub.' };
-  if (expected) {
-    if (!passwordOk(password, expected)) return { ok: false, status: 401, error: 'Het wachtwoord klopt niet.' };
-  } else if (!origin) {
-    return { ok: false, status: 403, error: 'Dit kan alleen vanuit de Tool Hub.' };
-  }
+// Vóór het lezen van het bestand: herkomst, soort en grootte
+export function checkRequest({ origin, type, length }) {
+  const from = checkOrigin({ origin });
+  if (!from.ok) return from;
   const clean = String(type || '').split(';')[0].trim().toLowerCase();
   if (!TYPES[clean]) return { ok: false, status: 415, error: 'Alleen JPG en PNG.' };
   if (length > MAX_BYTES) return { ok: false, status: 413, error: 'Het bestand is groter dan 4 MB.' };

@@ -27,6 +27,7 @@
      PM.brandImage(key)    logo als Image, met ingebedde kopie bij file://
      PM.brandSvg(key)      logo als SVG-tekst (vector in PDF's)
      PM.fontsReady         belofte die klaar is als Pure Minds Sans geladen is
+     PM.account            inloggen en wie er ingelogd is (js/shared/account.js, in de <head>)
    ============================================================================= */
 (function (global) {
   'use strict';
@@ -735,6 +736,7 @@
     url, esc, renderToolNav, recentTools, startParams, toast, run, textTools, toggleEmphasis, insertAtCaret, miniPreview, previewScale, watchPreview, wait, store, idb, readImage, bindDrop, preventStrayDrops,
     brandImage, brandSrc, brandSvg, saveBlob, canvasToBlob, fileProtocolError, slug, formatSize, busy,
     libs, pdfFonts, pdfFontStyle, pdfDocument, pdfFinish, pdfColor, fontFiles, fontsReady, debounce, uid,
+    account: global.PM_ACCOUNT || null,   // inloggen (js/shared/account.js, in de <head>)
   };
 
   function init() {

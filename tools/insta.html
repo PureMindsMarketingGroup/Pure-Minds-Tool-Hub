@@ -7,6 +7,8 @@
 <meta name="description" content="Maak Instagram- en LinkedIn-posts in de huisstijl van Pure Minds: vijf templates, live preview en direct downloaden.">
 <meta name="theme-color" content="#1ab9e2">
 <link rel="icon" type="image/png" href="../assets/brand/favicon.png">
+<!-- Inloggen: zonder sessie meteen naar login.html (js/shared/account.js) -->
+<script src="../js/shared/account.js"></script>
 <link rel="stylesheet" href="../css/global.css">
 <link rel="stylesheet" href="../css/editor.css">
 <link rel="stylesheet" href="../css/insta.css">
@@ -50,10 +52,10 @@
       <button type="button" class="appbar__btn" id="redoBtn" aria-label="Opnieuw" title="Opnieuw (Ctrl + Shift + Z)" aria-keyshortcuts="Control+Shift+Z Control+Y Meta+Shift+Z" disabled><svg class="ri" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.1716 6.99955H11C7.68629 6.99955 5 9.68584 5 12.9996C5 16.3133 7.68629 18.9996 11 18.9996H20V20.9996H11C6.58172 20.9996 3 17.4178 3 12.9996C3 8.58127 6.58172 4.99955 11 4.99955H18.1716L15.636 2.46402L17.0503 1.0498L22 5.99955L17.0503 10.9493L15.636 9.53509L18.1716 6.99955Z"/></svg></button>
     </div>
     <div class="appbar__right">
-      <!-- Bieb: je ontwerp 14 dagen bewaren om het later aan te passen (js/shared/library.js) -->
-      <button type="button" class="appbar__btn" id="libSave" data-tour="opslaan" title="Opslaan in je bieb"><svg class="ri" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 19V13H17V19H19V7.82843L16.1716 5H5V19H7ZM4 3H17L21 7V20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V4C3 3.44772 3.44772 3 4 3ZM9 15V19H15V15H9Z"/></svg><span class="appbar__txt">opslaan</span></button>
+      <!-- Bieb: je ontwerp 14 dagen bewaren, gedeeld met het team (js/shared/library.js) -->
+      <button type="button" class="appbar__btn" id="libSave" data-tour="opslaan" title="Opslaan in de bieb"><svg class="ri" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 19V13H17V19H19V7.82843L16.1716 5H5V19H7ZM4 3H17L21 7V20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V4C3 3.44772 3.44772 3 4 3ZM9 15V19H15V15H9Z"/></svg><span class="appbar__txt">opslaan</span></button>
       <div class="menu menu--lib">
-        <button type="button" class="appbar__btn" id="libBtn" aria-haspopup="dialog" aria-controls="libPop" title="Bieb: je opgeslagen ontwerpen, 14 dagen bewaard"><svg class="ri" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10H2V4.00293C2 3.44903 2.45531 3 2.9918 3H21.0082C21.556 3 22 3.43788 22 4.00293V10H21V20.0015C21 20.553 20.5551 21 20.0066 21H3.9934C3.44476 21 3 20.5525 3 20.0015V10ZM19 10H5V19H19V10ZM4 5V8H20V5H4ZM9 12H15V14H9V12Z"/></svg><span class="appbar__txt">bieb</span><span class="lib__count" data-lib-count></span></button>
+        <button type="button" class="appbar__btn" id="libBtn" aria-haspopup="dialog" aria-controls="libPop" title="Bieb: de opgeslagen ontwerpen van het team, 14 dagen bewaard"><svg class="ri" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10H2V4.00293C2 3.44903 2.45531 3 2.9918 3H21.0082C21.556 3 22 3.43788 22 4.00293V10H21V20.0015C21 20.553 20.5551 21 20.0066 21H3.9934C3.44476 21 3 20.5525 3 20.0015V10ZM19 10H5V19H19V10ZM4 5V8H20V5H4ZM9 12H15V14H9V12Z"/></svg><span class="appbar__txt">bieb</span><span class="lib__count" data-lib-count></span></button>
         <div class="popover lib" id="libPop" role="dialog" aria-labelledby="libTitle">
           <h2 class="popover__title" id="libTitle">Bieb<span class="dot">.</span></h2>
           <div class="popover__body" data-lib></div>
@@ -145,7 +147,7 @@
         </div>
 
         <div class="panel__foot">
-          <span>Alles wordt in deze browser onthouden, ook je foto.</span>
+          <span>Je werk blijft in deze browser staan, ook je foto. Opslaan zet het in de bieb van het team.</span>
           <button type="button" class="linkbtn" id="resetBtn">alles wissen</button>
         </div>
       </div>

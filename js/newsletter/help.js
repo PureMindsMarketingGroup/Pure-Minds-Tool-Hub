@@ -93,7 +93,7 @@
     // Mail
     'naam': {
       title: 'Naam',
-      text: 'Alleen voor jou: zo heet je mail in je bieb en als bestand. Het onderwerp van de mail vul je in Brevo in, bij de campagne.',
+      text: 'Alleen voor jou: zo heet je mail in de bieb en als bestand. Het onderwerp van de mail vul je in Brevo in, bij de campagne.',
     },
     'onderwerp': {
       title: 'Onderwerp',
@@ -109,7 +109,7 @@
     },
     'opnieuw': {
       title: 'Opnieuw beginnen',
-      text: 'Nieuwsbrief: alle blokken, om weg te halen wat je niet nodig hebt. Korte mail: opening, tekst en afsluiter. Je huidige mail is niet weg: ongedaan maken staat in de melding, en je bieb bewaart wat je opsloeg.',
+      text: 'Nieuwsbrief: alle blokken, om weg te halen wat je niet nodig hebt. Korte mail: opening, tekst en afsluiter. Je huidige mail is niet weg: ongedaan maken staat in de melding, en de bieb bewaart wat je opsloeg.',
     },
 
     // Podium
@@ -156,7 +156,7 @@
     {
       id: 'opslaan', target: 'opslaan',
       title: 'Sla je mail op',
-      text: 'Klik op opslaan: je mail blijft 14 dagen in je bieb. Pas je hem later aan? Sla dan opnieuw op en kies: vorige versie overschrijven of als nieuw opslaan.',
+      text: 'Klik op opslaan: je mail blijft 14 dagen in de bieb, ook voor je collega’s. Pas je hem later aan? Sla dan opnieuw op en kies: vorige versie overschrijven of als nieuw opslaan.',
       doe: { event: 'click', hint: 'Klik op opslaan' },
     },
     {

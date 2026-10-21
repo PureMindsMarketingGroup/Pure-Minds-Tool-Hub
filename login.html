@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="nl" data-root="" data-page="login">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inloggen &middot; Generator Hub &middot; Pure Minds</title>
+<meta name="description" content="Log in bij de Generator Hub, de interne tools van Pure Minds.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#1ab9e2">
+<link rel="icon" type="image/png" href="assets/brand/favicon.png">
+<link rel="stylesheet" href="css/global.css">
+<link rel="stylesheet" href="css/login.css">
+<!-- Op deze pagina geen deur (data-page="login"); wel de client voor het inloggen -->
+<script src="js/shared/account.js"></script>
+</head>
+<body>
+<div class="bg-deco" aria-hidden="true"></div>
+
+<div class="topstrip">
+  <a href="https://www.pureminds.nl/" target="_blank" rel="noopener">pure minds</a>
+  <span class="topstrip__sep">|</span>interne tools
+</div>
+
+<header class="site-header">
+  <div class="container site-header__inner">
+    <div class="site-header__brand">
+      <img src="assets/brand/logo/PureMinds-zeshoek-logo-zwart.svg" alt="Pure Minds marketing group" width="80" height="92" class="site-header__logo">
+      <span class="site-header__divider hide-sm" aria-hidden="true"></span>
+      <div class="site-header__title hide-sm">
+        <p class="site-header__name">Generator Hub</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- js/login.js wisselt tussen inloggen, account maken, wachtwoord vergeten en een nieuw
+     wachtwoord kiezen (na de link in een mail). Zonder JavaScript kan inloggen niet. -->
+<main class="container login">
+  <section class="login__card" aria-labelledby="loginTitle">
+    <h1 class="login__title" id="loginTitle" data-title>Inloggen<span class="dot">.</span></h1>
+    <p class="login__lead" data-lead>De Generator Hub is van het team van Pure Minds. Log in met je eigen e-mailadres.</p>
+    <div class="login__msg" id="loginMsg" role="alert" data-msg hidden></div>
+
+    <form class="login__form" id="loginForm" novalidate>
+      <div class="field" data-field="email">
+        <label class="label" for="email">E-mailadres</label>
+        <input class="input" id="email" name="email" type="email" autocomplete="username" inputmode="email" spellcheck="false" autocapitalize="none" placeholder="naam@pureminds.nl" required>
+      </div>
+      <div class="field" data-field="password">
+        <label class="label" for="password">Wachtwoord <i data-hint></i></label>
+        <span class="login__pw">
+          <input class="input" id="password" name="password" type="password" autocomplete="current-password" required>
+          <button type="button" class="login__eye" data-eye aria-label="Wachtwoord tonen" aria-pressed="false" aria-controls="password">
+            <svg viewBox="0 0 24 24" aria-hidden="true" data-eye-show><path d="M12 3C17.392 3 21.878 6.88 22.819 12C21.878 17.12 17.392 21 12 21C6.608 21 2.122 17.12 1.182 12C2.122 6.88 6.608 3 12 3ZM12 19C16.236 19 19.86 16.052 20.778 12C19.86 7.948 16.236 5 12 5C7.765 5 4.14 7.948 3.223 12C4.14 16.052 7.765 19 12 19ZM12 16.5C9.515 16.5 7.5 14.485 7.5 12C7.5 9.515 9.515 7.5 12 7.5C14.486 7.5 16.5 9.515 16.5 12C16.5 14.485 14.486 16.5 12 16.5ZM12 14.5C13.381 14.5 14.5 13.381 14.5 12C14.5 10.619 13.381 9.5 12 9.5C10.62 9.5 9.5 10.619 9.5 12C9.5 13.381 10.62 14.5 12 14.5Z"/></svg>
+            <svg viewBox="0 0 24 24" aria-hidden="true" data-eye-hide hidden><path d="M17.883 19.297C16.181 20.376 14.164 21 12 21C6.608 21 2.122 17.12 1.182 12C1.618 9.623 2.819 7.513 4.52 5.935L1.394 2.808L2.808 1.394L22.607 21.193L21.193 22.607L17.883 19.297ZM5.936 7.35C4.607 8.56 3.638 10.167 3.223 12C4.14 16.052 7.765 19 12 19C13.6 19 15.112 18.58 16.424 17.838L14.396 15.81C13.702 16.247 12.881 16.5 12 16.5C9.515 16.5 7.5 14.485 7.5 12C7.5 11.12 7.753 10.298 8.19 9.604L5.936 7.35ZM12.914 14.328L9.672 11.087C9.561 11.37 9.5 11.678 9.5 12C9.5 13.381 10.62 14.5 12 14.5C12.323 14.5 12.631 14.439 12.914 14.328ZM20.807 16.593L19.376 15.162C20.032 14.227 20.515 13.159 20.778 12C19.86 7.948 16.236 5 12 5C11.154 5 10.333 5.118 9.552 5.338L7.974 3.76C9.221 3.27 10.579 3 12 3C17.392 3 21.878 6.88 22.819 12C22.507 13.7 21.804 15.263 20.807 16.593ZM11.723 7.509C11.815 7.503 11.907 7.5 12 7.5C14.486 7.5 16.5 9.515 16.5 12C16.5 12.093 16.497 12.186 16.492 12.278L11.723 7.509Z"/></svg>
+          </button>
+        </span>
+      </div>
+      <button type="submit" class="btn btn-primary login__submit" data-submit>inloggen</button>
+    </form>
+
+    <!-- Na account maken of wachtwoord vergeten: kijk in je mail -->
+    <div class="login__sent" data-sent hidden>
+      <button type="button" class="btn btn-outline btn-sm" data-resend hidden>stuur de mail opnieuw</button>
+    </div>
+
+    <p class="login__alt" data-alt></p>
+  </section>
+  <p class="login__note">Alleen voor het team van Pure Minds. Hoort je adres erbij, maar lukt het niet? Vraag het aan je collega die de Tool Hub beheert.</p>
+</main>
+
+<noscript><p class="noscript">JavaScript staat uit. Zonder JavaScript kun je niet inloggen bij de Generator Hub.</p></noscript>
+
+<script src="js/login.js"></script>
+</body>
+</html>

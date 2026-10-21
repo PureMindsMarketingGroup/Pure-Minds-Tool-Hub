@@ -185,7 +185,7 @@
     {
       id: 'opslaan', target: 'opslaan',
       title: 'Sla je document op',
-      text: 'Klik op opslaan: je document blijft 14 dagen in je bieb. Pas je het later aan? Sla dan opnieuw op en kies: vorige versie overschrijven of als nieuw opslaan.',
+      text: 'Klik op opslaan: je document blijft 14 dagen in de bieb, ook voor je collega’s. Pas je het later aan? Sla dan opnieuw op en kies: vorige versie overschrijven of als nieuw opslaan.',
       doe: { event: 'click', hint: 'Klik op opslaan' },
     },
     {
