@@ -180,7 +180,9 @@
      In de kop: wie er ingelogd is, en uitloggen
      ------------------------------------------------------------------------- */
 
-  const ICON_OUT = '<svg class="ri" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 22C4.44772 22 4 21.5523 4 21V3C4 2.44772 4.44772 2 5 2H19C19.5523 2 20 2.44772 20 3V6H18V4H6V20H18V18H20V21C20 21.5523 19.5523 22 19 22H5ZM18 16V13H11V11H18V8L23 12L18 16Z"/></svg>';
+  // Uitloggen uit de iconenbibliotheek: cyaan zeshoek met wit lijnicoon
+  // (assets/icons/Zeshoek/Cyaan zeshoek - wit icoon/System/logout-box-r-line.svg)
+  const ICON_OUT = '<svg class="account__icon" viewBox="0 0 56.474 64" aria-hidden="true"><path class="account__hex" d="M30.193 0.524L54.518 14.568A3.913 3.913 0 0 1 56.474 17.956L56.474 46.044A3.913 3.913 0 0 1 54.518 49.432L30.193 63.476A3.913 3.913 0 0 1 26.281 63.476L1.956 49.432A3.913 3.913 0 0 1 0 46.044L0 17.956A3.913 3.913 0 0 1 1.956 14.568L26.281 0.524A3.913 3.913 0 0 1 30.193 0.524Z"/><path class="account__glyph" d="M17.563 47.248C16.721 47.248 16.039 46.565 16.039 45.723V18.277C16.039 17.435 16.721 16.752 17.563 16.752H38.911C39.753 16.752 40.435 17.435 40.435 18.277V22.851H37.386V19.802H19.088V44.198H37.386V41.149H40.435V45.723C40.435 46.565 39.753 47.248 38.911 47.248H17.563ZM37.386 38.099V33.525H26.712V30.475H37.386V25.901L45.01 32L37.386 38.099Z"/></svg>';
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   function renderAccount() {
