@@ -49,6 +49,8 @@
       const here = tool.id === current ? ' aria-current="page"' : '';
       links.push(`<a href="${url(tool.href)}"${here}>${esc(tool.short || tool.name)}</a>`);
     }
+    // De bieb van het team: alle ontwerpen, zoeken en de prullenbak (bieb.html)
+    links.push(`<a href="${url('bieb.html')}"${current === 'bieb' ? ' aria-current="page"' : ''}>bieb</a>`);
     nav.innerHTML = links.join('');
   }
 

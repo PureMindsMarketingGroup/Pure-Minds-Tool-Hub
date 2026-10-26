@@ -125,15 +125,37 @@ body.has-app > .topstrip, body.has-app > .site-header { flex: none; }
 .popover__note { font-size: .75rem; color: var(--pm-muted); line-height: 1.5; }
 .popover__row { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
 
-/* --- Bieb: je ontwerpen 14 dagen bewaard (js/shared/library.js) --- */
+/* --- Bieb: alles van het team, vanzelf opgeslagen (js/shared/library.js) --- */
 
-.lib { width: 26rem; }
+/* Hoe het ervoor staat (de knop rechtsboven): opgeslagen, opslaan…, offline */
+.lib-status.is-busy svg { animation: pm-spin 1.2s linear infinite; }
+.lib-status.is-off { color: var(--pm-magenta); }
+@media (prefers-reduced-motion: reduce) { .lib-status.is-busy svg { animation: none; } }
+/* Een collega heeft dit ontwerp ook open */
+.lib-presence {
+  align-self: center; max-width: 12rem; padding: .2rem .5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  background: var(--pm-tint); color: var(--pm-blue); font-size: .75rem; font-weight: 700; line-height: 1.4;
+}
+@media (max-width: 1023px) { .lib-presence { max-width: 7rem; } }
+
+.lib { width: 28rem; }
 .lib__count:not(:empty) {
   min-width: 1.15rem; height: 1.15rem; padding: 0 .3rem;
   background: var(--pm-cyan); color: var(--pm-ink);
   font-size: .6875rem; font-weight: 700; line-height: 1.15rem; text-align: center;
 }
 .lib__lead { font-size: .8125rem; line-height: 1.5; color: var(--pm-muted); text-wrap: pretty; }
+.lib__tools { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.lib__search { position: relative; display: flex; flex: 1 1 12rem; }
+.lib__search svg { position: absolute; top: 50%; left: .625rem; width: 1rem; height: 1rem; transform: translateY(-50%); fill: currentColor; color: var(--pm-muted); pointer-events: none; }
+.lib__search .input { padding: .45rem .625rem .45rem 2.1rem; font-size: .8125rem; }
+.lib__filter { display: flex; gap: .25rem; }
+.lib__filter button {
+  padding: .3rem .625rem; border: 1px solid var(--pm-border); background: #fff;
+  font-size: .8125rem; font-weight: 700; color: var(--pm-muted); white-space: nowrap;
+}
+.lib__filter button:hover { color: var(--pm-ink); border-color: var(--pm-cyan); }
+.lib__filter button[aria-pressed="true"] { color: var(--pm-ink); background: var(--pm-tint); border-color: var(--pm-cyan); box-shadow: inset 0 -3px 0 var(--pm-cyan); }
 .lib__list {
   display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none;
   max-height: min(22rem, 50vh); overflow-y: auto; border-top: 1px solid var(--pm-line);
@@ -148,27 +170,25 @@ body.has-app > .topstrip, body.has-app > .site-header { flex: none; }
 .lib__art img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .lib__txt { display: flex; flex-direction: column; min-width: 0; line-height: 1.35; }
 .lib__title { font-size: .875rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.lib__meta, .lib__left { font-size: .75rem; color: var(--pm-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lib__meta { font-size: .75rem; color: var(--pm-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lib__when { white-space: normal; }
-.lib__left { white-space: nowrap; }
-.lib__left.is-soon { color: #8f5600; font-weight: 700; }
+.lib__busy { color: var(--pm-blue); font-weight: 700; }
 .lib__open { font-size: .75rem; font-weight: 700; color: var(--pm-blue); white-space: nowrap; }
-.lib__del svg { width: 1.05rem; height: 1.05rem; }
+.lib__menu .iconbtn svg { width: 1.15rem; height: 1.15rem; fill: currentColor; }
+.lib__menulist { position: fixed; z-index: 95; min-width: 12rem; }
 .lib__empty { padding: .625rem .75rem; background: var(--pm-zebra); border-left: 3px solid var(--pm-line); font-size: .8125rem; line-height: 1.5; color: var(--pm-muted); }
-/* De vraag bij opslaan: overschrijven of als nieuw (een dialog in de stijl van de sneltoetsen) */
-.lib-ask { width: min(28rem, calc(100vw - 2rem)); }
+.lib__foot { font-size: .8125rem; }
+.lib__foot a { font-weight: 700; color: var(--pm-blue); }
+.lib__foot a:hover { color: var(--pm-magenta); }
+/* Naam wijzigen en eerdere versies (een dialog in de stijl van de sneltoetsen; ook op bieb.html) */
+.lib-ask { width: min(30rem, calc(100vw - 2rem)); }
 .lib-ask__body { display: flex; flex-direction: column; gap: .625rem; padding: 0 1.5rem 1.5rem; }
 .lib-ask__lead { margin-bottom: .25rem; font-size: .875rem; line-height: 1.5; text-wrap: pretty; }
-.lib-ask__choice {
-  display: flex; flex-direction: column; gap: .2rem; width: 100%; padding: .75rem .875rem;
-  border: 1px solid var(--pm-line); border-left: 3px solid var(--pm-cyan); background: #fff;
-  color: var(--pm-ink); text-align: left; cursor: pointer; transition: background-color .15s, border-color .15s;
-}
-.lib-ask__choice b { font-size: .9375rem; font-weight: 700; }
-.lib-ask__choice span { font-size: .8125rem; line-height: 1.45; color: var(--pm-muted); }
-.lib-ask__choice:hover { background: var(--pm-soft); border-color: var(--pm-cyan); }
-.lib-ask__choice:focus-visible { outline: 3px solid var(--pm-blue); outline-offset: 2px; }
-.lib-ask__cancel { align-self: flex-start; margin-top: .25rem; }
+.lib-name { display: flex; flex-direction: column; gap: .5rem; }
+.lib-name__foot { display: flex; justify-content: flex-end; align-items: center; gap: .75rem; margin-top: .25rem; }
+.lib-versions { display: flex; flex-direction: column; max-height: min(24rem, 55vh); margin: 0; padding: 0; overflow-y: auto; list-style: none; border-top: 1px solid var(--pm-line); }
+.lib-versions li { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .5rem .25rem; border-bottom: 1px solid var(--pm-line); }
+.lib-versions li > span { display: flex; flex-direction: column; min-width: 0; font-size: .875rem; line-height: 1.35; }
 /* Smal: de bieb hangt aan de rechterkant van de balk, anders valt hij links van het scherm */
 @media (max-width: 639px) {
   .appbar__right { position: relative; }

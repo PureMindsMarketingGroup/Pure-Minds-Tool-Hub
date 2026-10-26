@@ -139,9 +139,8 @@ test('de drie makers hebben het paneel AI, laden service.js en ai.js, en koppele
     const app = read(`js/${tool}/app.js`);
     assert.doesNotThrow(() => new vm.Script(app, { filename: `js/${tool}/app.js` }));
     assert.match(app, new RegExp(`PM\\.ai\\.panel\\([^)]*\\), \\{\\s*tool: '${tool}',\\s*format: '${format}'`), `${tool}: paneel`);
-    assert.match(app, /aiSaver = PM\.ai\.keepSaved\(lib\)/, `${tool}: vanzelf in de bieb`);
-    assert.match(app, /if \(aiSaver\) aiSaver\.touch\(\);/, `${tool}: elke wijziging`);
-    assert.match(app, /if \(aiSaver\) aiSaver\.stop\(\);/, `${tool}: stoppen bij een ander ontwerp`);
+    assert.match(app, /PM\.ai\.panel\([\s\S]*?\n {6}lib,\r?\n/, `${tool}: de bieb gaat mee naar het paneel`);
+    assert.ok(!/aiSaver|keepSaved/.test(app), `${tool}: geen apart opslaan na de AI meer (alles gaat vanzelf)`);
     const sandbox = {};
     new Function('window', read(`js/${tool}/help.js`))(sandbox);
     assert.ok(sandbox.PM_HELP[tool].sections.some((s) => s.id === 'ai'), `${tool}: sectie ai`);
@@ -157,23 +156,18 @@ test('geen aparte startpagina meer: de AI zit in het paneel AI van elke maker', 
   assert.ok(!/handoff|autostart/.test(read('js/shared/ai.js')));
 });
 
-test('debounce: na de AI één keer opslaan na de laatste wijziging, en niet meer na stop', async () => {
-  const saves = [];
-  const sandbox = { window: { PM: { store: { get: () => null, set() {} }, debounce: (f) => f } }, document: {}, setTimeout, clearTimeout };
-  sandbox.window.window = sandbox.window;
-  vm.runInNewContext(read('js/shared/ai.js'), { ...sandbox, window: sandbox.window });
-  const saver = sandbox.window.PM.ai.keepSaved({ save: (o) => saves.push(o) }, { delay: 30 });
-  saver.touch();
-  assert.equal(saves.length, 0, 'uit: niets');
-  saver.start();
-  saver.touch(); saver.touch(); saver.touch();
-  await new Promise((r) => setTimeout(r, 80));
-  assert.equal(saves.length, 1, 'drie wijzigingen kort na elkaar: één keer opslaan');
-  assert.equal(JSON.stringify(saves[0]), JSON.stringify({ quiet: true }));
-  saver.touch();
-  saver.stop();
-  await new Promise((r) => setTimeout(r, 80));
-  assert.equal(saves.length, 1, 'na stop niet meer');
+test('maken met AI begint een nieuw ontwerp: eerst opslaan, tijdens het invullen pauze, dan een eigen ontwerp', () => {
+  const src = read('js/shared/ai.js');
+  const at = (needle) => {
+    const i = src.indexOf(needle);
+    assert.ok(i > 0, needle);
+    return i;
+  };
+  const order = ['await lib.flush();', 'lib.pause();', "await opts.apply(res.data, { mode: 'generate', photos });", 'prev = lib.fork();', 'lib.resume();'].map(at);
+  assert.deepEqual([...order].sort((a, b) => a - b), order, 'volgorde');
+  assert.match(src, /finally \{\s*if \(lib\) \{\s*if \(lib\.isDirty\(\)\) prev = lib\.fork\(\);\s*lib\.resume\(\);/, 'ook als het invullen misgaat: nooit het vorige ontwerp overschrijven');
+  assert.match(src, /label: 'terug naar vorige', run: \(\) => lib\.open\(prev\.id\)/);
+  assert.ok(!/keepSaved/.test(src), 'geen apart opslaan na de AI meer');
 });
 
 test('geen tool-aanroep: één tweede poging in hetzelfde gesprek, met het antwoord erbij', async () => {

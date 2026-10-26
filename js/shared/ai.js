@@ -28,13 +28,12 @@
                                      de foto's gaan als opties.apply(data, { photos: Map }) mee
          .target()                   { label, orientation, query, width } van de open fotoplek, of null
          .apply(file, foto)          een gekozen foto plaatsen (zoals een upload)
-     PM.ai.keepSaved(lib)            na de AI: elke wijziging vanzelf in de bieb (debounce);
-                                     geeft { start, stop, touch }
 
-   Bewaren: in de bieb van het team (js/shared/library.js). Na de AI staat het
-   resultaat meteen in de bieb, als nieuw ontwerp (wat er open stond en
-   gewijzigd was, eerst ook). Elke wijziging daarna komt er na 3 seconden
-   rust vanzelf overheen, tot je een ander ontwerp opent of opnieuw begint.
+   Bewaren: de makers slaan alles vanzelf op in de bieb van het team
+   (js/shared/library.js). Maken met AI begint een nieuw ontwerp: wat er open
+   stond, gaat eerst nog de bieb in en blijft daar staan (de melding kan er
+   terug naartoe). Aanpassen met AI past het open ontwerp aan; eerdere versies
+   bewaart de bieb.
    ============================================================================= */
 (function (global) {
   'use strict';
@@ -62,7 +61,7 @@
     },
     'ai-bewaren': {
       title: 'Vanzelf bewaard',
-      text: 'Na de AI staat je ontwerp meteen in de bieb, ook voor je collega’s. Elke aanpassing daarna, van jou of van de AI, gaat er vanzelf in. Je vorige ontwerp gaat niet verloren: dat staat ook in de bieb, en ongedaan maken werkt gewoon.',
+      text: 'Maken met AI begint een nieuw ontwerp in de bieb, ook voor je collega’s. Je vorige ontwerp blijft daar gewoon staan: de melding na de AI brengt je er met één klik naar terug. Alles wordt vanzelf opgeslagen.',
     },
   };
 
@@ -79,28 +78,6 @@
   }
   const status = () => PM.service.status('/api/generate');
 
-  /* ---------------------------------------------------------------------------
-     Na de AI: elke wijziging vanzelf in de bieb, met een debounce
-     ------------------------------------------------------------------------- */
-
-  function keepSaved(lib, { delay = 3000 } = {}) {
-    let on = false;
-    let timer = 0;
-    const flush = () => {
-      timer = 0;
-      if (on && lib) lib.save({ quiet: true });
-    };
-    return {
-      get on() { return on; },
-      start() { on = true; },
-      stop() { on = false; clearTimeout(timer); timer = 0; },
-      touch() {
-        if (!on) return;
-        clearTimeout(timer);
-        timer = setTimeout(flush, delay);
-      },
-    };
-  }
 
   /* ---------------------------------------------------------------------------
      Het paneel
@@ -229,14 +206,28 @@ ${opts.wishField || ''}
             photos = await PM.photos.fill(slots);
           }
         }
-        // Wat er open stond en gewijzigd was, eerst als nieuwe versie in de bieb
-        if (opts.lib && opts.lib.isDirty && opts.lib.isDirty()) await opts.lib.save({ quiet: true, asNew: true });
-        await opts.apply(res.data, { mode: 'generate', photos });
+        // Een nieuw ontwerp: wat er open stond, eerst nog de bieb in; tijdens het invullen niets
+        // wegschrijven, daarna wordt het ingevulde een eigen ontwerp
+        const lib = opts.lib;
+        let prev = null;
+        if (lib) {
+          await lib.flush();
+          lib.pause();
+        }
+        try {
+          await opts.apply(res.data, { mode: 'generate', photos });
+        } finally {
+          if (lib) {
+            if (lib.isDirty()) prev = lib.fork();
+            lib.resume();
+          }
+        }
         if (photos) photos.forEach(({ photo }) => PM.photos.used(photo));
-        if (opts.lib) await opts.lib.save({ quiet: true, asNew: true });
-        if (opts.saver) opts.saver.start();
         const n = photos ? photos.size : 0;
-        PM.toast(`Je ${noun} is ingevuld${n ? `, met ${n === 1 ? 'een foto' : `${n} foto’s`} van ${PM.photos.providerName()},` : ''} en staat in de bieb. Lees hem na en pas aan wat je wilt.`, false, opts.undo ? { label: 'ongedaan maken', run: opts.undo } : null);
+        const back = prev && prev.id
+          ? { label: 'terug naar vorige', run: () => lib.open(prev.id) }
+          : opts.undo ? { label: 'ongedaan maken', run: opts.undo } : null;
+        PM.toast(`Je ${noun} is ingevuld${n ? `, met ${n === 1 ? 'een foto' : `${n} foto’s`} van ${PM.photos.providerName()},` : ''} en staat als nieuw ontwerp in de bieb. Lees hem na en pas aan wat je wilt.`, false, back);
         if (picker) picker.refresh();
         if (PM.tour) PM.tour.signal('ai');
       } catch (err) {
@@ -275,10 +266,6 @@ ${opts.wishField || ''}
           content: raw.value.trim().slice(0, 20000),
         });
         await opts.apply(res.data, { mode: 'refine', target: t ? t.index : null });
-        if (opts.saver && !opts.saver.on && opts.lib) {
-          await opts.lib.save({ quiet: true });
-          opts.saver.start();
-        }
         PM.toast(t ? `${t.label} is aangepast.` : `Je ${noun} is aangepast.`, false, opts.undo ? { label: 'ongedaan maken', run: opts.undo } : null);
       } catch (err) {
         PM.toast(err.message || 'Aanpassen lukte niet. Probeer het opnieuw.', true);
@@ -331,5 +318,5 @@ ${opts.wishField || ''}
     };
   }
 
-  if (PM) PM.ai = { request, status, panel, keepSaved, HELP };
+  if (PM) PM.ai = { request, status, panel, HELP };
 })(window);

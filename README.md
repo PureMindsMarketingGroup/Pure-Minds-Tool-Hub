@@ -8,8 +8,8 @@ Daarnaast vier technische tools voor websites, ads en SEO; zie
 Plain HTML, CSS en JavaScript: geen framework, geen buildstap.
 
 **Live:** https://puremindsmarketinggroup.github.io/Pure-Minds-Tool-Hub/ (alleen voor het team: je logt in
-met je eigen account, zie [Inloggen](#inloggen)). Wat je opslaat, staat in de [bieb van het
-team](#de-bieb): een collega kan het openen en verder aanpassen.
+met je eigen account, zie [Inloggen](#inloggen)). Alles wat je maakt, gaat vanzelf de [bieb van het
+team](#de-bieb) in, zoals in Canva of Google Docs: een collega kan het openen en verder aanpassen.
 
 > **Verhuisd (oktober 2026)** van `github.com/Jelger1/Pure-Minds-Tool-Hub` naar
 > `github.com/PureMindsMarketingGroup/Pure-Minds-Tool-Hub`, het account van
@@ -60,7 +60,8 @@ zodat de browser de export niet blokkeert.
 index.html                    de hub: maken (een kaart per tool) en checken (de technische tools),
                               en de uitleg bij de Consent Check (<dialog>)
 login.html                    inloggen, account maken, wachtwoord vergeten (js/login.js, css/login.css)
-supabase/teambieb.sql         de database van Supabase: teamlijst, ontwerpen, bestanden, beveiliging
+bieb.html                     alle ontwerpen van het team: zoeken, kopie, versies, prullenbak (js/bieb.js, css/bieb.css)
+supabase/teambieb.sql         de database van Supabase: teamlijst, ontwerpen, versies, reservekopie, beveiliging
 email/                        de e-mailtemplate voor Brevo, met plaatjes in email/img/
 uploads/                      de server van de hub (Vercel, Root Directory uploads): foto's
                               online zetten (Vercel Blob) en de AI (Claude); zie uploads/README.md
@@ -90,12 +91,14 @@ css/
   handleiding.css             handleidingen (leespagina)
 js/
   login.js                    de inlogpagina: inloggen, account maken, wachtwoord vergeten en kiezen
+  bieb.js                     alle ontwerpen (bieb.html)
   shared/account.js           inloggen (Supabase) en de deur van elke pagina; in de <head> (PM.account)
   shared/tools.js             register van alle tools (hub + toolwisselaar)
   shared/core.js              gedeelde hulpfuncties (window.PM)
   shared/brand.js             huisstijl als gegevens, plus controles (PM.brand)
   shared/history.js           ongedaan maken en opnieuw (PM.history)
-  shared/library.js           de bieb van het team: ontwerpen 14 dagen bewaren in Supabase (PM.library)
+  shared/designs.js           de ontwerpen van het team in Supabase: lijst, openen, opslaan, kopie, versies (PM.designs)
+  shared/library.js           de bieb in een maker: vanzelf opslaan, opslagstatus, botsingen, versies (PM.library)
   shared/service.js           de server van de hub: adres en verzoeken, met het inlogbewijs (PM.service)
   shared/ai.js                het paneel AI in de makers, vanzelf opslaan na de AI (PM.ai)
   shared/photos.js            passende foto's uit een fotobank (Unsplash) zoeken en plaatsen (PM.photos)
@@ -1210,9 +1213,9 @@ de editor: de AI vult hun velden, en daarna pas je alles gewoon aan.
   alles of alleen de open slide of het open blok (`target`: dan krijgt Claude het schema van één element).
   Wat je zelf schreef, blijft zoveel mogelijk staan. Met de hand aanpassen kan altijd, en ongedaan maken
   werkt voor elke AI-stap.
-- **Bewaren:** in de bieb van het team. Na de AI staat het resultaat meteen als nieuw ontwerp in de
-  bieb. Wat er open stond en gewijzigd was, gaat er eerst ook in. Elke wijziging daarna komt er na 3 seconden
-  rust vanzelf overheen (`PM.ai.keepSaved`, een debounce), tot je een ander ontwerp opent of opnieuw begint.
+- **Bewaren:** vanzelf, in de bieb van het team. Maken met AI begint een nieuw ontwerp: wat er open stond,
+  gaat eerst nog de bieb in en blijft staan (de melding heeft *terug naar vorige*). Tijdens het invullen
+  schrijft de bieb niets weg (`lib.pause()`), daarna wordt het ingevulde een eigen ontwerp (`lib.fork()`) (`PM.ai.keepSaved`, een debounce), tot je een ander ontwerp opent of opnieuw begint.
 - **Sprekersnotities:** elk slide heeft ze (Inhoud, onderaan). Ze staan niet op de slide, maar komen in de
   PowerPoint (en Google Slides) bij Notities. Zonder notities blijft het .pptx-bestand precies zoals het was.
 - **Een voorstel of positionering** heeft zijn eigen formulier en vaste opbouw. Maken met AI wisselt eerst
@@ -1262,7 +1265,7 @@ die van `email/pure-minds-email.html` en komt uit `js/newsletter/email.js`.
   online staan, en de grootte (Gmail knipt vanaf 102 KB). Nooit tegenhouden.
   De [handleiding](tools/brevo-handleiding.html) legt stap voor stap uit hoe
   je de HTML in een campagne plakt, test en verstuurt.
-- **Opslaan:** het concept in deze browser (`pm-newsletter-v1`) en de bieb.
+- **Opslaan:** vanzelf in de bieb van het team, met een kopie in deze browser (`pm-newsletter-v1`).
 
 ## E-mailtemplate (Brevo)
 
@@ -1319,58 +1322,54 @@ kan gebruiken. Zoekmachines slaan de pagina's over (`noindex`).
 
 ## Opslag
 
-Waar je aan werkt, staat in je eigen browser: teksten en instellingen in
-`localStorage`, afbeeldingen (handtekening, slidefoto's, het klantlogo) in
-IndexedDB. Wat je **opslaat**, gaat naar de bieb van het team in Supabase.
+Alles wat je maakt, gaat **vanzelf** de bieb van het team in (Supabase), zoals in Canva of Google
+Docs. Je browser houdt daarnaast een kopie van wat er open staat (`localStorage` en, voor
+afbeeldingen, IndexedDB): zo werkt een maker ook even zonder verbinding.
 
 ### De bieb
 
-In de vier makers staan rechtsboven **opslaan** en **bieb**
-(`js/shared/library.js`). Opslaan zet je ontwerp in de bieb om het later nog
-aan te passen, in plaats van het opnieuw te maken. De bieb is van het hele
-team: een collega ziet je ontwerp (met *door Ashley* erbij), opent het en werkt
-verder. Een ontwerp blijft 14 dagen staan na de laatste keer opslaan. Het
-dashboard toont per maker wat er in de bieb staat (een klik opent het via
-`?bieb=<id>`). De rondleiding van elke maker heeft een stap *Sla je … op*.
-
-- **Opslag:** Supabase (zie [Inloggen](#inloggen)). Het ontwerp staat in de
-  tabel `designs` (de toestand van de maker, titel, miniatuur, wie en wanneer),
-  de foto's, logo's en handtekeningen erin in de opslag `designs`, als
-  `<id>/<sleutel>`. Openen zet ze in de IndexedDB van je browser, onder
-  dezelfde sleutel. De lijst staat ook in `localStorage`
-  (`pm-library-team-v1`), zodat dashboard en maker hem meteen tonen; daarna
-  komt de stand van nu (het event `pm-library`). Uitloggen haalt die lijst weg.
-- **Overschrijven of nieuw:** staat het ontwerp nog niet in de bieb, dan slaat
-  opslaan het meteen op. Staat het er al en is er iets veranderd, dan vraagt
-  opslaan: *vorige versie overschrijven* of *opslaan als nieuw ontwerp*. Zonder
-  wijzigingen begint alleen de 14 dagen opnieuw. *Alles wissen* of *nieuw*
-  koppelt los. Een stip op opslaan: er zijn wijzigingen die nog niet in de
-  bieb staan.
-- **Tegelijk aan hetzelfde ontwerp:** de bieb onthoudt welke versie je opende
-  (`updated_at`). Heeft een collega het intussen opgeslagen, dan zegt opslaan
-  dat (*Ashley heeft … intussen ook aangepast*), met *opslaan als nieuw ontwerp*
-  als eerste keuze. Wie en wanneer zet de database zelf; alleen een andere
-  inhoud telt, langer bewaren of weggooien niet.
-- **Vanzelf, nooit overschrijven:** een download slaat alleen op wat nog niet
-  in de bieb staat. Open je een ander ontwerp terwijl het open ontwerp
-  gewijzigd is, dan komt dat eerst als nieuw ontwerp in de bieb. Heeft een
-  collega het ontwerp intussen opgeslagen, dan wordt vanzelf opslaan (na de AI)
-  een nieuw ontwerp. Openen haalt altijd de nieuwste versie en is één stap om
-  ongedaan te maken.
-- **Weggooien:** voor het hele team, met ongedaan maken. Weggooien zet een
-  ontwerp op verlopen; een dag na het verlopen ruimt de bieb het op, met de
-  bestanden (hoogstens eens per zes uur per browser).
-- **Uit de oude bieb:** wat er nog in de bieb van alleen je browser stond
-  (`pm-library-v1`, van vóór het inloggen), verhuist de eerste keer vanzelf
-  naar de bieb van het team.
-- **Presentaties:** alleen de soort die openstaat (presentatie, voorstel of
-  positionering), elk met een eigen plek. Een andere soort openen werkt als
-  wisselen: wat openstaat gaat naar Soort.
-- **Een maker koppelen:** knoppen `#libSave` en `#libBtn` met `#libPop` in de
-  appbalk, en `PM.library.attach({ tool, getState, fileKeys, apply, thumb,
-  undo, close, openId })`; roep `touch()` bij elke wijziging, `detach()` bij een
-  nieuw ontwerp en `autoSave()` na een download. Een nieuwe maker moet ook in de
-  lijst van tools in `supabase/teambieb.sql` (`designs.tool`).
+- **Vanzelf opslaan** (`js/shared/library.js`): elke wijziging, ook ongedaan maken, staat binnen een
+  paar seconden in de bieb. Rechtsboven in de appbalk staat hoe het ervoor staat (`#libSave`):
+  *opgeslagen*, *opslaan…*, *offline* (je werk blijft in de browser en gaat mee zodra er weer verbinding
+  is) of *niet opgeslagen* (nog een poging volgt vanzelf). Een klik slaat meteen op.
+- **Nieuw beginnen** (een starttegel op het dashboard, *nieuwe post*, *nieuw document*, *nieuwe
+  presentatie*, maken met AI) begint een nieuw ontwerp. Het vorige blijft gewoon in de bieb; de melding
+  heeft *terug naar vorige*. Een nieuw, onaangeraakt ontwerp komt pas in de bieb bij de eerste echte
+  wijziging (geen lege ontwerpen). Werk van vóór het vanzelf opslaan dat nog nooit in de bieb stond, gaat
+  er bij nieuw beginnen eerst in.
+- **De presentatie** heeft per soort (presentatie, voorstel, positionering) een eigen ontwerp. Wisselen bij
+  *Soort* is geen wijziging; de soort waar je naartoe gaat, komt in de nieuwste versie.
+- **Openen** (`?bieb=<id>`, de lijst onder **bieb**, het dashboard of `bieb.html`) haalt altijd de
+  nieuwste versie. Werkte een collega intussen aan het open ontwerp, dan komt die versie vanzelf (alleen
+  als je zelf niets onopgeslagen hebt).
+- **Tegelijk aan hetzelfde ontwerp:** wie het ontwerp open heeft, staat in de database (`editing_by`,
+  elke 45 seconden). Opent een collega het, dan ziet die *Jim heeft dit open* in de appbalk. Slaan jullie
+  toch allebei op, dan overschrijft niemand iets: opslaan controleert de versie (`updated_at`), en wie
+  later opslaat, krijgt zijn versie als kopie (*… (jouw versie)*) met een melding.
+- **Eerdere versies:** de database bewaart zelf een versie (tabel `design_versions`), hoogstens elke 10
+  minuten en altijd voordat een collega het aanpast; de nieuwste 50 per ontwerp. Terugzetten (menu ⋯ bij
+  een ontwerp → *eerdere versies*) maakt van wat er nu staat ook eerst een versie.
+- **Prullenbak:** weggooien (menu ⋯) zet een ontwerp in de prullenbak, voor het hele team en met *ongedaan
+  maken*. Op `bieb.html` → *prullenbak* staat wie het weggooide, en zet je het terug. Na 30 dagen ruimt de
+  bieb het op, met de bestanden.
+- **Een tweede bieb achter de schermen:** elke nacht om 2:30 kopieert de database alles wat die dag
+  veranderde naar `designs_backup` (60 dagen, `pg_cron`). Niemand in de hub ziet die tabel of kan eruit
+  weggooien; terughalen gaat met SQL in Supabase. Zo is er nog iets, ook na de prullenbak.
+- **Alle ontwerpen** (`bieb.html`, en *bieb* in de kop van elke pagina): zoeken op titel, klant of
+  collega, per tool, *van mij*, en per ontwerp openen, naam wijzigen, kopie maken, eerdere versies en naar de
+  prullenbak. Het dashboard toont per maker de laatste drie en, op een andere computer, *verder waar je
+  was* (je laatst bewerkte ontwerp).
+- **Opslag:** tabel `designs` (de toestand van de maker, titel, eigen naam, miniatuur, wie en wanneer),
+  de bestanden in de opslag `designs` als `<id>/<sleutel>`. Openen zet ze in de IndexedDB van je browser,
+  onder dezelfde sleutel. De lijst staat ook in `localStorage` (`pm-designs-v1`, zonder miniaturen;
+  die staan per versie in IndexedDB). Uitloggen haalt de lijst weg.
+- **Uit de oude bieb:** wat er nog in de bieb van alleen je browser stond (`pm-library-v1`, van vóór het
+  inloggen), verhuist de eerste keer vanzelf naar de bieb van het team.
+- **Een maker koppelen:** knoppen `#libSave` (status) en `#libBtn` met `#libPop` in de appbalk, en
+  `PM.library.attach({ tool, slot?, getState, fileKeys, apply, thumb?, close, openId, versionId, fresh? })`.
+  Roep `touch()` bij elke wijziging (ook in de `restore` van ongedaan maken), `detach()` vóór een nieuw
+  ontwerp en zet het nieuwe in `hold(fn)`, en `autoSave()` na een download. Een nieuwe maker moet ook in
+  de lijst van tools in `supabase/teambieb.sql` (`designs.tool`).
 
 Vervang je een logo in `assets/brand/`, draai dan `npm run brand`.
 
@@ -1415,4 +1414,6 @@ mails.
   verkeer. De server van de hub roept het elke ochtend aan
   (`uploads/api/keepalive.js`, een cron in `uploads/vercel.json`).
 - **Ruimte:** de gratis versie heeft 1 GB voor bestanden en 500 MB database.
-  Met 14 dagen bewaren is dat ruim; kijk bij twijfel in Supabase onder *Usage*.
+  Ontwerpen zijn klein (de foto's verkleind); kijk eens per kwartaal in Supabase onder *Usage*. Wordt
+  het krap, ruim dan oude ontwerpen op via `bieb.html` of stap over op Pro (dan ook dagelijkse backups
+  van Supabase zelf).

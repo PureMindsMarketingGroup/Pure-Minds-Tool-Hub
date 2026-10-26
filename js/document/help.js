@@ -184,9 +184,8 @@
     // De bieb: opslaan om later aan te passen, en wat je kiest bij opnieuw opslaan
     {
       id: 'opslaan', target: 'opslaan',
-      title: 'Sla je document op',
-      text: 'Klik op opslaan: je document blijft 14 dagen in de bieb, ook voor je collega’s. Pas je het later aan? Sla dan opnieuw op en kies: vorige versie overschrijven of als nieuw opslaan.',
-      doe: { event: 'click', hint: 'Klik op opslaan' },
+      title: 'Vanzelf opgeslagen',
+      text: 'Je document gaat vanzelf de bieb van het team in, ook voor je collega’s. Hier zie je of alles is opgeslagen. Onder bieb vind je alles terug, met eerdere versies.',
     },
     {
       id: 'download', target: 'download',

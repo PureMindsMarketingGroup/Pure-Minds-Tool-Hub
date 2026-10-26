@@ -168,8 +168,8 @@
       /* zonder verbinding: dan alleen hier vergeten */
     }
     try {
-      // Ook de lijst van de bieb (js/shared/library.js): die is van het team, niet van deze browser
-      for (const key of [AUTH_KEY, NAME_KEY, 'pm-library-team-v1']) global.localStorage.removeItem(key);
+      // Ook de lijst van de bieb (js/shared/designs.js): die is van het team, niet van deze browser
+      for (const key of [AUTH_KEY, NAME_KEY, 'pm-designs-v1', 'pm-library-team-v1']) global.localStorage.removeItem(key);
     } catch (err) {
       /* niets */
     }

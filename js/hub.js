@@ -74,61 +74,84 @@
     return { at: seen, title: title || 'Zonder titel', noun: info.noun || 'ontwerp', ratio: info.ratio };
   }
 
-  // De bieb van het team (js/shared/library.js), nieuwste eerst. Eerst uit het geheugen van deze
-  // browser; zodra Supabase antwoordt (het event pm-library) opnieuw
-  const LIB = window.PM.library;
+  // De bieb van het team (js/shared/designs.js), laatst bewerkt eerst. Eerst uit het geheugen van
+  // deze browser; zodra Supabase antwoordt (het event pm-designs) opnieuw. Miniaturen komen apart
+  const DES = window.PM.designs;
   const BIEB_SHOWN = 3;
-  const me = () => {
-    const who = window.PM.account && window.PM.account.current();
-    return who ? who.id : null;
-  };
+  const me = () => (DES ? DES.meId() : null);
 
-  function bieb(tool) {
-    const list = LIB && live(tool) ? LIB.list(tool.id) : [];
+  // "Verder waar je was" op een andere computer: je laatst bewerkte ontwerp uit de bieb
+  function cloudDraft(tool, list) {
+    const mine = list.find((e) => e.byId && e.byId === me());
+    if (!mine) return '';
+    return `
+      <a class="draft" href="${esc(`${url(tool.href)}?bieb=${encodeURIComponent(mine.id)}`)}">
+        <span class="draft__art">${shape(mine.ratio, 2.6, 2, tool.tone === 'light' ? 'shape--light' : '')}</span>
+        <span class="draft__text">
+          <span class="draft__kicker">${ICON.resume}verder waar je was</span>
+          <span class="draft__title">${esc(mine.title)}</span>
+          <span class="draft__meta">jouw ${esc(mine.noun)} · ${esc(when(mine.savedAt))}</span>
+        </span>
+        <span class="draft__go" aria-hidden="true">${ICON.arrow}</span>
+      </a>`;
+  }
+
+  function bieb(tool, list) {
     if (!list.length) return '';
     const now = Date.now();
     const meId = me();
     const base = url(tool.href);
     const item = (e) => {
-      const n = LIB.daysLeft(e, now);
-      const art = e.thumb
-        ? (() => {
-          const [a, b] = String(e.ratio || '1 / 1').split('/').map(Number);
-          const ar = a > 0 && b > 0 ? a / b : 1;
-          const w = Math.min(2.6, 2.25 * ar);
-          return `<span class="bieb__img" style="width:${w.toFixed(2)}rem;height:${(w / ar).toFixed(2)}rem"><img src="${esc(e.thumb)}" alt=""></span>`;
-        })()
-        : shape(e.ratio, 2.6, 2.25, tool.tone === 'light' ? 'shape--light' : '');
+      const [a, b] = String(e.ratio || '1 / 1').split('/').map(Number);
+      const ar = a > 0 && b > 0 ? a / b : 1;
+      const w = Math.min(2.6, 2.25 * ar);
+      const art = `<span class="bieb__img" style="width:${w.toFixed(2)}rem;height:${(w / ar).toFixed(2)}rem"><img alt="" data-thumb="${esc(e.id)}" hidden></span>`;
       return `
         <li><a class="bieb__item" href="${esc(`${base}?bieb=${encodeURIComponent(e.id)}`)}">
           <span class="bieb__art" aria-hidden="true">${art}</span>
           <span class="bieb__text">
             <span class="bieb__title">${esc(e.title)}</span>
-            <span class="bieb__meta"><span class="bieb__left${n <= 2 ? ' is-soon' : ''}">${esc(LIB.leftText(n))}</span> · ${esc(LIB.savedText(e.savedAt, now, LIB.byWho(e, meId)))}</span>
+            <span class="bieb__meta">${esc(DES.editedText(e.savedAt, now, DES.byWho(e, meId)))}</span>
           </span>
         </a></li>`;
     };
-    const more = list.length > BIEB_SHOWN
-      ? `<a class="bieb__more" href="${esc(`${base}?bieb=lijst`)}">alle ${list.length} in de bieb${ICON.arrow}</a>`
-      : '';
+    const total = DES.list(tool.id).length;
     return `
       <div class="bieb">
-        <p class="bieb__head">${ICON.bieb}in de bieb <span class="bieb__count">${list.length}</span><span class="bieb__note">· van het team, ${LIB.DAYS} dagen bewaard</span></p>
+        <p class="bieb__head">${ICON.bieb}in de bieb <span class="bieb__count">${total}</span><span class="bieb__note">· van het team, vanzelf opgeslagen</span></p>
         <ul class="bieb__list">${list.slice(0, BIEB_SHOWN).map(item).join('')}</ul>
-        ${more}
+        <a class="bieb__more" href="${esc(url(`bieb.html?tool=${tool.id}`))}">${total > BIEB_SHOWN ? `alle ${total} in de bieb` : 'zoeken en de prullenbak'}${ICON.arrow}</a>
       </div>`;
   }
 
-  // De bieb van een tool, en "of begin iets nieuws" als er iets boven de formaten staat
+  // De bieb van een tool, en "of begin iets nieuws" als er iets boven de formaten staat. Zonder
+  // concept in deze browser: je laatste ontwerp uit de bieb als "verder waar je was"
   function savedPart(tool, hasDraft) {
-    const saved = bieb(tool);
-    return `${saved}${hasDraft || saved ? '<p class="maker__or">of begin iets nieuws</p>' : ''}`;
+    let list = DES && live(tool) ? DES.list(tool.id) : [];
+    let resume = '';
+    if (!hasDraft && list.length) {
+      resume = cloudDraft(tool, list);
+      if (resume) list = list.filter((e) => e !== list.find((x) => x.byId && x.byId === me()));
+    }
+    const saved = bieb(tool, list);
+    return `${resume}${saved}${hasDraft || resume || saved ? '<p class="maker__or">of begin iets nieuws</p>' : ''}`;
   }
 
   function syncBieb() {
     document.querySelectorAll('[data-bieb]').forEach((box) => {
       const tool = tools.find((t) => t.id === box.dataset.bieb);
       if (tool) box.innerHTML = savedPart(tool, box.hasAttribute('data-draft'));
+    });
+    if (!DES) return;
+    const ids = [...document.querySelectorAll('img[data-thumb]')].map((img) => img.dataset.thumb);
+    DES.thumbs(DES.list().filter((e) => ids.includes(e.id))).then((map) => {
+      document.querySelectorAll('img[data-thumb]').forEach((img) => {
+        const src = map.get(img.dataset.thumb);
+        if (src) {
+          img.src = src;
+          img.hidden = false;
+        }
+      });
     });
   }
 
@@ -421,8 +444,9 @@
   render();
   initGuides();
   showHash();
-  if (LIB) {
-    window.addEventListener('pm-library', syncBieb);
-    LIB.refresh().catch(() => {});
+  if (DES) {
+    window.addEventListener('pm-designs', syncBieb);
+    syncBieb();
+    DES.refresh().catch(() => {});
   }
 })();

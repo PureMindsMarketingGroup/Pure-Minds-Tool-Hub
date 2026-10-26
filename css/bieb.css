@@ -1,0 +1,59 @@
+/**
+ * Bieb (bieb.html): alle ontwerpen van het team, als kaarten met een miniatuur.
+ * Gedeelde bouwstenen (kop, velden, knoppen, menu, dialogen) staan in
+ * css/global.css en css/editor.css.
+ */
+
+.shelf { padding-top: 1.75rem; padding-bottom: 3rem; }
+@media (min-width: 1024px) { .shelf { padding-top: 2.25rem; } }
+
+.shelf__head { margin-bottom: 1.25rem; }
+.shelf__title { font-size: clamp(1.875rem, 4vw, 2.75rem); font-weight: 800; line-height: 1.1; letter-spacing: -.02em; }
+.shelf__lead { max-width: 44rem; margin-top: .5rem; font-size: 1rem; line-height: 1.55; color: var(--pm-muted); text-wrap: pretty; }
+
+/* --- Zoeken en filters --- */
+
+.shelf__bar { display: flex; flex-wrap: wrap; align-items: center; gap: .625rem .75rem; margin-bottom: .75rem; }
+.shelf__search { position: relative; display: flex; flex: 1 1 18rem; max-width: 26rem; }
+.shelf__search svg { position: absolute; top: 50%; left: .75rem; width: 1.1rem; height: 1.1rem; transform: translateY(-50%); fill: var(--pm-muted); pointer-events: none; }
+.shelf__search .input { padding-left: 2.4rem; font-size: 1rem; }
+.shelf__filters { display: flex; flex-wrap: wrap; gap: .25rem; }
+.shelf__filters button, .shelf__trash {
+  min-height: 2.25rem; padding: .3rem .7rem; border: 1px solid var(--pm-border); background: #fff;
+  font-size: .8125rem; font-weight: 700; color: var(--pm-muted); white-space: nowrap;
+}
+.shelf__filters button:hover, .shelf__trash:hover { color: var(--pm-ink); border-color: var(--pm-cyan); }
+.shelf__filters button[aria-pressed="true"], .shelf__trash[aria-pressed="true"] {
+  color: var(--pm-ink); background: var(--pm-tint); border-color: var(--pm-cyan); box-shadow: inset 0 -3px 0 var(--pm-cyan);
+}
+.shelf__trash { margin-left: auto; }
+@media (max-width: 639px) { .shelf__trash { margin-left: 0; } }
+@media (pointer: coarse) { .shelf__filters button, .shelf__trash { min-height: 2.75rem; } }
+
+.shelf__count { margin-bottom: .75rem; font-size: .8125rem; color: var(--pm-muted); }
+.shelf__empty { padding: .875rem 1rem; background: var(--pm-zebra); border-left: 3px solid var(--pm-line); font-size: .875rem; color: var(--pm-muted); }
+
+/* --- De kaarten --- */
+
+.shelf__grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr)); gap: 1rem;
+  margin: 0; padding: 0; list-style: none;
+}
+.shelf__card { position: relative; display: flex; flex-direction: column; background: #fff; border: 1px solid var(--pm-line); border-top: 3px solid var(--pm-cyan); }
+.shelf__card:hover { border-color: var(--pm-cyan); }
+.shelf__card.is-trash { border-top-color: var(--pm-line); }
+.shelf__open { display: flex; flex-direction: column; gap: .2rem; flex: 1; padding: .75rem .875rem .875rem; color: inherit; text-decoration: none; }
+a.shelf__open:focus-visible { outline: 3px solid var(--pm-blue); outline-offset: -3px; }
+.shelf__art { display: grid; place-items: center; height: 9rem; margin-bottom: .5rem; background: var(--pm-canvas); }
+.shelf__frame { display: block; max-width: 92%; max-height: 8.25rem; height: 8.25rem; overflow: hidden; background: #e1e7ec; box-shadow: 0 6px 16px -10px rgba(16, 40, 60, .45); }
+.shelf__frame img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.shelf__kind { font-size: .6875rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--pm-blue); }
+.shelf__name { font-size: .9375rem; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+.shelf__sub, .shelf__meta { font-size: .75rem; line-height: 1.45; color: var(--pm-muted); }
+.shelf__busy { color: var(--pm-blue); font-weight: 700; }
+/* Het menu rechtsboven op de miniatuur, los van de tekst */
+.shelf__acts { position: absolute; top: .75rem; right: .875rem; }
+.shelf__acts .iconbtn { background: #fff; border-color: var(--pm-line); }
+.shelf__card.is-trash .shelf__acts { position: static; padding: 0 .875rem .875rem; }
+.shelf__acts .iconbtn svg { width: 1.2rem; height: 1.2rem; fill: currentColor; }
+.shelf__menu { top: calc(100% + .25rem); right: 0; min-width: 12rem; }

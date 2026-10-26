@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="nl" data-root="">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bieb &middot; Generator Hub &middot; Pure Minds</title>
+<meta name="description" content="Alle ontwerpen van het team: zoeken, openen, kopiëren, eerdere versies en de prullenbak.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#1ab9e2">
+<link rel="icon" type="image/png" href="assets/brand/favicon.png">
+<!-- Inloggen: zonder sessie meteen naar login.html (js/shared/account.js) -->
+<script src="js/shared/account.js"></script>
+<link rel="stylesheet" href="css/global.css">
+<link rel="stylesheet" href="css/editor.css">
+<link rel="stylesheet" href="css/bieb.css">
+</head>
+<body>
+<div class="bg-deco" aria-hidden="true"></div>
+
+<div class="topstrip">
+  <a href="https://www.pureminds.nl/" target="_blank" rel="noopener">pure minds</a>
+  <span class="topstrip__sep">|</span>interne tools: de bieb van het team
+</div>
+
+<header class="site-header">
+  <div class="container site-header__inner">
+    <div class="site-header__brand">
+      <a href="index.html" aria-label="Naar de Generator Hub"><img src="assets/brand/logo/PureMinds-zeshoek-logo-zwart.svg" alt="Pure Minds marketing group" width="80" height="92" class="site-header__logo"></a>
+      <span class="site-header__divider hide-sm" aria-hidden="true"></span>
+      <div class="site-header__title hide-sm">
+        <h1>Bieb</h1>
+        <p>Alles wat het team maakt, vanzelf opgeslagen.</p>
+      </div>
+    </div>
+    <nav class="toolnav" data-toolnav="bieb" aria-label="Tools"></nav>
+  </div>
+</header>
+
+<!-- js/bieb.js vult de lijst uit js/shared/designs.js (Supabase). ?tool=insta kiest de tool,
+     ?prullenbak=1 opent de prullenbak -->
+<main class="container shelf">
+  <div class="shelf__head">
+    <h2 class="shelf__title" data-title>De bieb<span class="dot">.</span></h2>
+    <p class="shelf__lead" data-lead>Alles wat het team maakt, vanzelf opgeslagen. Zoek een ontwerp en open het om verder te werken.</p>
+  </div>
+
+  <div class="shelf__bar">
+    <label class="shelf__search">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.031 16.617L22.314 20.9L20.9 22.314L16.617 18.031C15.077 19.263 13.124 20 11 20C6.032 20 2 15.968 2 11C2 6.032 6.032 2 11 2C15.968 2 20 6.032 20 11C20 13.124 19.263 15.077 18.031 16.617ZM16.025 15.875C17.248 14.615 18 12.896 18 11C18 7.133 14.868 4 11 4C7.133 4 4 7.133 4 11C4 14.868 7.133 18 11 18C12.896 18 14.615 17.248 15.875 16.025L16.025 15.875Z"/></svg>
+      <span class="sr-only">Zoek in de bieb</span>
+      <input class="input" type="search" data-query placeholder="zoek op titel, klant of collega" autocomplete="off" enterkeyhint="search">
+    </label>
+    <div class="shelf__filters" role="group" aria-label="Welke tool" data-tools></div>
+    <div class="shelf__filters" role="group" aria-label="Van wie">
+      <button type="button" data-mine aria-pressed="false">van mij</button>
+    </div>
+    <button type="button" class="shelf__trash" data-trash aria-pressed="false">prullenbak</button>
+  </div>
+
+  <p class="shelf__count" data-count aria-live="polite"></p>
+  <ul class="shelf__grid" data-grid aria-label="Ontwerpen"></ul>
+  <p class="shelf__empty" data-empty hidden></p>
+</main>
+
+<noscript><p class="noscript">JavaScript staat uit. Zonder JavaScript kun je de bieb niet gebruiken.</p></noscript>
+
+<script src="js/shared/tools.js"></script>
+<script src="js/shared/core.js"></script>
+<script src="js/shared/designs.js"></script>
+<script src="js/shared/library.js"></script>
+<script src="js/bieb.js"></script>
+</body>
+</html>

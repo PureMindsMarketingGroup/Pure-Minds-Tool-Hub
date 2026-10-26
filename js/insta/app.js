@@ -178,16 +178,21 @@
   }
 
   let state = load();
-  // Gestart vanaf het dashboard (?template=carousel&format=portrait): meteen het
-  // goede template en formaat. Pas opgeslagen bij de eerste wijziging.
+  // Gestart vanaf het dashboard (?template=carousel&format=portrait): een nieuwe post in het
+  // goede template en formaat. De vorige blijft in de bieb (library.js: opts.fresh); deze komt
+  // er pas in bij de eerste echte wijziging
   const start = PM.startParams();
   const quickStart = !!(start.template || start.format);
-  if (T.TEMPLATE_META.some((t) => t.id === start.template)) state.template = start.template;
-  if (T.FORMATS[start.format]) state.format = start.format;
+  const before = quickStart && PM.store.get(STORAGE_KEY) ? state : null;   // er stond al iets
+  if (quickStart) {
+    state = normalize({ ...defaults(), exportType: state.exportType, exportWidth: state.exportWidth });
+    if (T.TEMPLATE_META.some((t) => t.id === start.template)) state.template = start.template;
+    if (T.FORMATS[start.format]) state.format = start.format;
+    PM.store.set(STORAGE_KEY, state);
+  }
 
   const save = PM.debounce(() => PM.store.set(STORAGE_KEY, state), 300, { flushOnHide: true });
   let lib = null;   // de bieb (js/shared/library.js), aan het eind gekoppeld
-  let aiSaver = null;   // na de AI: elke wijziging vanzelf in de bieb (PM.ai.keepSaved)
   let ai = null;        // het paneel AI (js/shared/ai.js)
 
   const env = { logo: null, badge: null, photo: null, clientLogo: null };
@@ -306,6 +311,7 @@
       syncInputs();
       applyFiles();
       save();
+      if (lib) lib.touch();
       render();
     },
   });
@@ -653,7 +659,6 @@
     history.commit(key);
     save();
     if (lib) lib.touch();
-    if (aiSaver) aiSaver.touch();
     render();
   }
 
@@ -1234,20 +1239,24 @@
      Overig
      ------------------------------------------------------------------------- */
 
-  // Alles wissen gaat meteen, met "ongedaan maken" in de melding in plaats van
-  // een vraag vooraf. Foto en logo blijven in IndexedDB tot de volgende keer laden
+  // Nieuwe post: meteen, zonder vraag vooraf. De vorige blijft in de bieb (alles wordt vanzelf
+  // opgeslagen); de melding brengt je er terug. Foto en logo blijven in IndexedDB tot de volgende keer laden
   $('#resetBtn').addEventListener('click', () => {
-    const keep = { exportType: state.exportType, exportWidth: state.exportWidth };
-    state = normalize({ ...defaults(), ...keep });
-    syncLast();
-    syncVisibility();
-    syncInputs();
-    applyFiles();
-    changed(null);
-    if (lib) lib.detach();
-    if (aiSaver) aiSaver.stop();
-    syncSocial();
-    toast('Alles gewist; je begint opnieuw met de voorbeelden.', false, { label: 'ongedaan maken', run: () => history.undo() });
+    const prev = lib ? lib.detach() : { id: null };
+    const reset = () => {
+      const keep = { exportType: state.exportType, exportWidth: state.exportWidth };
+      state = normalize({ ...defaults(), ...keep });
+      syncLast();
+      syncVisibility();
+      syncInputs();
+      applyFiles();
+      changed(null);
+      syncSocial();
+    };
+    if (lib) lib.hold(reset);
+    else reset();
+    toast(prev.id ? 'Een nieuwe post, met de voorbeelden. Je vorige post staat in de bieb.' : 'Een nieuwe post, met de voorbeelden.', false,
+      prev.id ? { label: 'terug naar vorige', run: () => lib.open(prev.id) } : { label: 'ongedaan maken', run: () => history.undo() });
   });
 
   // Logo en badge: het bestand via een server; bij file:// de ingebedde kopie,
@@ -1269,15 +1278,14 @@
   history.clear();
   render();
 
-  // Bieb: dit ontwerp 14 dagen bewaren om het later aan te passen. Openen zet de hele post
-  // terug (één stap om ongedaan te maken); je downloadinstellingen blijven zoals ze staan
+  // Bieb: de post gaat vanzelf de bieb van het team in. Openen zet de hele post terug; je
+  // downloadinstellingen blijven zoals ze staan
   lib = PM.library ? PM.library.attach({
     tool: 'insta',
     getState: () => state,
     fileKeys: (s) => [s.photoKey, s.logoKey, ...(((s.data || {}).carousel || {}).slides || []).map((x) => x && x.photoKey)],
     async apply(saved, keys) {
       keys.forEach(trackFile);
-      if (aiSaver) aiSaver.stop();
       const keep = { exportType: state.exportType, exportWidth: state.exportWidth };
       state = normalize({ ...merge(defaults(), saved), ...keep });
       syncLast();
@@ -1293,9 +1301,10 @@
       T.renderPost(c, { ...state, badge: false }, renderEnv({ slideIndex: 0 }), { scale: 240 / 1080 });
       return c;
     },
-    undo: () => history.undo(),
     close: () => shell.closePopover(),
     openId: start.bieb,
+    versionId: start.versie,
+    fresh: before,
   }) : null;
 
   /* ---------------------------------------------------------------------------
@@ -1445,7 +1454,6 @@
   }
 
   if (PM.ai) {
-    aiSaver = PM.ai.keepSaved(lib);
     ai = PM.ai.panel($('[data-ai-panel]'), {
       tool: 'insta',
       format: 'insta',
@@ -1474,7 +1482,6 @@
         apply: (file) => setPhoto(file),
       },
       lib,
-      saver: aiSaver,
       undo: () => history.undo(),
     });
     syncSocial();

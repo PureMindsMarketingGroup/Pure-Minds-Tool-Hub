@@ -155,9 +155,8 @@
     },
     {
       id: 'opslaan', target: 'opslaan',
-      title: 'Sla je mail op',
-      text: 'Klik op opslaan: je mail blijft 14 dagen in de bieb, ook voor je collega’s. Pas je hem later aan? Sla dan opnieuw op en kies: vorige versie overschrijven of als nieuw opslaan.',
-      doe: { event: 'click', hint: 'Klik op opslaan' },
+      title: 'Vanzelf opgeslagen',
+      text: 'Je mail gaat vanzelf de bieb van het team in, ook voor je collega’s. Hier zie je of alles is opgeslagen. Onder bieb vind je alles terug, met eerdere versies.',
     },
     {
       id: 'kopieer', target: 'kopieer',

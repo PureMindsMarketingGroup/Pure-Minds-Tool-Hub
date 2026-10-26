@@ -22,8 +22,8 @@
    en een link naar een foto die al online staat.
 
    Ongedaan maken: PM.history over de hele mail. Opslaan: PM.store
-   (pm-newsletter-v1) en de bieb (14 dagen); na de AI gaat elke wijziging
-   vanzelf in de bieb (PM.ai.keepSaved, met een debounce).
+   (pm-newsletter-v1), en elke wijziging gaat vanzelf de bieb van het team in
+   (js/shared/library.js).
    ============================================================================= */
 (function () {
   'use strict';
@@ -87,13 +87,16 @@
      Toestand
      ------------------------------------------------------------------------- */
 
+  // Een snelle start vanaf het dashboard (nieuwsbrief of korte mail): een nieuwe mail. De vorige
+  // blijft in de bieb (library.js: opts.fresh); deze komt er pas in bij de eerste echte wijziging
   const start = PM.startParams();
   const savedDraft = PM.store.get(KEY, null);
   const quickKind = E.STARTERS[start.soort] ? start.soort : null;
-  let state = savedDraft ? E.normalize(savedDraft) : E.starter(quickKind || 'nieuwsbrief');
+  const before = quickKind && savedDraft ? E.normalize(savedDraft) : null;
+  let state = savedDraft && !quickKind ? E.normalize(savedDraft) : { ...E.starter(quickKind || 'nieuwsbrief'), name: '' };
+  if (before) PM.store.set(KEY, state);
   let selected = state.blocks[0] ? state.blocks[0].id : null;
   let lib = null;
-  let aiSaver = null;   // na de AI: elke wijziging vanzelf in de bieb
   let ai = null;        // het paneel AI
   const pending = {};   // sleutel (blok-id of blok-id:punt) -> blob-url zolang een upload loopt
 
@@ -114,6 +117,7 @@
       state = E.normalize(saved);
       if (!find(selected)) selected = state.blocks[0] ? state.blocks[0].id : null;
       save();
+      if (lib) lib.touch();
       syncMail();
       renderList();
       render();
@@ -126,7 +130,6 @@
     history.commit(key);
     save();
     if (lib) lib.touch();
-    if (aiSaver) aiSaver.touch();
     renderSoon();
   }
 
@@ -679,16 +682,21 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
     changed(f.dataset.mail);
   }));
 
-  function restart(kind, { quiet = false } = {}) {
-    state = { ...E.starter(kind), name: '' };
-    selected = state.blocks[0] ? state.blocks[0].id : null;
-    syncMail();
-    changed(null);
-    renderList();
-    render();
-    if (lib) lib.detach();
-    if (aiSaver) aiSaver.stop();
-    if (!quiet) PM.toast(`${kind === 'kort' ? 'Nieuwe korte mail' : 'Nieuwe nieuwsbrief'} gestart.`, false, { label: 'ongedaan maken', run: () => history.undo() });
+  // Een nieuwe mail: de vorige blijft in de bieb (alles wordt vanzelf opgeslagen); de melding brengt je er terug
+  function restart(kind) {
+    const prev = lib ? lib.detach() : { id: null };
+    const reset = () => {
+      state = { ...E.starter(kind), name: '' };
+      selected = state.blocks[0] ? state.blocks[0].id : null;
+      syncMail();
+      changed(null);
+      renderList();
+      render();
+    };
+    if (lib) lib.hold(reset);
+    else reset();
+    PM.toast(`${kind === 'kort' ? 'Nieuwe korte mail' : 'Nieuwe nieuwsbrief'} gestart.${prev.id ? ' De vorige staat in de bieb.' : ''}`, false,
+      prev.id ? { label: 'terug naar vorige', run: () => lib.open(prev.id) } : { label: 'ongedaan maken', run: () => history.undo() });
   }
   $$('[data-restart]').forEach((btn) => btn.addEventListener('click', () => restart(btn.dataset.restart)));
 
@@ -1271,21 +1279,17 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
   renderList();
   history.clear();
   render();
-  // Een snelle start vanaf het dashboard (nieuwsbrief of korte mail) terwijl er al een mail
-  // open stond: nieuw beginnen, met "ongedaan maken" in de melding (niets kwijt)
-  if (quickKind && savedDraft) restart(quickKind);
   // Pure Minds Sans is in de preview pas zichtbaar als hij geladen is
   PM.fontsReady.then(fitFrame);
   syncUploadState();
 
-  // Bieb: deze mail 14 dagen bewaren om hem later aan te passen
+  // Bieb: de mail gaat vanzelf de bieb van het team in
   lib = PM.library ? PM.library.attach({
     tool: 'newsletter',
     getState: () => state,
     fileKeys,
     apply(saved, keys) {
       keys.forEach(trackFile);
-      if (aiSaver) aiSaver.stop();
       state = E.normalize(saved);
       selected = state.blocks[0] ? state.blocks[0].id : null;
       syncMail();
@@ -1293,9 +1297,10 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
       renderList();
       render();
     },
-    undo: () => history.undo(),
     close: () => shell.closePopover(),
     openId: start.bieb,
+    versionId: start.versie,
+    fresh: before,
   }) : null;
 
   /* ---------------------------------------------------------------------------
@@ -1421,7 +1426,6 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
   }
 
   if (PM.ai) {
-    aiSaver = PM.ai.keepSaved(lib);
     ai = PM.ai.panel($('[data-ai-panel]'), {
       tool: 'newsletter',
       format: 'email',
@@ -1450,7 +1454,6 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
         apply: (file, photo) => placePhoto(selected, file, photo),
       },
       lib,
-      saver: aiSaver,
       undo: () => history.undo(),
     });
     renderIdeas();

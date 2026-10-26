@@ -206,12 +206,22 @@
   }
 
   let state = loadState();
-  // Gestart vanaf het dashboard (?type=offerte): meteen het goede soort document.
-  // Pas opgeslagen bij de eerste wijziging, zodat alleen kijken niets verandert.
+  // Een nieuw, leeg document; je naam, functie en handtekening blijven staan (het briefpapier staat apart)
+  const blankDoc = (type, from = state) => ({
+    ...defaults(), type, signName: from.signName, signRole: from.signRole, sigKey: from.sigKey,
+    title: '', recipient: '', reference: '', salutation: '', memoTo: '', memoFrom: '', memoCc: '',
+    body: '', items: [{ desc: '', qty: 1, price: 0 }],
+  });
+  // Gestart vanaf het dashboard (?type=offerte): een nieuw document van die soort. Het vorige
+  // blijft in de bieb (library.js: opts.fresh); dit komt er pas in bij de eerste echte wijziging
   const start = PM.startParams();
   let lib = null;   // de bieb (js/shared/library.js), aan het eind gekoppeld
   const quickStart = !!TYPE_LABEL[start.type];
-  if (quickStart) state.type = start.type;
+  const before = quickStart && PM.store.get(KEY) ? state : null;   // er stond al iets
+  if (quickStart) {
+    state = normalize(blankDoc(start.type));
+    PM.store.set(KEY, state);
+  }
   let sender = normalizeSender(PM.store.get(SENDER_KEY, {}));
   let signature = null;  // { url, name, width } van state.sigKey
 
@@ -659,6 +669,7 @@
       syncVisibility();
       applySignature();
       save();
+      if (lib) lib.touch();
       render();
     },
   });
@@ -1543,19 +1554,20 @@
      Overig
      ------------------------------------------------------------------------- */
 
-  // Nieuw document: meteen beginnen, met "ongedaan maken" in de melding in
-  // plaats van een vraag vooraf (je briefpapier, naam en handtekening blijven staan)
+  // Nieuw document: meteen beginnen, zonder vraag vooraf. Het vorige blijft in de bieb (alles wordt
+  // vanzelf opgeslagen); de melding brengt je er terug. Briefpapier, naam en handtekening blijven staan
   $('#resetBtn').addEventListener('click', () => {
-    const keep = { type: state.type, signName: state.signName, signRole: state.signRole, sigKey: state.sigKey };
-    state = {
-      ...defaults(), ...keep, title: '', recipient: '', reference: '', salutation: '', memoTo: '', memoFrom: '', memoCc: '',
-      body: '', items: [{ desc: '', qty: 1, price: 0 }],
+    const prev = lib ? lib.detach() : { id: null };
+    const reset = () => {
+      state = blankDoc(state.type);
+      syncInputs();
+      syncVisibility();
+      changed(null);
     };
-    syncInputs();
-    syncVisibility();
-    changed(null);
-    if (lib) lib.detach();
-    PM.toast('Nieuw, leeg document gestart.', false, { label: 'ongedaan maken', run: () => history.undo() });
+    if (lib) lib.hold(reset);
+    else reset();
+    PM.toast(prev.id ? 'Nieuw, leeg document gestart. Het vorige staat in de bieb.' : 'Nieuw, leeg document gestart.', false,
+      prev.id ? { label: 'terug naar vorige', run: () => lib.open(prev.id) } : { label: 'ongedaan maken', run: () => history.undo() });
   });
 
   // Rondleiding, stap werkbalk: de tekst ernaast moet te gebruiken blijven. Breed staat het kaartje
@@ -1583,8 +1595,8 @@
   history.clear();
   render();
   PM.fontsReady.then(render);
-  // Bieb: dit document 14 dagen bewaren om het later aan te passen. Openen zet het hele
-  // document terug (één stap om ongedaan te maken); je briefpapier blijft zoals het staat
+  // Bieb: het document gaat vanzelf de bieb van het team in. Openen zet het hele document
+  // terug; je briefpapier blijft zoals het staat
   lib = PM.library ? PM.library.attach({
     tool: 'document',
     getState: () => state,
@@ -1597,9 +1609,10 @@
       applySignature();
       changed(null);
     },
-    undo: () => history.undo(),
     close: () => shell.closePopover(),
     openId: start.bieb,
+    versionId: start.versie,
+    fresh: before,
   }) : null;
 
   // Handtekening uit een vorige sessie terugzetten, dan oude bestanden opruimen

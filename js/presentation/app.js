@@ -317,10 +317,11 @@
   // De rondleiding vanaf de hub (#rondleiding) is die van een gewone presentatie. Lezen vóór
   // PM.shell: die haalt de hash weg
   const hubTour = location.hash === '#rondleiding';
-  // Een tegel op de hub kiest de soort (?type=regulier, voorstel of positionering). De wissel volgt
-  // na het laden (zodat ongedaan maken hem terugdraait), maar de rondleiding past meteen bij de soort
-  const wanted = TYPES.includes(start.type) ? start.type : hubTour ? 'regulier' : null;
-  let startType = wanted && (wanted === 'regulier' || DECKS[wanted]) && wanted !== state.type ? wanted : null;
+  // Een tegel op de hub (?type=regulier, voorstel of positionering) begint een nieuwe van die soort; wat
+  // er stond, blijft in de bieb. De rondleiding vanaf de hub wisselt alleen naar de gewone presentatie.
+  // Beide na het laden en het koppelen van de bieb, maar de rondleiding past meteen bij de soort
+  const tileType = TYPES.includes(start.type) && (start.type === 'regulier' || DECKS[start.type]) ? start.type : null;
+  let startType = !tileType && hubTour && state.type !== 'regulier' ? 'regulier' : null;
   // type=regulier is geen snelle start: bij een eerste bezoek start de rondleiding zoals altijd
   const quickStart = Object.keys(start).some((k) => k !== 'type' && k !== 'bieb') || (TYPES.includes(start.type) && start.type !== 'regulier');
   // De rondleiding begint bij de titel van slide 1
@@ -506,13 +507,13 @@
       if (inStrip) focusActiveThumb();
       applyPhotos();
       save();
+      if (lib) lib.touch();
       render();
     },
   });
   history.bind({ undo: $('#undoBtn'), redo: $('#redoBtn') });
 
-  // Na de AI: elke wijziging vanzelf in de bieb (PM.ai.keepSaved); het paneel AI (js/shared/ai.js)
-  let aiSaver = null;
+  // Het paneel AI (js/shared/ai.js)
   let ai = null;
 
   // Elke wijziging: een stap in de geschiedenis, opslaan en opnieuw tekenen
@@ -520,7 +521,6 @@
     history.commit(key);
     save();
     if (lib) lib.touch();
-    if (aiSaver) aiSaver.touch();
     render();
   }
 
@@ -1510,7 +1510,7 @@
 
   // Wisselen van soort: wat openstaat gaat de bewaarplek in, de andere komt eruit (of een nieuwe).
   // Zo raak je niets kwijt; ongedaan maken draait de wissel ook terug
-  function switchType(type, { atStart = false } = {}) {
+  function switchType(type, { atStart = false, quiet = false } = {}) {
     if (type === state.type || !TYPES.includes(type) || (type !== 'regulier' && !DECKS[type])) return;
     const from = state.type;
     const back = state.stash[type];
@@ -1519,7 +1519,15 @@
     if (from !== 'regulier') Object.assign(keep, { form: state.form, parked: state.parked });
     state.stash = { ...state.stash, [from]: keep, [type]: null };
     Object.assign(state, back ? { form: null, parked: {}, ...back } : { ...freshDeck(type), showNumbers: false }, { type });
-    afterSwitch(!back);
+    // Elke soort is een eigen ontwerp in de bieb: wisselen is geen wijziging, en de soort waar je
+    // naartoe gaat, komt in de nieuwste versie (heeft een collega hem intussen aangepast)
+    if (lib) {
+      lib.hold(() => afterSwitch(!back));
+      lib.sync();
+    } else {
+      afterSwitch(!back);
+    }
+    if (quiet) return;
     const text = {
       regulier: back ? 'Terug in je presentatie.' : 'Nieuwe presentatie gestart met de voorbeeldslides.',
       voorstel: back ? 'Terug in je voorstel.' : 'Nieuw voorstel: vul de gegevens van de klant in.',
@@ -1530,21 +1538,25 @@
     if (type !== 'regulier' && !atStart && PM.tour) PM.tour.auto(type, { quickStart: false });
   }
 
-  // Opnieuw beginnen met de soort die openstaat: meteen, met "ongedaan maken" in de melding in
-  // plaats van een vraag vooraf. De andere soorten blijven bewaard, de badge blijft zoals hij stond
+  // Opnieuw beginnen met de soort die openstaat: meteen, zonder vraag vooraf. Wat er stond, blijft in
+  // de bieb (alles wordt vanzelf opgeslagen); de melding brengt je er terug. De andere soorten blijven
+  // bewaard, de badge blijft zoals hij stond
   function startDeck(type) {
-    Object.assign(state, freshDeck(type), { type, dot: true, showNumbers: false });
-    state.stash = { ...state.stash, [type]: null };
-    afterSwitch(true);
-    if (lib) lib.detach();
-    if (aiSaver) aiSaver.stop();
-    const undo = { label: 'ongedaan maken', run: () => history.undo() };
+    const prev = lib ? lib.detach() : { id: null };
+    const reset = () => {
+      Object.assign(state, freshDeck(type), { type, dot: true, showNumbers: false });
+      state.stash = { ...state.stash, [type]: null };
+      afterSwitch(true);
+    };
+    if (lib) lib.hold(reset);
+    else reset();
     const text = {
       regulier: 'Nieuwe presentatie gestart met de voorbeeldslides.',
       voorstel: 'Nieuw voorstel gestart. Vul bij Voorstel de gegevens van de klant in.',
       positionering: 'Nieuwe positionering gestart. Vul bij Gegevens de klantnaam in.',
     }[type];
-    toast(text, false, undo);
+    toast(`${text}${prev.id ? ` ${OWN[type]} van net staat in de bieb.` : ''}`, false,
+      prev.id ? { label: 'terug naar vorige', run: () => lib.open(prev.id) } : { label: 'ongedaan maken', run: () => history.undo() });
   }
 
   el.resetBtn.addEventListener('click', () => startDeck(state.type));
@@ -2684,8 +2696,7 @@
   syncAll();   // bouwt ook de layouts (applyType)
   history.clear();
   photoKeys().forEach(trackFile);
-  // Vanaf het dashboard naar de gekozen soort: wisselen zoals bij Soort (je vorige presentatie,
-  // voorstel of positionering komt terug, of een nieuwe). Ongedaan maken of Soort brengt de andere terug
+  // De rondleiding vanaf het dashboard: naar de gewone presentatie, zoals bij Soort
   if (startType) {
     switchType(startType, { atStart: true });
     startType = null;
@@ -2699,9 +2710,9 @@
     drawStrip();
   });
 
-  // Bieb: de presentatie, het voorstel of de positionering die openstaat 14 dagen bewaren.
-  // Elke soort heeft zijn eigen plek (slot). Openen van een andere soort werkt als wisselen:
-  // wat openstaat gaat naar Soort; wat daar van die soort stond, gaat eerst in de bieb
+  // Bieb: de presentatie, het voorstel en de positionering gaan elk vanzelf de bieb in, als eigen
+  // ontwerp (slot). Openen van een andere soort werkt als wisselen: wat openstaat gaat naar Soort;
+  // wat daar van die soort stond en nog niet helemaal in de bieb staat, gaat er eerst in
   const biebDeck = (s, box = s) => ({
     v: 2, type: s.type, dot: s.dot, badge: s.badge,
     slides: box.slides, active: 0, showNumbers: box.showNumbers === true, form: box.form || null, parked: box.parked || {},
@@ -2713,14 +2724,13 @@
     fileKeys: (s) => [...(s.slides || []), ...Object.values(s.parked || {})].map((x) => x && x.photoKey),
     async apply(saved, keys) {
       keys.forEach(trackFile);
-      if (aiSaver) aiSaver.stop();
       const deck = normalize({ ...saved, exportWidth: state.exportWidth, stash: {} });
       const stash = { ...state.stash };
       if (deck.type !== state.type) {
         const keep = { slides: state.slides, active: state.active, showNumbers: state.showNumbers };
         if (state.type !== 'regulier') Object.assign(keep, { form: state.form, parked: state.parked });
         stash[state.type] = keep;
-        if (stash[deck.type] && !lib.isClean(deck.type)) await lib.save({ quiet: true, state: biebDeck({ ...state, type: deck.type }, stash[deck.type]) });
+        if (stash[deck.type] && !lib.isClean(deck.type)) lib.saveOther(biebDeck({ ...state, type: deck.type }, stash[deck.type]));
       }
       stash[deck.type] = null;
       state = { ...deck, stash, exportWidth: state.exportWidth, active: 0 };
@@ -2733,10 +2743,21 @@
       S.renderSlide(c, state, 0, slideEnv(0), { scale: 240 / S.W });
       return c;
     },
-    undo: () => history.undo(),
     close: () => shell.closePopover(),
     openId: start.bieb,
+    versionId: start.versie,
   }) : null;
+
+  // Wat bij Soort geparkeerd staat met wijzigingen die nog niet in de bieb kwamen (een vorige keer),
+  // meteen naar zijn eigen ontwerp
+  if (lib) for (const t of TYPES) if (t !== state.type && state.stash[t]) lib.saveSlot(t, biebDeck({ ...state, type: t }, state.stash[t]));
+
+  // Een tegel op het dashboard: een nieuwe van die soort. Een andere soort eerst openen zoals bij
+  // Soort (wat er stond, gaat naar Soort en in de bieb), dan opnieuw beginnen
+  if (tileType && lib && !start.bieb) {
+    if (tileType !== state.type) switchType(tileType, { atStart: true, quiet: true });
+    startDeck(tileType);
+  }
 
   /* ---------------------------------------------------------------------------
      AI: ruwe content in, slides eruit (schema: vul_presentatie in uploads/lib/ai.js)
@@ -2832,7 +2853,6 @@
   }
 
   if (PM.ai) {
-    aiSaver = PM.ai.keepSaved(lib);
     ai = PM.ai.panel($('[data-ai-panel]'), {
       tool: 'presentation',
       format: 'presentatie',
@@ -2854,7 +2874,6 @@
         apply: (file) => setPhoto(file),
       },
       lib,
-      saver: aiSaver,
       undo: () => history.undo(),
     });
     renderIdeas();
