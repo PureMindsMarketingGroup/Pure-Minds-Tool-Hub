@@ -31,7 +31,7 @@
     // Inhoud
     'blokken': {
       title: 'Blokken',
-      text: 'Je mail bestaat uit blokken onder elkaar. Klik op een blok om het te openen en aan te passen. Met de pijltjes zet je het hoger of lager; kopiëren en weggooien staan ernaast. Kop en voet staan vast.',
+      text: 'Je mail bestaat uit blokken onder elkaar. Klik op een blok om het te openen en aan te passen. Met de pijltjes zet je het hoger of lager; kopiëren en weggooien staan ernaast. De voet staat vast.',
     },
     'opmaak': {
       title: 'Vet en voornaam',
@@ -95,6 +95,14 @@
       title: 'Naam',
       text: 'Alleen voor jou: zo heet je mail in de bieb en als bestand. Het onderwerp van de mail vul je in Brevo in, bij de campagne.',
     },
+    'kopnaam': {
+      title: 'Naam bovenaan',
+      text: 'Staat groot naast het logo, met de cyaan punt: zo zie je meteen dat dit de nieuwsbrief is. Laat je hem leeg, dan staat er alleen het logo, zoals bij een korte mail.',
+    },
+    'editie': {
+      title: 'Editie',
+      text: 'Klein onder de naam bovenaan, in hoofdletters: de maand (“Oktober 2026”) of een nummer (“Editie 12”). Een nieuwe nieuwsbrief krijgt vanzelf de huidige maand.',
+    },
     'onderwerp': {
       title: 'Onderwerp',
       text: 'De onderwerpregel staat niet in de HTML: je vult hem in Brevo in, bij Subject. Hier bewaar je hem bij je mail (de AI maakt er ook een), met kopieer om hem te plakken.',
@@ -115,7 +123,7 @@
     // Podium
     'preview': {
       title: 'Preview',
-      text: 'Zo ziet je mail eruit. Klik op een blok om het aan te passen. Met telefoon zie je hoe de kolommen op een smal scherm onder elkaar vallen. Kop en voet staan vast, met de afmeldlink die Brevo verplicht.',
+      text: 'Zo ziet je mail eruit. Klik op een blok of op de kop om hem aan te passen. Met telefoon zie je de mail op een smal scherm. De voet staat vast, met de afmeldlink die Brevo verplicht.',
     },
 
     // Kopiëren

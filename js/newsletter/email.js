@@ -4,8 +4,14 @@
    -----------------------------------------------------------------------------
    Dezelfde opbouw als email/pure-minds-email.html: tabellen met inline stijl,
    600 px breed, kolommen die op een telefoon onder elkaar vallen, knoppen die
-   ook in Outlook werken (VML). Kop (logo, "bekijk online") en voet (contact,
-   socials, Emerce 100, afmelden) staan vast; daartussen de blokken.
+   ook in Outlook werken (VML). Kop (logo, met de naam bovenaan en de editie
+   als die er zijn) en voet (contact, socials, Emerce 100, afmelden) staan
+   vast; "bekijk online" staat klein boven de mail; daartussen de blokken.
+
+   Typografie (TYPE): H1 36/42 ExtraBold alleen in de opening, H2 24/30 Bold
+   boven elk blok (met een cyaan streepje erboven), H3 18/24 Bold per punt,
+   p 16/26 Regular voor alle lopende tekst, label 13 px in hoofdletters. Twee
+   tekstblokken na elkaar krijgen een lijn ertussen.
 
      PMEmail.build(toestand, { preview, pending })   de hele HTML
          preview  voor de preview in de maker: elk blok krijgt data-pm-blok,
@@ -13,7 +19,8 @@
          pending  { sleutel: blob-url }: foto's die nog uploaden (alleen preview)
      PMEmail.check(toestand, html?)   [{ level, key, block, text }]: wat nog moet
      PMEmail.normalize(toestand)      opgeslagen toestand netjes maken
-     PMEmail.starter(soort)           'nieuwsbrief' (alle blokken) of 'kort'
+     PMEmail.starter(soort)           'nieuwsbrief' (alle blokken, naam "Nieuwsbrief" en de maand
+                                      als editie) of 'kort' (zonder naam bovenaan)
      PMEmail.block(type)              een nieuw blok met voorbeeldtekst
      PMEmail.convert(blok, soort, o)  een blok omzetten met behoud van tekst, link, foto en id:
                                       tekst -> fototekst (o.side: links, rechts, boven), fototekst
@@ -144,8 +151,18 @@
     kort: ['opening', 'tekst', 'afsluiter'],
   };
 
+  // De naam bovenaan (masthead): een nieuwsbrief heet "Nieuwsbrief", met de maand als editie; een korte mail heeft er geen
+  const MONTHS = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
+  const DEFAULT_MAST = 'Nieuwsbrief';
+  function thisEdition(date = new Date()) {
+    const m = MONTHS[date.getMonth()];
+    return `${m[0].toUpperCase()}${m.slice(1)} ${date.getFullYear()}`;
+  }
+
   function starter(kind = 'nieuwsbrief') {
-    return { v: 1, kind: STARTERS[kind] ? kind : 'nieuwsbrief', name: '', subject: '', preheader: SAMPLE_PREHEADER, ideas: [], blocks: (STARTERS[kind] || STARTERS.nieuwsbrief).map(block) };
+    const k = STARTERS[kind] ? kind : 'nieuwsbrief';
+    const letter = k === 'nieuwsbrief';
+    return { v: 1, kind: k, name: '', subject: '', preheader: SAMPLE_PREHEADER, masthead: letter ? DEFAULT_MAST : '', edition: letter ? thisEdition() : '', ideas: [], blocks: STARTERS[k].map(block) };
   }
 
   /* ---------------------------------------------------------------------------
@@ -207,12 +224,16 @@
       seen.add(b.id);
       return b;
     });
+    const kind = STARTERS[o.kind] ? o.kind : 'nieuwsbrief';
     return {
       v: 1,
-      kind: STARTERS[o.kind] ? o.kind : 'nieuwsbrief',
+      kind,
       name: str(o.name, 120),
       subject: str(o.subject, 150),   // onderwerpregel: vul je in Brevo in, staat niet in de HTML
       preheader: 'preheader' in o ? str(o.preheader, 200) : SAMPLE_PREHEADER,
+      // Naam bovenaan en editie; een nieuwsbrief van vóór deze velden krijgt "Nieuwsbrief" erbij
+      masthead: 'masthead' in o ? str(o.masthead, 60) : kind === 'nieuwsbrief' ? DEFAULT_MAST : '',
+      edition: 'edition' in o ? str(o.edition, 60) : '',
       ideas: Array.isArray(o.ideas) ? o.ideas.filter((x) => typeof x === 'string').map((x) => x.slice(0, 200)).slice(0, 12) : [],   // fotosuggesties van de AI
       blocks,
     };
@@ -303,6 +324,42 @@
   const td = (style, inner, attrs = '') => `<td${attrs} style="font-family:${FONT};${style}">${inner}</td>`;
   const table = (inner, extra = '') => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"${extra}>${inner}</table>`;
 
+  // Eén typeschaal voor elke mail. H1 alleen in de opening, H2 boven elk blok, H3 per punt,
+  // p voor alle lopende tekst. Op een telefoon worden H1 en H2 iets kleiner (HEAD_STYLE)
+  const TYPE = {
+    h1: 'font-size:36px;line-height:42px;font-weight:800;letter-spacing:-0.5px;',
+    h2: 'font-size:24px;line-height:30px;font-weight:700;letter-spacing:-0.2px;',
+    h3: 'font-size:18px;line-height:24px;font-weight:700;',
+    p: 'font-size:16px;line-height:26px;font-weight:400;',
+    label: 'font-size:13px;line-height:16px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;',
+  };
+  const INK = '#303030';
+  // Vaste ruimtes (px) tussen de delen van een blok
+  const GAP = { title: 14, text: 12, para: 16, h3: 6, button: 28 };
+
+  // Echte koppen en alinea's, met margin 0 tegen de standaardruimte van mailprogramma's
+  const hx = (n, inner, color = INK) => `<h${n} class="pm-h${n}" style="margin:0;font-family:${FONT};${TYPE[`h${n}`]}color:${color};">${inner}</h${n}>`;
+  const para = (inner, color = INK, extra = '') => `<p style="margin:0;font-family:${FONT};${TYPE.p}color:${color};${extra}">${inner}</p>`;
+
+  // Cyaan streepje boven elke tussenkop: hier begint een nieuw onderwerp
+  const ACCENT = '<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td width="32" style="width:32px;height:4px;line-height:4px;font-size:4px;background-color:#1AB9E2;">&nbsp;</td></tr></table>';
+
+  // Delen onder elkaar: [ruimte erboven, html]. Lege delen vallen weg, het eerste krijgt geen ruimte
+  const stack = (items) => {
+    const rows = items.filter((it) => it && it[1]);
+    return rows.length ? table(rows.map(([gap, html], i) => `<tr><td style="padding:${i ? gap : 0}px 0 0 0;">${html}</td></tr>`).join('\n')) : '';
+  };
+
+  // Tussenkop met streepje, alinea's en een tekstlink: zo begint en loopt elk tekstblok
+  function textParts(b, o) {
+    const parts = [];
+    if (b.title.trim()) parts.push([0, ACCENT], [GAP.title, hx(2, heading(b.title, o))]);
+    paragraphs(b.body).forEach((p, i) => parts.push([i ? GAP.para : GAP.text, para(inline(p, o))]));
+    const link = textLink(b.link);
+    if (link) parts.push([GAP.para, para(link, INK, 'font-weight:700;')]);
+    return parts;
+  }
+
   // Magenta hoofdknop (één per mail) of rustige knop met Inkt-rand; ook in Outlook (VML)
   function button(b, kind) {
     const href = safeUrl(b && b.url);
@@ -353,24 +410,17 @@
 
   const RENDER = {
     opening(b, o) {
-      const btn = button(b.button, 'hoofd');
-      const intro = paragraphs(b.intro);
-      const rows = [];
+      const parts = [];
       if (b.label.trim()) {
-        rows.push(`<tr><td style="padding:0 0 18px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+        parts.push([0, `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
 <td valign="middle" style="padding:0 10px 0 0;"><img src="${IMG}zeshoek-cyaan.png" width="14" height="16" alt="" style="display:block;width:14px;height:16px;"></td>
-${td('font-size:13px;line-height:16px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#ffffff;', esc(b.label.trim()), ' valign="middle"')}
-</tr></table></td></tr>`);
+${td(`${TYPE.label}color:#ffffff;`, esc(b.label.trim()), ' valign="middle"')}
+</tr></table>`]);
       }
-      if (b.title.trim()) {
-        rows.push(`<tr>${td(`font-size:36px;line-height:42px;font-weight:800;letter-spacing:-0.5px;color:#ffffff;padding:0 0 ${intro.length || btn ? 18 : 0}px 0;`, heading(b.title, o), ' class="pm-h1"')}</tr>`);
-      }
-      intro.forEach((p, i) => {
-        const end = i === intro.length - 1;
-        rows.push(`<tr>${td(`font-size:17px;line-height:28px;color:#e4e7ea;padding:0 0 ${end ? (btn ? 30 : 0) : 16}px 0;`, inline(p, o, { dark: true }))}</tr>`);
-      });
-      if (btn) rows.push(`<tr><td align="left">${btn}</td></tr>`);
-      return `<td class="pm-px" style="padding:44px 40px 48px 40px;background-color:#303030;">${table(rows.join('\n'))}</td>`;
+      if (b.title.trim()) parts.push([18, hx(1, heading(b.title, o), '#ffffff')]);
+      paragraphs(b.intro).forEach((p, i) => parts.push([i ? GAP.para : 16, para(inline(p, o, { dark: true }), '#e4e7ea')]));
+      parts.push([GAP.button, button(b.button, 'hoofd')]);
+      return `<td class="pm-px" style="padding:44px 40px 48px 40px;background-color:#303030;">${stack(parts)}</td>`;
     },
 
     foto(b, o) {
@@ -381,44 +431,27 @@ ${td('font-size:13px;line-height:16px;font-weight:700;letter-spacing:1.5px;text-
     },
 
     tekst(b, o, pad) {
-      const rows = [];
-      const body = paragraphs(b.body);
-      const link = textLink(b.link);
-      if (b.title.trim()) rows.push(`<tr>${td('font-size:24px;line-height:30px;font-weight:700;color:#303030;padding:0 0 14px 0;', heading(b.title, o), ' class="pm-h2"')}</tr>`);
-      body.forEach((p) => rows.push(`<tr>${td('font-size:16px;line-height:26px;color:#303030;padding:0 0 16px 0;', inline(p, o))}</tr>`));
-      if (link) rows.push(`<tr>${td('font-size:16px;line-height:26px;font-weight:700;padding:4px 0 16px 0;', link)}</tr>`);
-      if (!rows.length) return '';
-      return `<td class="pm-px" style="padding:${pad.top}px 40px ${Math.max(0, pad.bottom - 16)}px 40px;">${table(rows.join('\n'))}</td>`;
+      const body = stack(textParts(b, o));
+      if (!body) return '';
+      return `<td class="pm-px" style="padding:${pad.top}px 40px ${pad.bottom}px 40px;">${body}</td>`;
     },
 
     fototekst(b, o, pad) {
       // Foto boven de tekst: over de hele breedte (520), de tekst eronder zoals een tekstblok
       if (b.side === 'boven') {
-        const img = photo(b.img, b.id, 520, o);
-        const body = paragraphs(b.body);
-        const link = textLink(b.link);
-        const rows = [];
-        if (img) rows.push(`<tr><td style="padding:0 0 ${b.title.trim() || body.length || link ? 22 : 0}px 0;">${img}</td></tr>`);
-        if (b.title.trim()) rows.push(`<tr>${td('font-size:22px;line-height:28px;font-weight:700;color:#303030;padding:0 0 12px 0;', heading(b.title, o), ' class="pm-h2"')}</tr>`);
-        body.forEach((p, i) => rows.push(`<tr>${td(`font-size:16px;line-height:26px;color:#303030;padding:0 0 ${i === body.length - 1 && !link ? 0 : 16}px 0;`, inline(p, o))}</tr>`));
-        if (link) rows.push(`<tr>${td('font-size:16px;line-height:26px;font-weight:700;padding:4px 0 0 0;', link)}</tr>`);
-        if (!rows.length) return '';
-        return `<td class="pm-px" style="padding:${pad.top}px 40px ${pad.bottom}px 40px;">${table(rows.join('\n'))}</td>`;
+        const text = textParts(b, o);
+        const body = stack([[0, photo(b.img, b.id, 520, o)], ...text.map(([gap, html], i) => [i ? gap : 24, html])]);
+        if (!body) return '';
+        return `<td class="pm-px" style="padding:${pad.top}px 40px ${pad.bottom}px 40px;">${body}</td>`;
       }
       const right = b.side === 'rechts';
       const img = photo(b.img, b.id, 224, o);
-      const body = paragraphs(b.body);
-      const link = textLink(b.link);
-      const rows = [];
-      if (b.title.trim()) rows.push(`<tr>${td('font-size:19px;line-height:26px;font-weight:700;color:#303030;padding:0 0 10px 0;', heading(b.title, o))}</tr>`);
-      body.forEach((p, i) => rows.push(`<tr>${td(`font-size:15px;line-height:24px;color:#303030;padding:0 0 ${i === body.length - 1 && !link ? 0 : 14}px 0;`, inline(p, o))}</tr>`));
-      if (link) rows.push(`<tr>${td('font-size:15px;line-height:24px;font-weight:700;', link)}</tr>`);
       // Foto rechts: dir="rtl" zet hem rechts, op een telefoon blijft hij boven de tekst
       const dir = right ? ' dir="rtl"' : '';
       const ltr = right ? ' dir="ltr"' : '';
       const gap = right ? '0 0 0 24px' : '0 24px 0 0';
       const textW = img ? 272 : 520;
-      const textCol = `<div class="pm-col"${ltr} style="display:inline-block;vertical-align:top;width:${textW}px;max-width:${textW}px;">${table(rows.join('\n'))}</div>`;
+      const textCol = `<div class="pm-col"${ltr} style="display:inline-block;vertical-align:top;width:${textW}px;max-width:${textW}px;">${stack(textParts(b, o)) || table('<tr><td></td></tr>')}</div>`;
       const cols = img
         ? `<!--[if mso]><table role="presentation" width="520" cellpadding="0" cellspacing="0" border="0"${dir}><tr><td width="248" valign="top"${ltr}><![endif]-->
 <div class="pm-col pm-col-gap"${ltr} style="display:inline-block;vertical-align:top;width:224px;max-width:224px;padding:${gap};">${img}</div>
@@ -442,16 +475,16 @@ ${cols}
         const icon = iconSrc
           ? `<img src="${esc(iconSrc)}" width="35" height="40" alt="" style="display:block;width:35px;height:40px;">`
           : `<img src="${IMG}zeshoek-cyaan.png" width="20" height="23" alt="" style="display:block;width:20px;height:23px;">`;
-        const rows = [`<tr><td style="padding:0 ${padR}px 10px 0;">${icon}</td></tr>`];
-        if (it.title.trim()) rows.push(`<tr>${td(`font-size:16px;line-height:22px;font-weight:700;color:#303030;padding:0 ${padR}px 6px 0;`, plain(it.title.trim(), o))}</tr>`);
-        if (it.text.trim()) rows.push(`<tr>${td(`font-size:14px;line-height:22px;color:#303030;padding:0 ${padR}px 0 0;`, inline(it.text.trim(), o))}</tr>`);
+        const parts = [[0, icon]];
+        if (it.title.trim()) parts.push([10, hx(3, plain(it.title.trim(), o))]);
+        if (it.text.trim()) parts.push([GAP.h3, para(inline(it.text.trim(), o))]);
         return `<!--[if mso]>${i ? '</td>' : ''}<td width="${widths[i]}" valign="top"><![endif]-->
-<div class="pm-col${end ? '' : ' pm-col-gap'}" style="display:inline-block;vertical-align:top;width:${widths[i]}px;max-width:${widths[i]}px;">${table(rows.join('\n'))}</div>`;
+<div class="pm-col${end ? '' : ' pm-col-gap'}" style="display:inline-block;vertical-align:top;width:${widths[i]}px;max-width:${widths[i]}px;">${table(`<tr><td style="padding:0 ${padR}px 0 0;">${stack(parts)}</td></tr>`)}</div>`;
       });
       const head = b.title.trim()
-        ? `<tr>${td('font-size:22px;line-height:28px;font-weight:700;color:#303030;padding:0 0 24px 0;', heading(b.title, o), ' class="pm-h2"')}</tr>`
+        ? `<tr><td style="padding:0 0 24px 0;">${stack([[0, ACCENT], [GAP.title, hx(2, heading(b.title, o))]])}</td></tr>`
         : '';
-      return `<td class="pm-px" style="padding:40px 40px 36px 40px;background-color:#F2FBFE;border-top:1px solid #E1E7EC;border-bottom:1px solid #E1E7EC;">${table(`${head}
+      return `<td class="pm-px" style="padding:40px 40px 40px 40px;background-color:#F2FBFE;border-top:1px solid #E1E7EC;border-bottom:1px solid #E1E7EC;">${table(`${head}
 <tr><td style="font-size:0;line-height:0;">
 <!--[if mso]><table role="presentation" width="520" cellpadding="0" cellspacing="0" border="0"><tr><![endif]-->
 ${cols.join('\n')}
@@ -460,68 +493,82 @@ ${cols.join('\n')}
     },
 
     resultaat(b, o, pad) {
-      const rows = [];
-      if (b.label.trim()) rows.push(`<tr>${td('font-size:12px;line-height:16px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#c9cdd1;padding:0 0 8px 0;', esc(b.label.trim()))}</tr>`);
-      if (b.number.trim()) rows.push(`<tr>${td('font-size:52px;line-height:56px;font-weight:800;letter-spacing:-1px;color:#1AB9E2;padding:0 0 6px 0;', esc(b.number.trim()), ' class="pm-big"')}</tr>`);
-      if (b.text.trim()) rows.push(`<tr>${td('font-size:16px;line-height:24px;color:#ffffff;', plain(b.text.trim(), o))}</tr>`);
-      if (!rows.length) return '';
+      const body = stack([
+        [0, b.label.trim() ? `<p style="margin:0;font-family:${FONT};${TYPE.label}color:#c9cdd1;">${esc(b.label.trim())}</p>` : ''],
+        [8, b.number.trim() ? `<p class="pm-big" style="margin:0;font-family:${FONT};font-size:52px;line-height:56px;font-weight:800;letter-spacing:-1px;color:#1AB9E2;">${esc(b.number.trim())}</p>` : ''],
+        [6, b.text.trim() ? para(plain(b.text.trim(), o), '#ffffff') : ''],
+      ]);
+      if (!body) return '';
       return `<td class="pm-px" style="padding:${pad.top}px 40px ${pad.bottom}px 40px;">${table(`<tr>
 <td width="8" style="width:8px;background-color:#1AB9E2;font-size:0;line-height:0;">&nbsp;</td>
-<td style="padding:26px 28px 28px 24px;">${table(rows.join('\n'))}</td>
+<td style="padding:26px 28px 28px 24px;">${body}</td>
 </tr>`, ' style="background-color:#303030;"')}</td>`;
     },
 
     afsluiter(b, o, pad) {
-      const rows = [];
-      const body = paragraphs(b.body);
-      const btn = button(b.button, 'rustig');
-      if (b.title.trim()) rows.push(`<tr>${td('font-size:24px;line-height:30px;font-weight:700;color:#303030;padding:0 0 12px 0;', heading(b.title, o), ' class="pm-h2"')}</tr>`);
-      body.forEach((p, i) => rows.push(`<tr>${td(`font-size:16px;line-height:26px;color:#303030;padding:0 0 ${i === body.length - 1 ? (btn ? 24 : 0) : 16}px 0;`, inline(p, o))}</tr>`));
-      if (btn) rows.push(`<tr><td align="left">${btn}</td></tr>`);
-      if (!rows.length) return '';
-      return `<td class="pm-px" style="padding:${pad.top}px 40px ${pad.bottom}px 40px;">${table(rows.join('\n'))}</td>`;
+      const body = stack([...textParts({ ...b, link: null }, o), [GAP.button, button(b.button, 'rustig')]]);
+      if (!body) return '';
+      return `<td class="pm-px" style="padding:${pad.top}px 40px ${pad.bottom}px 40px;">${body}</td>`;
     },
   };
 
-  // Witte blokken: ruimte erboven, en eronder alleen als er geen wit blok volgt (anders dubbel)
-  const WHITE = new Set(['tekst', 'fototekst', 'resultaat', 'afsluiter']);
+  // Tekstblokken op wit. Twee na elkaar krijgen een lijn ertussen: een nieuw onderwerp
+  const TEXT = new Set(['tekst', 'fototekst', 'afsluiter']);
+  const DIVIDER = `<tr>
+<td class="pm-px" style="padding:0 40px;">${table('<tr><td style="height:1px;line-height:1px;font-size:1px;background-color:#E1E7EC;">&nbsp;</td></tr>')}</td>
+</tr>`;
 
   /* ---------------------------------------------------------------------------
-     Vaste kop en voet
+     Kop en voet
      ------------------------------------------------------------------------- */
 
-  const HEADER = `<tr><td style="height:6px;line-height:6px;font-size:6px;background-color:#1AB9E2;">&nbsp;</td></tr>
+  // De kop: cyaan balk en logo. Met een naam (state.masthead, bijv. "Nieuwsbrief") staat die groot
+  // naast het logo, achter een cyaan lijn, met de editie (state.edition) eronder
+  function header(s, o) {
+    const mast = String(s.masthead || '').trim();
+    const edition = String(s.edition || '').trim();
+    const logo = (w, h) => `<a href="https://www.pureminds.nl/" target="_blank"><img src="${IMG}logo-inkt.png" width="${w}" height="${h}" alt="Pure Minds marketing group" style="display:block;width:${w}px;height:${h}px;"></a>`;
+    const bar = '<tr><td style="height:6px;line-height:6px;font-size:6px;background-color:#1AB9E2;">&nbsp;</td></tr>';
+    if (!mast) return `${bar}\n<tr>\n<td class="pm-px" style="padding:28px 40px 24px 40px;">${logo(80, 92)}</td>\n</tr>`;
+    return `${bar}
 <tr>
-<td class="pm-px" style="padding:28px 40px 24px 40px;">${table(`<tr>
-<td valign="middle" width="80"><a href="https://www.pureminds.nl/" target="_blank"><img src="${IMG}logo-inkt.png" width="80" height="92" alt="Pure Minds marketing group" style="display:block;width:80px;height:92px;"></a></td>
-${td('font-size:13px;line-height:20px;color:#5C6670;', '<a href="{{ mirror }}" target="_blank" style="color:#5C6670;text-decoration:underline;">Bekijk deze e-mail online</a>', ' valign="middle" align="right"')}
+<td class="pm-px" style="padding:28px 40px 28px 40px;">${table(`<tr>
+<td valign="middle" width="64" style="width:64px;">${logo(64, 74)}</td>
+<td valign="middle" style="padding:0 20px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td width="3" style="width:3px;height:64px;line-height:64px;font-size:4px;background-color:#1AB9E2;">&nbsp;</td></tr></table></td>
+<td valign="middle" width="100%"><p class="pm-mast" style="margin:0;font-family:${FONT};font-size:34px;line-height:38px;font-weight:800;letter-spacing:-0.5px;color:#303030;">${heading(mast, o)}</p>${edition ? `<p style="margin:6px 0 0 0;font-family:${FONT};${TYPE.label}color:#5C6670;">${plain(edition, o)}</p>` : ''}</td>
 </tr>`)}</td>
 </tr>`;
+  }
 
+  // "Bekijk deze e-mail online" klein boven de mail, op de grijze achtergrond
+  const ONLINE = `<table role="presentation" class="pm-container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;"><tr>
+${td('font-size:12px;line-height:18px;color:#5C6670;padding:0 4px 10px 4px;', '<a href="{{ mirror }}" target="_blank" style="color:#5C6670;text-decoration:underline;">Bekijk deze e-mail online</a>', ' align="right"')}
+</tr></table>`;
+
+  // Contact in de voet: icoon en tekst; de socials staan eronder in dezelfde kolom, gelijk met de iconen
   const contactRow = (icon, inner, last) => `<tr>
-<td valign="middle" style="padding:0 10px ${last ? 0 : 10}px 0;"><img src="${IMG}icoon-${icon}.png" width="21" height="24" alt="" style="display:block;width:21px;height:24px;"></td>
-${td(`font-size:14px;line-height:20px;color:#ffffff;padding:0 0 ${last ? 0 : 10}px 0;`, inner, ' valign="middle"')}
+<td valign="top" width="21" style="width:21px;padding:0 12px ${last ? 0 : 12}px 0;"><img src="${IMG}icoon-${icon}.png" width="21" height="24" alt="" style="display:block;width:21px;height:24px;"></td>
+${td(`font-size:14px;line-height:24px;color:#ffffff;padding:0 0 ${last ? 0 : 12}px 0;`, inner, ' valign="top"')}
 </tr>`;
-  const social = (name, label, href, last) => `<td style="padding:0${last ? '' : ' 10px 0 0'};"><a href="${href}" target="_blank"><img src="${IMG}icoon-${name}.png" width="28" height="32" alt="${label}" style="display:block;width:28px;height:32px;"></a></td>`;
+  const social = (name, label, href, last) => `<td valign="middle" style="padding:0${last ? '' : ' 10px 0 0'};"><a href="${href}" target="_blank"><img src="${IMG}icoon-${name}.png" width="28" height="32" alt="${label}" style="display:block;width:28px;height:32px;"></a></td>`;
 
   const FOOTER = `<tr>
 <td class="pm-px" style="padding:40px 40px 36px 40px;background-color:#303030;">${table(`<tr>
-<td valign="top" width="96" class="pm-hide-sm" style="padding:0 24px 0 0;"><img src="${IMG}logo-wit.png" width="80" height="92" alt="Pure Minds marketing group" style="display:block;width:80px;height:92px;"></td>
-<td valign="top"><table role="presentation" cellpadding="0" cellspacing="0" border="0">
-${contactRow('adres', 'Pure Minds Marketing Group &middot; Spekhofstraat 2, 6466 LZ Kerkrade')}
+<td valign="top" width="80" class="pm-hide-sm" style="width:80px;padding:0 32px 0 0;"><img src="${IMG}logo-wit.png" width="80" height="92" alt="Pure Minds marketing group" style="display:block;width:80px;height:92px;"></td>
+<td valign="top">${table(`
+${contactRow('adres', 'Pure Minds Marketing Group<br>Spekhofstraat 2, 6466 LZ Kerkrade')}
 ${contactRow('telefoon', '<a href="tel:+31453690530" style="color:#ffffff;text-decoration:none;">045 369 0530</a>')}
 ${contactRow('mail', '<a href="mailto:info@pureminds.nl" style="color:#ffffff;text-decoration:none;">info@pureminds.nl</a>')}
 ${contactRow('web', '<a href="https://www.pureminds.nl/" target="_blank" style="color:#ffffff;text-decoration:none;">pureminds.nl</a>', true)}
-</table></td>
-</tr>
 <tr>
-<td colspan="2" style="padding:28px 0 0 0;">${table(`<tr>
+<td colspan="2" style="padding:24px 0 0 0;">${table(`<tr>
 <td valign="middle"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
 ${social('linkedin', 'LinkedIn', 'https://www.linkedin.com/company/puremindsmarketinggroup/')}
 ${social('instagram', 'Instagram', 'https://www.instagram.com/puremindsmarketinggroup/')}
 ${social('facebook', 'Facebook', 'https://www.facebook.com/puremindsmarketinggroup/', true)}
 </tr></table></td>
 <td valign="middle" align="right"><img src="${IMG}emerce-100-wit.png" width="88" height="33" alt="Emerce 100 2026" style="display:block;width:88px;height:33px;"></td>
+</tr>`)}</td>
 </tr>`)}</td>
 </tr>
 <tr>
@@ -553,6 +600,7 @@ u + #body a { color: inherit; text-decoration: none; font-size: inherit; font-fa
 .pm-col-gap { padding: 0 0 24px 0 !important; }
 .pm-h1 { font-size: 30px !important; line-height: 36px !important; }
 .pm-h2 { font-size: 22px !important; line-height: 28px !important; }
+.pm-mast { font-size: 28px !important; line-height: 32px !important; }
 .pm-big { font-size: 44px !important; line-height: 48px !important; }
 .pm-img-full { width: 100% !important; height: auto !important; }
 .pm-hide-sm { display: none !important; }
@@ -567,18 +615,24 @@ u + #body a { color: inherit; text-decoration: none; font-size: inherit; font-fa
     const o = { preview: !!opts.preview, pending: opts.pending || null };
     const s = normalize(state);
     const blocks = s.blocks;
-    const parts = blocks.map((b, i) => {
+    // Ruimte: 40 px boven en onder een blok op wit. Het resultaat (een vlak) sluit aan op de tekst ernaast,
+    // zodat er ook daar 40 px tussen zit en niet 80
+    const isText = (b) => !!b && TEXT.has(b.type);
+    const isCard = (b) => !!b && b.type === 'resultaat';
+    const cells = blocks.map((b, i) => {
       const prev = blocks[i - 1];
       const next = blocks[i + 1];
       const pad = {
-        top: i === 0 ? 16 : WHITE.has(prev.type) ? 8 : 40,
-        bottom: next && WHITE.has(next.type) ? 32 : 44,
+        top: i === 0 ? 16 : isCard(b) && (isText(prev) || isCard(prev)) ? 0 : 40,
+        bottom: isCard(b) && isText(next) ? 0 : 40,
       };
       const cell = RENDER[b.type](b, o, pad);
-      if (!cell) return '';
+      if (!cell) return null;
       const marked = o.preview ? cell.replace(/^<td/, `<td data-pm-blok="${esc(b.id)}"`) : cell;
-      return `<!-- BLOK: ${BLOCKS[b.type].name} -->\n<tr>${marked}</tr>\n<!-- EINDE BLOK -->`;
+      return { b, html: `<!-- BLOK: ${BLOCKS[b.type].name} -->\n<tr>${marked}</tr>\n<!-- EINDE BLOK -->` };
     }).filter(Boolean);
+    const parts = cells.map((c, i) => (i && isText(c.b) && isText(cells[i - 1].b) ? `${DIVIDER}\n${c.html}` : c.html));
+    const head = header(s, o);
 
     const pre = String(s.preheader || '').trim();
     const filler = '&#8199;&#65279;&#847;'.repeat(12);
@@ -601,8 +655,9 @@ ${pre ? `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font
 <tr>
 <td align="center" style="padding:24px 12px;">
 <!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+${ONLINE}
 <table role="presentation" class="pm-container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#ffffff;">
-${o.preview ? HEADER.replace('<td class="pm-px"', '<td data-pm-vast="kop" class="pm-px"') : HEADER}
+${o.preview ? head.replace('<td class="pm-px"', '<td data-pm-vast="kop" class="pm-px"') : head}
 ${parts.join('\n')}
 ${o.preview ? FOOTER.replace('<td class="pm-px"', '<td data-pm-vast="voet" class="pm-px"') : FOOTER}
 </table>
@@ -687,7 +742,7 @@ ${o.preview ? FOOTER.replace('<td class="pm-px"', '<td data-pm-vast="voet" class
     return next;
   }
 
-  const PMEmail = { build, check, normalize, starter, block, convert, BLOCKS, TYPES, STARTERS, STOCK, SIDES, SAMPLE_PREHEADER, safeUrl, safeImg, inline, bytes, MAX_BLOCKS, SITE };
+  const PMEmail = { build, check, normalize, starter, block, convert, thisEdition, BLOCKS, TYPES, STARTERS, STOCK, SIDES, SAMPLE_PREHEADER, DEFAULT_MAST, TYPE, safeUrl, safeImg, inline, bytes, MAX_BLOCKS, SITE };
   global.PMEmail = PMEmail;
   if (typeof module !== 'undefined' && module.exports) module.exports = PMEmail;
 })(typeof window !== 'undefined' ? window : globalThis);

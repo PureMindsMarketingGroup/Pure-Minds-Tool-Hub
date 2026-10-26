@@ -141,8 +141,67 @@ test('koppen krijgen de cyaan punt, behalve na een vraagteken; links een pijl', 
   s.blocks[2].title = 'Vragen?';
   const html = E.build(s);
   assert.ok(html.includes('Een kop zonder punt<span style="color:#1AB9E2;">.</span>'));
-  assert.ok(html.includes('Vragen?</td>'));
+  assert.ok(html.includes('Vragen?</h2>'));
   assert.ok(html.includes('Lees verder op onze website →</a>'));
+});
+
+test('typografie: één schaal. H1 alleen in de opening, H2 boven elk blok, H3 per punt, alle lopende tekst 16/26', () => {
+  const s = real();
+  s.blocks.push({ ...E.block('fototekst'), side: 'rechts' }, { ...E.block('fototekst'), side: 'boven' });
+  const html = E.build(s);
+  const tags = (n) => Array.from(html.matchAll(new RegExp(`<h${n} class="pm-h${n}" style="([^"]*)"`, 'g')), (m) => m[1]);
+  assert.equal(tags(1).length, 1, 'één H1: de kop van de opening');
+  const h2 = tags(2);
+  assert.equal(h2.length, s.blocks.filter((b) => ['tekst', 'fototekst', 'punten', 'afsluiter'].includes(b.type)).length, 'elk blok met een kop heeft een H2');
+  for (const st of h2) assert.ok(st.includes(E.TYPE.h2), 'elke H2 even groot');
+  assert.equal(tags(3).length, 3, 'de drie punten');
+  for (const st of tags(3)) assert.ok(st.includes(E.TYPE.h3));
+  const ps = Array.from(html.matchAll(/<p style="margin:0;[^"]*font-size:(\d+)px;line-height:(\d+)px;font-weight:400;/g), (m) => `${m[1]}/${m[2]}`);
+  assert.ok(ps.length > 10);
+  assert.deepEqual([...new Set(ps)], ['16/26'], 'lopende tekst overal 16/26');
+  assert.ok(!/<td[^>]*font-size:(1[579]|22)px/.test(html), 'geen losse koppen of tekst meer in andere maten');
+});
+
+test('blokken: twee tekstblokken na elkaar krijgen een lijn ertussen, en elke tussenkop een cyaan streepje', () => {
+  const s = E.starter('kort');   // opening, tekst, afsluiter
+  const line = 'background-color:#E1E7EC;">&nbsp;</td>';
+  assert.equal(count(E.build(s), line), 1, 'tussen tekst en afsluiter');
+  s.blocks.splice(2, 0, E.block('fototekst'), E.block('resultaat'));
+  assert.equal(count(E.build(s), line), 1, 'tekst | fototekst; het resultaat is zelf een vlak');
+  const html = E.build(s);
+  assert.equal(count(html, 'width="32" style="width:32px;height:4px;'), 3, 'streepje boven tekst, fototekst en afsluiter');
+});
+
+test('kop: een nieuwsbrief heeft groot "Nieuwsbrief." naast het logo met de editie; een korte mail alleen het logo', () => {
+  const s = E.starter('nieuwsbrief');
+  assert.equal(s.masthead, 'Nieuwsbrief');
+  assert.match(s.edition, /^[A-Z][a-z]+ \d{4}$/);
+  assert.equal(E.thisEdition(new Date(2026, 9, 26)), 'Oktober 2026');
+  s.edition = 'Editie 12';
+  const html = E.build(s);
+  assert.ok(html.includes('class="pm-mast"'));
+  assert.ok(html.includes('Nieuwsbrief<span style="color:#1AB9E2;">.</span></p>'));
+  assert.ok(html.includes('>Editie 12</p>'));
+  assert.ok(!E.build(E.starter('kort')).includes('class="pm-mast"'), 'korte mail: geen naam bovenaan');
+  // Een opgeslagen nieuwsbrief van vóór de naam bovenaan krijgt hem erbij; een lege naam blijft leeg
+  const old = E.starter('nieuwsbrief');
+  delete old.masthead;
+  delete old.edition;
+  assert.equal(E.normalize(old).masthead, 'Nieuwsbrief');
+  assert.equal(E.normalize({ ...s, masthead: '' }).masthead, '');
+  // Online bekijken staat klein boven de mail, buiten de kop
+  assert.ok(html.indexOf('{{ mirror }}') < html.indexOf('class="pm-mast"'));
+});
+
+test('voet: de socials staan in de kolom van het contact, onder het adres, de telefoon en de mail', () => {
+  const html = E.build(E.starter('kort'));
+  const foot = html.slice(html.indexOf('logo-wit.png'));
+  const at = (s) => foot.indexOf(s);
+  assert.ok(at('icoon-mail.png') < at('icoon-web.png') && at('icoon-web.png') < at('icoon-linkedin.png'));
+  // Tussen het logo en de socials sluit geen kolom: ze zitten in dezelfde cel als het contact
+  const between = foot.slice(at('icoon-adres.png'), at('icoon-linkedin.png'));
+  assert.ok(!/<\/td>\s*<\/tr>\s*<tr>\s*<td colspan="2" style="padding:28px/.test(between));
+  assert.ok(foot.includes('Pure Minds Marketing Group<br>Spekhofstraat 2'));
 });
 
 test('huisstijl: alleen 400, 700 en 800; magenta alleen voor de knop in de opening; cyaan nooit als tekst op wit', () => {

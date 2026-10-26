@@ -72,6 +72,8 @@
     checkAnyway: $('#checkAnyway'),
     name: $('#mName'),
     subject: $('#mSubject'),
+    mast: $('#mMast'),
+    edition: $('#mEdition'),
     pre: $('#mPre'),
     preCount: $('#preCount'),
     uploadState: $('#uploadState'),
@@ -198,8 +200,13 @@ html { scrollbar-width: none; }
       e.preventDefault();   // links in de preview openen niet
       const cell = e.target.closest('[data-pm-blok], [data-pm-vast]');
       if (!cell) return;
+      // De kop: de naam bovenaan en de editie pas je aan bij Mail; de voet staat vast
+      if (cell.dataset.pmVast === 'kop') {
+        shell.reveal('mail', '#mMast');
+        return;
+      }
       if (cell.dataset.pmVast) {
-        PM.toast(`${cell.dataset.pmVast === 'voet' ? 'De voet' : 'De kop'} staat vast: zo is elke mail in de huisstijl${cell.dataset.pmVast === 'voet' ? ', met de afmeldlink die Brevo verplicht' : ''}.`);
+        PM.toast('De voet staat vast: zo is elke mail in de huisstijl, met de afmeldlink die Brevo verplicht.');
         return;
       }
       select(cell.dataset.pmBlok, { open: true, focus: true });
@@ -664,6 +671,8 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
   function syncMail() {
     if (document.activeElement !== el.name) el.name.value = state.name;
     if (document.activeElement !== el.subject) el.subject.value = state.subject;
+    if (document.activeElement !== el.mast) el.mast.value = state.masthead;
+    if (document.activeElement !== el.edition) el.edition.value = state.edition;
     if (document.activeElement !== el.pre) el.pre.value = state.preheader;
     syncPreCount();
   }
@@ -676,7 +685,7 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
     const ok = await writeClipboard(state.subject.trim());
     PM.toast(ok ? 'Onderwerp gekopieerd: plak het in Brevo bij Subject.' : 'Kopiëren lukte niet.', !ok);
   });
-  [el.name, el.subject, el.pre].forEach((f) => f.addEventListener('input', () => {
+  [el.name, el.subject, el.mast, el.edition, el.pre].forEach((f) => f.addEventListener('input', () => {
     state[f.dataset.mail] = f.value;
     syncPreCount();
     changed(f.dataset.mail);
@@ -1378,6 +1387,9 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
       if (mode === 'generate') {
         state.name = txt(d.onderwerp).slice(0, 120);
         state.kind = state.blocks.length <= 4 ? 'kort' : 'nieuwsbrief';
+        // Een korte mail heeft geen naam bovenaan; een nieuwsbrief wel (tenzij je er zelf een koos)
+        if (state.kind === 'kort' && state.masthead === E.DEFAULT_MAST) state.masthead = state.edition = '';
+        if (state.kind === 'nieuwsbrief' && !state.masthead) Object.assign(state, { masthead: E.DEFAULT_MAST, edition: E.thisEdition() });
       }
       // Fotosuggesties alleen voor een blok zonder foto van Pexels (daar staat dan nog de fotobank)
       state.ideas = list

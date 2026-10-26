@@ -1229,9 +1229,21 @@ de editor: de AI vult hun velden, en daarna pas je alles gewoon aan.
 
 Nieuwsbrieven en mails in de huisstijl, zonder HTML te kennen
 (`tools/nieuwsbrief.html`). Je mail bestaat uit blokken onder elkaar; je past
-alleen tekst, foto's, iconen en links aan. Kop (logo, "bekijk online") en voet
-(contact, socials, Emerce 100, afmelden) staan vast. De HTML is dezelfde als
-die van `email/pure-minds-email.html` en komt uit `js/newsletter/email.js`.
+alleen tekst, foto's, iconen en links aan. De HTML komt uit
+`js/newsletter/email.js` en bouwt voort op `email/pure-minds-email.html`.
+
+- **Kop:** logo met de *naam bovenaan* groot ernaast (een nieuwsbrief heet
+  "Nieuwsbrief.", met de maand als *editie* eronder; een korte mail heeft
+  alleen het logo). Aanpassen bij *Mail*, of klik op de kop in de preview.
+  "Bekijk deze e-mail online" staat klein boven de mail.
+- **Voet (vast):** logo, contact (adres, telefoon, mail, site) met de socials
+  eronder in dezelfde kolom, Emerce 100 en afmelden.
+- **Typografie:** één schaal (`PMEmail.TYPE`). H1 36/42 ExtraBold alleen in de
+  opening, H2 24/30 Bold boven elk blok, H3 18/24 Bold per punt, p 16/26 voor
+  alle lopende tekst, labels 13 px in hoofdletters. Echte `h1`–`h3`- en
+  `p`-tags, met margin 0.
+- **Blokken uit elkaar:** elke tussenkop heeft een cyaan streepje erboven, en
+  twee tekstblokken na elkaar krijgen een lijn ertussen. Overal 40 px ruimte.
 
 - **Blokken:** opening (kop, intro, magenta hoofdknop), foto, tekst, foto en
   tekst (foto links, rechts of boven de tekst), punten (twee of drie, met een
@@ -1275,7 +1287,8 @@ laden van het GitHub-account van Pure Minds; de foto's in het voorbeeld komen
 uit `assets/styleguide/photos/`.
 
 - **Makkelijker:** maak je mail in de [Nieuwsbrief Maker](#nieuwsbrief-maker);
-  deze template is de basis daarvan.
+  deze template is de basis daarvan. De maker is verder: naam bovenaan, één
+  typeschaal en lijnen tussen de blokken staan alleen daarin.
 - **In Brevo zetten:** Marketing → Templates → Create template → Email
   template → Add content → Start from scratch → HTML custom code. Plak de hele
   inhoud van het bestand en sla op (Save & quit).
