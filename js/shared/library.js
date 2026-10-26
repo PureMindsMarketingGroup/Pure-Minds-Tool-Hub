@@ -605,9 +605,10 @@
         return false;
       }
       // Niets kwijtraken en niets overschrijven: wat er open stond en gewijzigd is, eerst als
-      // nieuw ontwerp in de bieb
+      // nieuw ontwerp in de bieb. Ook als je hetzelfde ontwerp opnieuw opent: anders vervangt de
+      // opgeslagen (oudere) versie je wijzigingen
       let kept = null;
-      if (before.dirty && before.id !== id) kept = await save({ quiet: true, asNew: true });
+      if (before.dirty) kept = await save({ quiet: true, asNew: true });
       const prev = readCurrent();
 
       // De bestanden in deze browser zetten (wat er al staat, hoeft niet opnieuw)
