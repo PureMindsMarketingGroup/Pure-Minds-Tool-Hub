@@ -26,7 +26,7 @@
                                       tekst -> fototekst (o.side: links, rechts, boven), fototekst
                                       -> tekst (foto weghalen), foto -> fototekst (tekst erbij)
      PMEmail.BLOCKS                   de blokken: naam, uitleg, standaardinhoud
-     PMEmail.safeUrl(link)            alleen https, http, mailto en tel ('' = afgekeurd)
+     PMEmail.safeUrl(link)            alleen https, http, mailto en tel ('' = afgekeurd); UTM-codes eraf
      PMEmail.safeImg(src)             alleen https (in de preview ook blob:)
      PMEmail.bytes(html)              grootte in bytes (Gmail knipt vanaf 102 KB)
 
@@ -271,12 +271,20 @@
       return `tel:${digits.replace(/^0(?=[1-9])/, '+31')}`;
     }
     if (/[\s<>"'`\\]/.test(s)) return '';
-    if (/^https?:\/\/[^/?#]+\.[^/?#]+/i.test(s)) return s;
+    if (/^https?:\/\/[^/?#]+\.[^/?#]+/i.test(s)) return noUtm(s);
     if (/^mailto:[^@]+@[^@]+\.[^@]+$/i.test(s)) return s;
     if (/^[a-z][a-z0-9+.-]*:/i.test(s)) return '';   // javascript:, data:, ftp: ...
     if (/^[^@/]+@[^@/]+\.[a-z]{2,}$/i.test(s)) return `mailto:${s}`;
-    if (/^(www\.)?[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}([/?#]\S*)?$/i.test(s)) return `https://${s}`;
+    if (/^(www\.)?[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}([/?#]\S*)?$/i.test(s)) return noUtm(`https://${s}`);
     return '';
+  }
+
+  // Schone links: UTM-codes (utm_source, utm_medium, ...) eraf, de rest van de link blijft zoals hij was
+  function noUtm(url) {
+    const m = /^([^?#]*)(\?[^#]*)?(#.*)?$/.exec(url);
+    if (!m || !m[2] || !/[?&]utm_/i.test(m[2])) return url;
+    const keep = m[2].slice(1).split('&').filter((p) => p && !/^utm_/i.test(p));
+    return `${m[1]}${keep.length ? `?${keep.join('&')}` : ''}${m[3] || ''}`;
   }
 
   function safeImg(src, preview = false) {

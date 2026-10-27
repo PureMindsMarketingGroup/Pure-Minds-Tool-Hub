@@ -1281,7 +1281,9 @@ alleen tekst, foto's, iconen en links aan. De HTML komt uit
   krijgen vanzelf de cyaan punt, tekstlinks een pijl.
 - **Links:** alleen https, mailto en tel; `www.…`, een e-mailadres of een
   telefoonnummer wordt vanzelf goed. Een link die niet klopt krijgt een oranje
-  rand en komt niet in de mail.
+  rand en komt niet in de mail. Links zijn schoon: UTM-codes (`utm_…`) gaan
+  eraf. Zet in Brevo ook de Google Analytics-tracking uit, anders zet Brevo bij
+  het versturen `?utm_source=brevo` achter elke link (zie de handleiding).
 - **Foto's en iconen:** een mail toont alleen plaatjes die online staan. Een
   foto wordt in de browser verkleind tot 1200 px breed (of bijgesneden:
   liggend, breed, vierkant) en gaat naar de [upload-service](uploads/README.md)

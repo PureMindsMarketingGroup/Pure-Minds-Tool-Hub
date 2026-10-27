@@ -55,7 +55,7 @@
     },
     'link': {
       title: 'Link',
-      text: 'Plak de link van de pagina, bijvoorbeeld van je blog. www.pureminds.nl mag ook, net als een e-mailadres of telefoonnummer. Brevo zet er bij het versturen zelf de UTM-codes achter.',
+      text: 'Plak de link van de pagina, bijvoorbeeld van je blog. www.pureminds.nl mag ook, net als een e-mailadres of telefoonnummer. UTM-codes haalt de maker eraf: je links blijven schoon.',
     },
     'foto': {
       title: 'Foto',

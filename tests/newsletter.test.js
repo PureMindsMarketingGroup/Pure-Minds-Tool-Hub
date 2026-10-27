@@ -120,6 +120,16 @@ test('links: https, mailto en tel; www, e-mailadres en telefoonnummer worden van
   assert.equal(E.safeUrl('info@pureminds.nl'), 'mailto:info@pureminds.nl');
   assert.equal(E.safeUrl('mailto:info@pureminds.nl?subject=Hoi'), 'mailto:info@pureminds.nl?subject=Hoi');
   assert.equal(E.safeUrl('045 369 0530'), 'tel:+31453690530');
+  // Schone links: UTM-codes eraf, de rest blijft
+  assert.equal(E.safeUrl('https://pureminds.nl/blog?utm_source=brevo&utm_medium=email&id=3#kop'), 'https://pureminds.nl/blog?id=3#kop');
+  assert.equal(E.safeUrl('www.pureminds.nl/?utm_source=x&UTM_campaign=y'), 'https://www.pureminds.nl/');
+  assert.equal(E.safeUrl('https://pureminds.nl/?page=2'), 'https://pureminds.nl/?page=2');
+  const s = E.starter('kort');
+  s.blocks[1].body = 'Lees [de blog](https://pureminds.nl/blog?utm_source=nieuwsbrief).';
+  s.blocks[1].link = { text: 'Verder', url: 'https://pureminds.nl/x?utm_medium=email&a=1' };
+  const html = E.build(s);
+  assert.ok(!/utm_/i.test(html), 'geen UTM-codes in de mail');
+  assert.ok(html.includes('href="https://pureminds.nl/blog"') && html.includes('href="https://pureminds.nl/x?a=1"'));
   assert.equal(E.safeUrl('tel:+31 45 369 0530'), 'tel:+31453690530');
   for (const bad of ['javascript:alert(1)', 'JAVASCRIPT:x', 'data:text/html,x', 'vbscript:x', 'ftp://a.nl', 'https://a.nl/a b', 'gewoon tekst', '12345', '', '"><x']) {
     assert.equal(E.safeUrl(bad), '', bad);
