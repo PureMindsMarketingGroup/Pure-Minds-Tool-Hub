@@ -104,6 +104,7 @@
       make: () => ({
         img: stock('werkplek-bureau.jpg'),
         side: 'links',
+        url: '',   // link achter de foto (optioneel): dan is de foto klikbaar
         title: 'Een onderwerp met een foto',
         body: 'Twee of drie zinnen over dit onderwerp: een blog, een case of een nieuwe dienst.',
         link: { text: 'Bekijk het', url: 'https://www.pureminds.nl/' },
@@ -111,9 +112,10 @@
     },
     punten: {
       name: 'Punten',
-      sub: 'twee of drie, met een zeshoek of icoon',
+      sub: 'twee tot vijf, naast of onder elkaar',
       make: () => ({
         title: 'Drie dingen om te onthouden',
+        layout: 'naast',
         items: ['Eerste punt', 'Tweede punt', 'Derde punt'].map((t) => ({ icon: null, title: t, text: 'Eén korte zin met de kern.' })),
       }),
     },
@@ -137,6 +139,9 @@
 
   // Waar de foto staat in een blok foto en tekst; boven = over de breedte, boven de tekst
   const SIDES = ['links', 'rechts', 'boven'];
+  // Punten naast elkaar (kolommen; vier worden twee rijen van twee) of onder elkaar (icoon links, tekst ernaast)
+  const POINT_LAYOUTS = ['naast', 'onder'];
+  const MAX_POINTS = 5;
 
   let counter = 0;
   const uid = () => `b${Date.now().toString(36)}${(counter++).toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -196,7 +201,7 @@
       if (key === 'img') out.img = normImg(o.img, value);
       else if (key === 'button' || key === 'link') out[key] = key in o ? normLink(o[key]) : value;
       else if (key === 'items') {
-        const items = Array.isArray(o.items) ? o.items.slice(0, 3) : value;
+        const items = Array.isArray(o.items) ? o.items.slice(0, MAX_POINTS) : value;
         out.items = items.map((it, i) => {
           const x = obj(it);
           const icon = obj(x.icon);
@@ -208,6 +213,7 @@
         });
         while (out.items.length < 2) out.items.push({ icon: null, title: '', text: '' });
       } else if (key === 'side') out.side = SIDES.includes(o.side) ? o.side : 'links';
+      else if (key === 'layout') out.layout = POINT_LAYOUTS.includes(o.layout) ? o.layout : 'naast';
       else if (key === 'url') out.url = str(o.url, 1000);
       else out[key] = key in o ? str(o[key]) : value;
     }
@@ -404,6 +410,12 @@
     return `<img class="${cls}" src="${esc(src)}" width="${width}"${h ? ` height="${h}"` : ''} alt="${esc((img && img.alt) || '')}" style="display:block;width:${width}px;max-width:100%;height:auto;">`;
   }
 
+  // Een foto met een link erachter is klikbaar (alleen een goede link; anders blijft hij gewoon staan)
+  function linked(img, url) {
+    const href = safeUrl(url);
+    return img && href ? `<a href="${esc(href)}" target="_blank" style="display:block;text-decoration:none;">${img}</a>` : img;
+  }
+
   /* ---------------------------------------------------------------------------
      De blokken als HTML. pad = { top, bottom } rond witte blokken (zie build)
      ------------------------------------------------------------------------- */
@@ -424,10 +436,9 @@ ${td(`${TYPE.label}color:#ffffff;`, esc(b.label.trim()), ' valign="middle"')}
     },
 
     foto(b, o) {
-      const img = photo(b.img, b.id, 600, o);
+      const img = linked(photo(b.img, b.id, 600, o), b.url);
       if (!img) return '';
-      const href = safeUrl(b.url);
-      return `<td style="padding:0;">${href ? `<a href="${esc(href)}" target="_blank">${img}</a>` : img}</td>`;
+      return `<td style="padding:0;">${img}</td>`;
     },
 
     tekst(b, o, pad) {
@@ -440,12 +451,12 @@ ${td(`${TYPE.label}color:#ffffff;`, esc(b.label.trim()), ' valign="middle"')}
       // Foto boven de tekst: over de hele breedte (520), de tekst eronder zoals een tekstblok
       if (b.side === 'boven') {
         const text = textParts(b, o);
-        const body = stack([[0, photo(b.img, b.id, 520, o)], ...text.map(([gap, html], i) => [i ? gap : 24, html])]);
+        const body = stack([[0, linked(photo(b.img, b.id, 520, o), b.url)], ...text.map(([gap, html], i) => [i ? gap : 24, html])]);
         if (!body) return '';
         return `<td class="pm-px" style="padding:${pad.top}px 40px ${pad.bottom}px 40px;">${body}</td>`;
       }
       const right = b.side === 'rechts';
-      const img = photo(b.img, b.id, 224, o);
+      const img = linked(photo(b.img, b.id, 224, o), b.url);
       // Foto rechts: dir="rtl" zet hem rechts, op een telefoon blijft hij boven de tekst
       const dir = right ? ' dir="rtl"' : '';
       const ltr = right ? ' dir="ltr"' : '';
@@ -465,31 +476,52 @@ ${cols}
     },
 
     punten(b, o) {
-      const items = b.items.slice(0, 3);
-      const n = items.length;
-      const widths = n === 2 ? [260, 260] : [173, 173, 174];
-      const cols = items.map((it, i) => {
-        const end = i === n - 1;
-        const padR = end ? 0 : 16;
-        const iconSrc = it.icon && safeImg((o.pending && o.pending[`${b.id}:${i}`]) || it.icon.src, o.preview);
-        const icon = iconSrc
-          ? `<img src="${esc(iconSrc)}" width="35" height="40" alt="" style="display:block;width:35px;height:40px;">`
-          : `<img src="${IMG}zeshoek-cyaan.png" width="20" height="23" alt="" style="display:block;width:20px;height:23px;">`;
-        const parts = [[0, icon]];
-        if (it.title.trim()) parts.push([10, hx(3, plain(it.title.trim(), o))]);
-        if (it.text.trim()) parts.push([GAP.h3, para(inline(it.text.trim(), o))]);
-        return `<!--[if mso]>${i ? '</td>' : ''}<td width="${widths[i]}" valign="top"><![endif]-->
-<div class="pm-col${end ? '' : ' pm-col-gap'}" style="display:inline-block;vertical-align:top;width:${widths[i]}px;max-width:${widths[i]}px;">${table(`<tr><td style="padding:0 ${padR}px 0 0;">${stack(parts)}</td></tr>`)}</div>`;
+      const items = b.items.slice(0, MAX_POINTS);
+      // Eigen icoon (35 × 40) of het cyaan zeshoekje (20 × 23)
+      const icons = items.map((it, i) => {
+        const src = it.icon && safeImg((o.pending && o.pending[`${b.id}:${i}`]) || it.icon.src, o.preview);
+        return src
+          ? { w: 35, html: `<img src="${esc(src)}" width="35" height="40" alt="" style="display:block;width:35px;height:40px;">` }
+          : { w: 20, html: `<img src="${IMG}zeshoek-cyaan.png" width="20" height="23" alt="" style="display:block;width:20px;height:23px;">` };
       });
-      const head = b.title.trim()
-        ? `<tr><td style="padding:0 0 24px 0;">${stack([[0, ACCENT], [GAP.title, hx(2, heading(b.title, o))]])}</td></tr>`
-        : '';
-      return `<td class="pm-px" style="padding:40px 40px 40px 40px;background-color:#F2FBFE;border-top:1px solid #E1E7EC;border-bottom:1px solid #E1E7EC;">${table(`${head}
-<tr><td style="font-size:0;line-height:0;">
+      // Titel (H3) en tekst van een punt; gap = ruimte boven de eerste van de twee
+      const words = (it, gap) => {
+        const parts = [];
+        if (it.title.trim()) parts.push([gap, hx(3, plain(it.title.trim(), o))]);
+        if (it.text.trim()) parts.push([parts.length ? GAP.h3 : gap, para(inline(it.text.trim(), o))]);
+        return parts;
+      };
+
+      let body;
+      if (b.layout === 'onder') {
+        // Onder elkaar: icoon links, titel en tekst ernaast; de tekst van alle punten staat op één lijn
+        const iw = Math.max(...icons.map((ic) => ic.w));
+        body = stack(items.map((it, i) => [i ? 24 : 0, table(`<tr>
+<td valign="top" width="${iw}" style="width:${iw}px;padding:0 16px 0 0;">${icons[i].html}</td>
+<td valign="top">${stack(words(it, 0)) || '&nbsp;'}</td>
+</tr>`)]));
+      } else {
+        // Naast elkaar: hoogstens drie per rij; vier worden twee rijen van twee, vijf drie en twee
+        const rows = items.length === 4 ? [2, 2] : items.length === 5 ? [3, 2] : [items.length];
+        let at = 0;
+        body = stack(rows.map((n, r) => {
+          const widths = n === 1 ? [520] : n === 2 ? [260, 260] : [173, 173, 174];
+          const cols = items.slice(at, at + n).map((it, j) => {
+            const end = j === n - 1;
+            const parts = [[0, icons[at + j].html], ...words(it, 10)];
+            return `<!--[if mso]>${j ? '</td>' : ''}<td width="${widths[j]}" valign="top"><![endif]-->
+<div class="pm-col${end ? '' : ' pm-col-gap'}" style="display:inline-block;vertical-align:top;width:${widths[j]}px;max-width:${widths[j]}px;">${table(`<tr><td style="padding:0 ${end ? 0 : 16}px 0 0;">${stack(parts)}</td></tr>`)}</div>`;
+          });
+          at += n;
+          return [r ? 28 : 0, table(`<tr><td style="font-size:0;line-height:0;">
 <!--[if mso]><table role="presentation" width="520" cellpadding="0" cellspacing="0" border="0"><tr><![endif]-->
 ${cols.join('\n')}
 <!--[if mso]></td></tr></table><![endif]-->
-</td></tr>`)}</td>`;
+</td></tr>`)];
+        }));
+      }
+      const head = b.title.trim() ? stack([[0, ACCENT], [GAP.title, hx(2, heading(b.title, o))]]) : '';
+      return `<td class="pm-px" style="padding:40px 40px 40px 40px;background-color:#F2FBFE;border-top:1px solid #E1E7EC;border-bottom:1px solid #E1E7EC;">${stack([[0, head], [24, body]])}</td>`;
     },
 
     resultaat(b, o, pad) {
@@ -709,7 +741,7 @@ ${o.preview ? FOOTER.replace('<td class="pm-px"', '<td data-pm-vast="voet" class
         const l = b[key];
         if (l && l.text.trim() && !safeUrl(l.url)) add('warn', 'link', b, `${name}: de ${key === 'button' ? 'knop' : 'link'} “${l.text.trim()}” heeft nog geen goede link.`);
       }
-      if (b.type === 'foto' && b.url.trim() && !safeUrl(b.url)) add('warn', 'link', b, `${name}: de link achter de foto klopt niet.`);
+      if (typeof b.url === 'string' && b.url.trim() && !safeUrl(b.url)) add('warn', 'link', b, `${name}: de link achter de foto klopt niet.`);
       for (const k of ['body', 'intro', 'text']) {
         for (const m of String(b[k] || '').matchAll(/\[([^\]\n]+)\]\(([^)\s]+)\)/g)) {
           if (!safeUrl(m[2])) add('warn', 'link', b, `${name}: de link “${m[1]}” in de tekst klopt niet.`);
@@ -734,15 +766,16 @@ ${o.preview ? FOOTER.replace('<td class="pm-px"', '<td data-pm-vast="voet" class
     if (to === 'fototekst') {
       Object.assign(next, b.type === 'foto' ? { title: '', body: '', link: { text: '', url: '' } } : text);
       next.side = SIDES.includes(side) ? side : 'links';
-      // Een foto die er al was blijft; anders een lege plek (de preview zegt "kies een foto")
+      // Een foto die er al was blijft, met zijn link; anders een lege plek (de preview zegt "kies een foto")
       next.img = b.img ? { ...b.img } : { src: '', alt: '' };
+      next.url = typeof b.url === 'string' ? b.url : '';
     } else if (to === 'tekst') {
       Object.assign(next, text);
     }
     return next;
   }
 
-  const PMEmail = { build, check, normalize, starter, block, convert, thisEdition, BLOCKS, TYPES, STARTERS, STOCK, SIDES, SAMPLE_PREHEADER, DEFAULT_MAST, TYPE, safeUrl, safeImg, inline, bytes, MAX_BLOCKS, SITE };
+  const PMEmail = { build, check, normalize, starter, block, convert, thisEdition, BLOCKS, TYPES, STARTERS, STOCK, SIDES, POINT_LAYOUTS, MAX_POINTS, SAMPLE_PREHEADER, DEFAULT_MAST, TYPE, safeUrl, safeImg, inline, bytes, MAX_BLOCKS, SITE };
   global.PMEmail = PMEmail;
   if (typeof module !== 'undefined' && module.exports) module.exports = PMEmail;
 })(typeof window !== 'undefined' ? window : globalThis);

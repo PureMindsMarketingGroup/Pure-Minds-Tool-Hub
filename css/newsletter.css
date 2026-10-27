@@ -135,6 +135,12 @@
 .nb-side--rechts i { order: 2; }
 .nb-side--boven { grid-template-rows: 1fr 1fr; }
 .nb-sides label { gap: .3rem; font-size: .75rem; }
+/* Punten naast of onder elkaar: drie blokjes in een rij of drie streepjes onder elkaar */
+.nb-lay { display: inline-grid; gap: 2px; width: 1.25rem; height: .9rem; flex: none; }
+.nb-lay i { background: var(--pm-cyan); }
+.nb-lay--naast { grid-template-columns: repeat(3, 1fr); }
+.nb-lay--onder { grid-template-rows: repeat(3, 1fr); }
+.nb-lays label { gap: .3rem; font-size: .75rem; }
 
 /* Foto kiezen: uploaden, online zoeken, fotobank */
 .nb-choose { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; }

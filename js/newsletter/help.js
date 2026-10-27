@@ -79,7 +79,11 @@
     },
     'fotolink': {
       title: 'Link achter de foto',
-      text: 'Optioneel: wie op de foto klikt, gaat naar deze pagina. Laat hem leeg als de foto alleen sfeer is.',
+      text: 'Optioneel: wie op de foto klikt, gaat naar deze pagina, bijvoorbeeld dezelfde blog als de link onder de tekst. Laat hem leeg als de foto alleen sfeer is.',
+    },
+    'punten-schikking': {
+      title: 'Naast of onder elkaar',
+      text: 'Naast elkaar: kolommen, hoogstens drie per rij (vier punten worden twee rijen van twee). Onder elkaar: het icoon links met de tekst ernaast, fijn bij langere tekst of vijf punten.',
     },
     'icoon': {
       title: 'Icoon',

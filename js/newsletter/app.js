@@ -368,9 +368,27 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
     return ['is-ok', `staat online${size}`];
   }
 
+  // Punten naast of onder elkaar, met een klein plaatje van de schikking
+  const LAYOUT_ART = {
+    naast: '<span class="nb-lay nb-lay--naast" aria-hidden="true"><i></i><i></i><i></i></span>',
+    onder: '<span class="nb-lay nb-lay--onder" aria-hidden="true"><i></i><i></i><i></i></span>',
+  };
+  const LAYOUT_NAME = { naast: 'naast elkaar', onder: 'onder elkaar' };
+
+  function layoutField(b) {
+    const id = fid();
+    return `<div class="field">
+  <span class="label" id="${id}">Punten staan <button type="button" class="help" data-help="punten-schikking"></button></span>
+  <div class="seg seg--2 seg--sm nb-lays" role="radiogroup" aria-labelledby="${id}">
+    ${E.POINT_LAYOUTS.map((s) => { const r = fid(); return `<input type="radio" name="layout-${esc(b.id)}" id="${r}" value="${s}" data-k="layout"${b.layout === s ? ' checked' : ''}><label for="${r}">${LAYOUT_ART[s]}${LAYOUT_NAME[s]}</label>`; }).join('')}
+  </div>
+  <p class="field-hint">Op een telefoon staan ze altijd onder elkaar.</p>
+</div>`;
+  }
+
   function pointsField(b) {
     const items = b.items;
-    return `${items.map((it, i) => {
+    return `${layoutField(b)}${items.map((it, i) => {
       const iconSrc = pending[`${b.id}:${i}`] || (it.icon && it.icon.src);
       return `<div class="nb-point" data-point="${i}">
   <div class="nb-point__head"><span>Punt ${i + 1}</span>${items.length > 2 ? `<button type="button" class="linkbtn" data-act="point-del" data-i="${i}">weghalen</button>` : ''}</div>
@@ -384,7 +402,7 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
   ${text(b, `items.${i}.text`, 'Tekst', { rows: 2, max: 300, help: '' })}
 </div>`;
     }).join('')}
-<div class="nb-points-foot">${items.length < 3 ? '<button type="button" class="btn btn-quiet btn-sm" data-act="point-add">+ punt</button>' : ''}</div>`;
+<div class="nb-points-foot">${items.length < E.MAX_POINTS ? '<button type="button" class="btn btn-quiet btn-sm" data-act="point-add">+ punt</button>' : ''}</div>`;
   }
 
   const SIDE_ART = {
@@ -429,6 +447,7 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
           + link(b, 'link', 'Link onder de tekst', { textPh: 'Lees verder' });
       case 'fototekst':
         return imageField(b) + sideField(b)
+          + input(b, 'url', 'Link achter de foto', { max: 1000, opt: true, help: 'fotolink', ph: 'https://…', type: 'url' })
           + input(b, 'title', 'Kop', { max: 100, help: 'kop', opt: true })
           + text(b, 'body', 'Tekst', { rows: 4 })
           + link(b, 'link', 'Link', { textPh: 'Bekijk het' });
@@ -492,6 +511,9 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
     if (e.target.matches('[data-k="side"]')) {
       b.side = e.target.value;
       changed(null);
+    } else if (e.target.matches('[data-k="layout"]')) {
+      b.layout = e.target.value;
+      changed(null);
     } else if (e.target.matches('[data-shape]')) {
       setShape(b.id, e.target.value);
     }
@@ -538,7 +560,7 @@ ${input(b, 'img.alt', 'Beschrijving', { max: 150, help: 'alt', ph: 'bijv. Ons te
       b.items[i].icon = null;
       changed(null);
       renderList();
-    } else if (act === 'point-add' && b.items.length < 3) {
+    } else if (act === 'point-add' && b.items.length < E.MAX_POINTS) {
       b.items.push({ icon: null, title: 'Nog een punt', text: 'Eén korte zin met de kern.' });
       changed(null);
       renderList();

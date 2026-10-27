@@ -1246,8 +1246,10 @@ alleen tekst, foto's, iconen en links aan. De HTML komt uit
   twee tekstblokken na elkaar krijgen een lijn ertussen. Overal 40 px ruimte.
 
 - **Blokken:** opening (kop, intro, magenta hoofdknop), foto, tekst, foto en
-  tekst (foto links, rechts of boven de tekst), punten (twee of drie, met een
-  zeshoek of icoon), resultaat en afsluiter (rustige knop). Toevoegen bij
+  tekst (foto links, rechts of boven de tekst), punten (twee tot vijf, met een
+  zeshoek of icoon; naast elkaar in kolommen of onder elkaar met het icoon
+  links), resultaat en afsluiter (rustige knop). Achter de foto van Foto en
+  Foto en tekst kan een link: dan is de foto klikbaar. Toevoegen bij
   *Blokken* (onder het open blok), verschuiven, kopiëren en weggooien op het
   kaartje. Hoogstens 30 blokken.
 - **Omzetten zonder overtypen** (`PMEmail.convert`): een tekstblok krijgt met

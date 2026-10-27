@@ -43,10 +43,13 @@ test('de HTML heeft alles wat Brevo nodig heeft: afmelden, gegevens wijzigen, on
 
 test('tabellen, rijen, cellen en Outlook-blokken zijn in balans (anders valt de opmaak uit elkaar)', () => {
   for (const s of [E.starter('nieuwsbrief'), E.starter('kort'), real()]) {
-    s.blocks.push({ ...E.block('fototekst'), side: 'rechts' });
+    s.blocks.push({ ...E.block('fototekst'), side: 'rechts', url: 'https://pureminds.nl/blog' });
     const p = E.block('punten');
     p.items.pop();
     s.blocks.push(p);
+    // Punten onder elkaar, en vier en vijf punten naast elkaar (in rijen)
+    const more = (n, layout) => { const q = E.block('punten'); q.layout = layout; while (q.items.length < n) q.items.push({ icon: null, title: 'x', text: 'y' }); return q; };
+    s.blocks.push(more(3, 'onder'), more(4, 'naast'), more(5, 'naast'), more(5, 'onder'));
     const html = E.build(s);
     assert.equal(count(html, '<table'), count(html, '</table>'), 'table');
     assert.equal(count(html, '<tr'), count(html, '</tr>'), 'tr');
@@ -191,6 +194,45 @@ test('kop: een nieuwsbrief heeft groot "Nieuwsbrief." naast het logo met de edit
   assert.equal(E.normalize({ ...s, masthead: '' }).masthead, '');
   // Online bekijken staat klein boven de mail, buiten de kop
   assert.ok(html.indexOf('{{ mirror }}') < html.indexOf('class="pm-mast"'));
+});
+
+test('foto met een link erachter is klikbaar: bij Foto en bij Foto en tekst (links, rechts en boven); een foute link niet', () => {
+  for (const side of E.SIDES) {
+    const s = E.starter('kort');
+    const b = { ...E.block('fototekst'), side, url: 'www.pureminds.nl/blog' };
+    s.blocks.splice(1, 0, b);
+    assert.match(E.build(s), /<a href="https:\/\/www\.pureminds\.nl\/blog" target="_blank" style="display:block;text-decoration:none;"><img class="pm-img-full" src="https:\/\/[^"]+werkplek-bureau\.jpg"/, side);
+    b.url = 'javascript:alert(1)';
+    assert.ok(!E.build(s).includes('javascript:'), `${side}: foute link niet in de mail`);
+    assert.ok(E.check(s).some((i) => i.key === 'link' && i.block === b.id), `${side}: de controle meldt hem`);
+  }
+  // Van foto naar foto en tekst (tekst erbij) en terug gaat de link mee
+  const foto = { ...E.block('foto'), url: 'https://pureminds.nl/x' };
+  assert.equal(E.convert(foto, 'fototekst', { side: 'boven' }).url, 'https://pureminds.nl/x');
+  assert.equal(E.normalize({ blocks: [{ type: 'fototekst' }] }).blocks[0].url, '', 'oude blokken krijgen een lege link');
+});
+
+test('punten naast elkaar (kolommen, vier = twee rijen van twee) of onder elkaar (icoon links); tot vijf punten', () => {
+  const s = E.starter('kort');
+  const p = E.block('punten');
+  s.blocks.splice(1, 0, p);
+  assert.equal(p.layout, 'naast');
+  const cols = (html) => count(html, 'class="pm-col');
+  assert.equal(cols(E.build(s)), 3, 'drie kolommen');
+  p.items.push({ icon: null, title: 'Vier', text: 'x' });
+  const four = E.build(s);
+  assert.equal(cols(four), 4);
+  assert.equal(count(four, 'width:260px;max-width:260px;'), 4, 'vier punten: twee rijen van twee');
+  p.layout = 'onder';
+  const under = E.build(s);
+  assert.equal(cols(under), 0, 'onder elkaar: geen kolommen');
+  assert.equal(count(under, '<h3 class="pm-h3"'), 4);
+  assert.equal(count(under, 'zeshoek-cyaan.png" width="20"'), 4, 'elk punt zijn zeshoek links');
+  // Hoogstens vijf; een onbekende schikking wordt naast elkaar
+  const n = E.normalize({ blocks: [{ type: 'punten', layout: 'raar', items: Array.from({ length: 8 }, () => ({ title: 't' })) }] }).blocks[0];
+  assert.equal(n.items.length, E.MAX_POINTS);
+  assert.equal(n.layout, 'naast');
+  assert.equal(E.normalize({ blocks: [{ ...p }] }).blocks[0].layout, 'onder');
 });
 
 test('voet: de socials staan in de kolom van het contact, onder het adres, de telefoon en de mail', () => {
