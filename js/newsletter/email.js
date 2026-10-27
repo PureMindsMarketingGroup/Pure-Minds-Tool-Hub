@@ -563,21 +563,31 @@ ${cols.join('\n')}
      Kop en voet
      ------------------------------------------------------------------------- */
 
-  // De kop: cyaan balk en logo. Met een naam (state.masthead, bijv. "Nieuwsbrief") staat die groot
-  // naast het logo, achter een cyaan lijn, met de editie (state.edition) eronder
+  /* Donkere modus, zonder ooit het logo te vullen: het logo is altijd doorzichtig (brandbook: geen
+     achtergrond achter het logo). Het witte logo staat op een vlak in Inkt, net als in de voet.
+     - Apple Mail en iOS: de mail zegt "alleen licht" (color-scheme), dus ze laten hem zoals hij is.
+     - Gmail op Android en Outlook maken alleen lichte vlakken donker: Inkt blijft Inkt.
+     - Gmail op de iPhone keert ook donkere vlakken om, maar nooit een achtergrondafbeelding: daarom
+       ook een linear-gradient in dezelfde kleur (INK_BG). Witte tekst zou daar zwart worden; de
+       twee lagen van gmailWhite() (mix-blend-mode, alleen in Gmail via u + #body) draaien dat terug.
+       Cyaan blijft ongeveer cyaan, dus de naam bovenaan (cyaan) heeft die lagen niet nodig. */
+  const INK_BG = 'background-color:#303030;background-image:linear-gradient(#303030,#303030);';
+  const gmailWhite = (html) => `<div class="pm-gm-screen"><div class="pm-gm-diff">${html}</div></div>`;
+
+  // De kop: cyaan balk, en op Inkt het witte logo. Met een naam (state.masthead, bijv. "Nieuwsbrief") staat
+  // die groot in cyaan naast het logo, achter een cyaan lijn, met de editie (state.edition) eronder
   function header(s, o) {
     const mast = String(s.masthead || '').trim();
     const edition = String(s.edition || '').trim();
-    // Logo met een wit gevulde zeshoek: blijft zichtbaar als een mailapp in donkere modus het wit donker maakt
-    const logo = (w, h) => `<a href="https://www.pureminds.nl/" target="_blank"><img src="${IMG}logo-inkt-vlak.png" width="${w}" height="${h}" alt="Pure Minds marketing group" style="display:block;width:${w}px;height:${h}px;"></a>`;
+    const logo = (w, h) => `<a href="https://www.pureminds.nl/" target="_blank"><img src="${IMG}logo-wit.png" width="${w}" height="${h}" alt="Pure Minds marketing group" style="display:block;width:${w}px;height:${h}px;"></a>`;
     const bar = '<tr><td style="height:6px;line-height:6px;font-size:6px;background-color:#1AB9E2;">&nbsp;</td></tr>';
-    if (!mast) return `${bar}\n<tr>\n<td class="pm-px" style="padding:28px 40px 24px 40px;">${logo(80, 92)}</td>\n</tr>`;
+    if (!mast) return `${bar}\n<tr>\n<td class="pm-px" style="padding:28px 40px 28px 40px;${INK_BG}">${logo(80, 92)}</td>\n</tr>`;
     return `${bar}
 <tr>
-<td class="pm-px" style="padding:28px 40px 28px 40px;">${table(`<tr>
+<td class="pm-px" style="padding:28px 40px 28px 40px;${INK_BG}">${table(`<tr>
 <td valign="middle" width="64" style="width:64px;">${logo(64, 74)}</td>
 <td valign="middle" style="padding:0 20px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td width="3" style="width:3px;height:64px;line-height:64px;font-size:4px;background-color:#1AB9E2;">&nbsp;</td></tr></table></td>
-<td valign="middle" width="100%"><p class="pm-mast" style="margin:0;font-family:${FONT};font-size:34px;line-height:38px;font-weight:800;letter-spacing:-0.5px;color:#303030;">${heading(mast, o)}</p>${edition ? `<p style="margin:6px 0 0 0;font-family:${FONT};${TYPE.label}color:#5C6670;">${plain(edition, o)}</p>` : ''}</td>
+<td valign="middle" width="100%"><p class="pm-mast" style="margin:0;font-family:${FONT};font-size:34px;line-height:38px;font-weight:800;letter-spacing:-0.5px;color:#1AB9E2;">${heading(mast, o)}</p>${edition ? gmailWhite(`<p style="margin:6px 0 0 0;font-family:${FONT};${TYPE.label}color:#ffffff;">${plain(edition, o)}</p>`) : ''}</td>
 </tr>`)}</td>
 </tr>`;
   }
@@ -590,17 +600,18 @@ ${td('font-size:12px;line-height:18px;color:#5C6670;padding:0 4px 10px 4px;', '<
   // Contact in de voet: icoon en tekst; de socials staan eronder in dezelfde kolom, gelijk met de iconen
   const contactRow = (icon, inner, last) => `<tr>
 <td valign="top" width="21" style="width:21px;padding:0 12px ${last ? 0 : 12}px 0;"><img src="${IMG}icoon-${icon}.png" width="21" height="24" alt="" style="display:block;width:21px;height:24px;"></td>
-${td(`font-size:14px;line-height:24px;color:#ffffff;padding:0 0 ${last ? 0 : 12}px 0;`, inner, ' valign="top"')}
+${td(`font-size:14px;line-height:24px;color:#ffffff;padding:0 0 ${last ? 0 : 12}px 0;`, gmailWhite(inner), ' valign="top"')}
 </tr>`;
   const social = (name, label, href, last) => `<td valign="middle" style="padding:0${last ? '' : ' 10px 0 0'};"><a href="${href}" target="_blank"><img src="${IMG}icoon-${name}.png" width="28" height="32" alt="${label}" style="display:block;width:28px;height:32px;"></a></td>`;
 
   // Het adres opent Google Maps
   const MAPS = 'https://maps.app.goo.gl/U2DL24yAZRJD6MTHA';
 
-  // Logo en Emerce-badge op een inktvlak: zo blijven ze zichtbaar als een mailapp de voet licht maakt
+  // De voet op Inkt (INK_BG): het witte logo, de iconen en de Emerce-badge blijven zichtbaar, ook in Gmail op de iPhone;
+  // de witte tekst staat in gmailWhite(). Het logo blijft doorzichtig, net als in de kop
   const FOOTER = `<tr>
-<td class="pm-px" style="padding:40px 40px 36px 40px;background-color:#303030;">${table(`<tr>
-<td valign="top" width="80" class="pm-hide-sm" style="width:80px;padding:0 32px 0 0;"><img src="${IMG}logo-wit-vlak.png" width="80" height="92" alt="Pure Minds marketing group" style="display:block;width:80px;height:92px;"></td>
+<td class="pm-px" style="padding:40px 40px 36px 40px;${INK_BG}">${table(`<tr>
+<td valign="top" width="80" class="pm-hide-sm" style="width:80px;padding:0 32px 0 0;"><img src="${IMG}logo-wit.png" width="80" height="92" alt="Pure Minds marketing group" style="display:block;width:80px;height:92px;"></td>
 <td valign="top">${table(`
 ${contactRow('adres', `<a href="${MAPS}" target="_blank" style="color:#ffffff;text-decoration:none;">Pure Minds Marketing Group<br>Spekhofstraat 2, 6466 LZ Kerkrade</a>`)}
 ${contactRow('telefoon', '<a href="tel:+31453690530" style="color:#ffffff;text-decoration:none;">045 369 0530</a>')}
@@ -613,14 +624,14 @@ ${social('linkedin', 'LinkedIn', 'https://www.linkedin.com/company/puremindsmark
 ${social('instagram', 'Instagram', 'https://www.instagram.com/puremindsmarketinggroup/')}
 ${social('facebook', 'Facebook', 'https://www.facebook.com/puremindsmarketinggroup/', true)}
 </tr></table></td>
-<td valign="middle" align="right"><img src="${IMG}emerce-100-vlak.png" width="88" height="33" alt="Emerce 100 2026" style="display:block;width:88px;height:33px;"></td>
+<td valign="middle" align="right"><img src="${IMG}emerce-100-wit.png" width="88" height="33" alt="Emerce 100 2026" style="display:block;width:88px;height:33px;"></td>
 </tr>`)}</td>
 </tr>`)}</td>
 </tr>
 <tr>
 <td colspan="2" style="padding:28px 0 0 0;">${table(`<tr><td style="height:1px;line-height:1px;font-size:1px;background-color:#4a4a4a;">&nbsp;</td></tr>
-<tr>${td('font-size:12px;line-height:19px;color:#c9cdd1;padding:20px 0 0 0;', `Je ontvangt deze e-mail omdat je contact hebt met Pure Minds of je hebt aangemeld voor onze updates.<br>
-<a href="{{ unsubscribe }}" target="_blank" style="color:#ffffff;text-decoration:underline;">Afmelden</a> &nbsp;&middot;&nbsp; <a href="{{ update_profile }}" target="_blank" style="color:#ffffff;text-decoration:underline;">Gegevens wijzigen</a>`)}</tr>`)}</td>
+<tr>${td('font-size:12px;line-height:19px;color:#c9cdd1;padding:20px 0 0 0;', gmailWhite(`Je ontvangt deze e-mail omdat je contact hebt met Pure Minds of je hebt aangemeld voor onze updates.<br>
+<a href="{{ unsubscribe }}" target="_blank" style="color:#ffffff;text-decoration:underline;">Afmelden</a> &nbsp;&middot;&nbsp; <a href="{{ update_profile }}" target="_blank" style="color:#ffffff;text-decoration:underline;">Gegevens wijzigen</a>`))}</tr>`)}</td>
 </tr>`)}</td>
 </tr>`;
 
@@ -633,8 +644,11 @@ ${social('facebook', 'Facebook', 'https://www.facebook.com/puremindsmarketinggro
 @font-face { font-family: "Pure Minds Sans"; font-weight: 700; font-style: normal; src: url("${SITE}assets/fonts/PureMindsSans-Bold.ttf") format("truetype"); }
 @font-face { font-family: "Pure Minds Sans"; font-weight: 800; font-style: normal; src: url("${SITE}assets/fonts/PureMindsSans-ExtraBold.ttf") format("truetype"); }
 /* Donkere modus: Apple Mail en iOS laten de mail licht (light only). Gmail en Outlook maken lichte vlakken zelf
-   donker en laten plaatjes zoals ze zijn; daarom hebben de logo's een gevulde zeshoek (logo-*-vlak.png) */
+   donker; kop en voet staan daarom op Inkt met het witte, doorzichtige logo (zie INK_BG) */
 :root { color-scheme: light only; supported-color-schemes: light only; }
+/* Alleen in Gmail (u + #body): witte tekst op Inkt houdt zijn kleur in donkere modus (zie INK_BG) */
+u + #body .pm-gm-screen { background: #000; mix-blend-mode: screen; }
+u + #body .pm-gm-diff { background: #000; mix-blend-mode: difference; }
 body { margin: 0 !important; padding: 0 !important; width: 100% !important; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
 table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse; }
 img { border: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; display: block; }

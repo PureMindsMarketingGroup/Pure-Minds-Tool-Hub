@@ -1239,12 +1239,16 @@ alleen tekst, foto's, iconen en links aan. De HTML komt uit
 - **Voet (vast):** logo, contact (adres, telefoon, mail, site) met de socials
   eronder in dezelfde kolom, Emerce 100 en afmelden. Het adres opent Google
   Maps.
-- **Donkere modus:** Apple Mail en iOS houden de mail licht (`color-scheme:
-  light only`). Gmail en Outlook maken lichte vlakken zelf donker (of keren alles
-  om) maar laten plaatjes staan; daarom hebben de logo's een gevulde zeshoek
-  (`email/img/logo-inkt-vlak.png`: wit gevuld, `logo-wit-vlak.png`: inkt gevuld)
-  en staat de Emerce-badge op een inktvlak (`emerce-100-vlak.png`). De oude
-  doorzichtige `logo-inkt.png` blijft voor de mails van het inloggen.
+- **Donkere modus:** het logo is altijd doorzichtig, nooit gevuld en zonder vlak
+  erachter (brandbook). Kop en voet staan daarom op Inkt met het witte logo
+  (`email/img/logo-wit.png`). Apple Mail en iOS houden de mail licht
+  (`color-scheme: light only`); Gmail op Android en Outlook maken alleen lichte
+  vlakken donker, dus Inkt blijft Inkt. Gmail op de iPhone keert ook donkere
+  vlakken om, maar geen achtergrondafbeelding: daarom ook
+  `background-image: linear-gradient(#303030, #303030)`. Witte tekst op Inkt
+  houdt in Gmail zijn kleur met twee lagen `mix-blend-mode` (screen en
+  difference, alleen via `u + #body`); de naam bovenaan is cyaan en heeft dat
+  niet nodig.
 - **Preview:** *computer* of *telefoon*, en *licht*, *donker* of *omgekeerd*.
   Donker doet Gmail op Android en Outlook na (lichte vlakken donker, donkere
   tekst en lijnen licht), omgekeerd Gmail op de iPhone (alles omgedraaid);

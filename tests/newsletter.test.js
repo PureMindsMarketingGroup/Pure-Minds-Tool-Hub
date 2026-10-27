@@ -251,7 +251,7 @@ test('punten naast elkaar (kolommen, vier = twee rijen van twee) of onder elkaar
 
 test('voet: de socials staan in de kolom van het contact, onder het adres, de telefoon en de mail', () => {
   const html = E.build(E.starter('kort'));
-  const foot = html.slice(html.indexOf('logo-wit-vlak.png'));
+  const foot = html.slice(html.indexOf('<td class="pm-px" style="padding:40px 40px 36px 40px;'));
   const at = (s) => foot.indexOf(s);
   assert.ok(at('icoon-mail.png') < at('icoon-web.png') && at('icoon-web.png') < at('icoon-linkedin.png'));
   // Tussen het logo en de socials sluit geen kolom: ze zitten in dezelfde cel als het contact
@@ -265,19 +265,27 @@ test('voet: het adres opent Google Maps', () => {
   assert.ok(html.includes('<a href="https://maps.app.goo.gl/U2DL24yAZRJD6MTHA" target="_blank" style="color:#ffffff;text-decoration:none;">Pure Minds Marketing Group<br>Spekhofstraat 2, 6466 LZ Kerkrade</a>'));
 });
 
-test('donkere modus: logo\'s met een gevulde zeshoek (zichtbaar als een mailapp de kleuren omkeert), Apple Mail blijft licht', () => {
+test('donkere modus: het logo is altijd doorzichtig (nooit gevuld); kop en voet op Inkt die ook Gmail op de iPhone niet omkeert', () => {
+  const INK = 'background-color:#303030;background-image:linear-gradient(#303030,#303030);';
   for (const s of [E.starter('nieuwsbrief'), E.starter('kort')]) {
     const html = E.build(s);
-    assert.ok(html.includes('email/img/logo-inkt-vlak.png'), 'kop: wit gevulde zeshoek');
-    assert.ok(html.includes('email/img/logo-wit-vlak.png'), 'voet: inkt gevulde zeshoek');
-    assert.ok(html.includes('email/img/emerce-100-vlak.png'), 'badge op een inktvlak');
-    assert.ok(!/logo-(inkt|wit)\.png|emerce-100-wit\.png/.test(html), 'geen doorzichtige logo\'s meer');
+    assert.ok(!/vlak\.png/.test(html), 'geen gevulde logo\'s');
+    assert.equal(count(html, 'email/img/logo-wit.png'), 2, 'het witte, doorzichtige logo in kop en voet');
+    assert.ok(!html.includes('logo-inkt'), 'geen inktlogo op een vlak dat in donkere modus donker wordt');
+    // Kop en voet: Inkt als kleur én als achtergrondafbeelding
+    const head = html.slice(html.indexOf('class="pm-container" width="600"', html.indexOf('class="pm-container" width="600"') + 1));
+    assert.ok(head.slice(0, 1200).includes(INK), 'kop op Inkt');
+    assert.ok(html.slice(html.lastIndexOf('<!-- EINDE BLOK -->')).includes(INK), 'voet op Inkt');
+    // Witte tekst in Gmail: de twee lagen; het logo staat er nooit in (anders verkleurt het)
+    assert.ok(html.includes('u + #body .pm-gm-screen { background: #000; mix-blend-mode: screen; }'));
+    assert.ok(html.includes('u + #body .pm-gm-diff { background: #000; mix-blend-mode: difference; }'));
+    for (const m of html.matchAll(/<div class="pm-gm-diff">([\s\S]*?)<\/div><\/div>/g)) assert.ok(!/<img/.test(m[1]), 'geen plaatje in de lagen');
     assert.ok(html.includes('<meta name="color-scheme" content="light only">'));
     assert.ok(html.includes(':root { color-scheme: light only;'));
   }
   // De losse template ook
   const tpl = read('email/pure-minds-email.html');
-  assert.ok(tpl.includes('logo-inkt-vlak.png') && tpl.includes('logo-wit-vlak.png') && tpl.includes('maps.app.goo.gl'));
+  assert.ok(!/vlak\.png/.test(tpl) && tpl.includes('logo-wit.png') && tpl.includes('maps.app.goo.gl'));
 });
 
 test('huisstijl: alleen 400, 700 en 800; magenta alleen voor de knop in de opening; cyaan nooit als tekst op wit', () => {
@@ -286,9 +294,10 @@ test('huisstijl: alleen 400, 700 en 800; magenta alleen voor de knop in de openi
   for (const w of weights) assert.ok(['400', '700', '800'].includes(w), `gewicht ${w}`);
   assert.equal(count(html, 'class="pm-btn"'), 1, 'één magenta knop');
   assert.equal(count(html.toLowerCase(), '#b61b50'), 2, 'magenta: de knop en zijn Outlook-versie');
-  // Cyaan als tekstkleur alleen in de punt achter een kop en het cijfer op Inkt
+  // Cyaan als tekstkleur alleen in de punt achter een kop, het cijfer op Inkt en de naam bovenaan (op Inkt)
   const cyanText = Array.from(html.matchAll(/(?<![-\w])color:#1AB9E2;[^"]*">([^<]*)/g), (m) => m[1]);
-  for (const t of cyanText) assert.ok(t === '.' || /^\+?\d/.test(t), `cyaan als tekst: ${t}`);
+  for (const t of cyanText) assert.ok(t === '.' || /^\+?\d/.test(t) || t === real().masthead, `cyaan als tekst: ${t}`);
+  assert.equal(count(html, 'class="pm-mast"'), 1);
 });
 
 test('preview: elk blok aanklikbaar; kop en voet vast. De export heeft geen preview-sporen', () => {

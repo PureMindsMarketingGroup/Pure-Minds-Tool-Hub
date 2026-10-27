@@ -46,6 +46,9 @@
   @font-face { font-family: "Pure Minds Sans"; font-weight: 700; font-style: normal; src: url("https://puremindsmarketinggroup.github.io/Pure-Minds-Tool-Hub/assets/fonts/PureMindsSans-Bold.ttf") format("truetype"); }
   @font-face { font-family: "Pure Minds Sans"; font-weight: 800; font-style: normal; src: url("https://puremindsmarketinggroup.github.io/Pure-Minds-Tool-Hub/assets/fonts/PureMindsSans-ExtraBold.ttf") format("truetype"); }
   :root { color-scheme: light only; supported-color-schemes: light only; }
+  /* Alleen in Gmail: witte tekst op Inkt houdt zijn kleur in donkere modus */
+  u + #body .pm-gm-screen { background: #000; mix-blend-mode: screen; }
+  u + #body .pm-gm-diff { background: #000; mix-blend-mode: difference; }
   body { margin: 0 !important; padding: 0 !important; width: 100% !important; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
   table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse; }
   img { border: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; display: block; }
@@ -83,16 +86,16 @@
         <tr><td style="height:6px;line-height:6px;font-size:6px;background-color:#1AB9E2;">&nbsp;</td></tr>
         <!-- EINDE BLOK -->
 
-        <!-- BLOK: kop met logo en "bekijk online" (vast) -->
+        <!-- BLOK: kop met logo en "bekijk online" (vast). Op Inkt met het witte, doorzichtige logo: zo blijft het logo zichtbaar in donkere modus -->
         <tr>
-          <td class="pm-px" style="padding:28px 40px 24px 40px;">
+          <td class="pm-px" style="padding:28px 40px 28px 40px;background-color:#303030;background-image:linear-gradient(#303030,#303030);">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
                 <td valign="middle" width="80">
-                  <a href="https://www.pureminds.nl/" target="_blank"><img src="https://puremindsmarketinggroup.github.io/Pure-Minds-Tool-Hub/email/img/logo-inkt-vlak.png" width="80" height="92" alt="Pure Minds marketing group" style="display:block;width:80px;height:92px;"></a>
+                  <a href="https://www.pureminds.nl/" target="_blank"><img src="https://puremindsmarketinggroup.github.io/Pure-Minds-Tool-Hub/email/img/logo-wit.png" width="80" height="92" alt="Pure Minds marketing group" style="display:block;width:80px;height:92px;"></a>
                 </td>
-                <td valign="middle" align="right" style="font-family:'Pure Minds Sans','Open Sans',Arial,sans-serif;font-size:13px;line-height:20px;color:#5C6670;">
-                  <a href="{{ mirror }}" target="_blank" style="color:#5C6670;text-decoration:underline;">Bekijk deze e-mail online</a>
+                <td valign="middle" align="right" style="font-family:'Pure Minds Sans','Open Sans',Arial,sans-serif;font-size:13px;line-height:20px;color:#c9cdd1;">
+                  <div class="pm-gm-screen"><div class="pm-gm-diff"><a href="{{ mirror }}" target="_blank" style="color:#c9cdd1;text-decoration:underline;">Bekijk deze e-mail online</a></div></div>
                 </td>
               </tr>
             </table>
@@ -287,7 +290,7 @@
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
                 <td valign="top" width="96" class="pm-hide-sm" style="padding:0 24px 0 0;">
-                  <img src="https://puremindsmarketinggroup.github.io/Pure-Minds-Tool-Hub/email/img/logo-wit-vlak.png" width="80" height="92" alt="Pure Minds marketing group" style="display:block;width:80px;height:92px;">
+                  <img src="https://puremindsmarketinggroup.github.io/Pure-Minds-Tool-Hub/email/img/logo-wit.png" width="80" height="92" alt="Pure Minds marketing group" style="display:block;width:80px;height:92px;">
                 </td>
                 <td valign="top">
                   <table role="presentation" cellpadding="0" cellspacing="0" border="0">
@@ -322,7 +325,7 @@
                         </tr></table>
                       </td>
                       <td valign="middle" align="right">
-                        <img src="https://puremindsmarketinggroup.github.io/Pure-Minds-Tool-Hub/email/img/emerce-100-vlak.png" width="88" height="33" alt="Emerce 100 2026" style="display:block;width:88px;height:33px;">
+                        <img src="https://puremindsmarketinggroup.github.io/Pure-Minds-Tool-Hub/email/img/emerce-100-wit.png" width="88" height="33" alt="Emerce 100 2026" style="display:block;width:88px;height:33px;">
                       </td>
                     </tr>
                   </table>

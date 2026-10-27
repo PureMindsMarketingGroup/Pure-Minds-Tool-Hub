@@ -194,7 +194,9 @@ html { scrollbar-width: none; }
      donkere modus doen; plaatjes blijven altijd zoals ze zijn.
        licht      gewoon scherm, en Apple Mail en iPhone (de mail zegt "alleen licht")
        donker     Gmail op Android, Outlook: lichte vlakken worden donker, donkere tekst en lijnen licht
-       omgekeerd  Gmail op de iPhone: alle kleuren omgedraaid, ook donkere vlakken worden licht
+       omgekeerd  Gmail op de iPhone: alle kleuren omgedraaid, ook donkere vlakken worden licht,
+                  behalve een achtergrondafbeelding (de kop en voet op Inkt blijven dus Inkt)
+     In donker en omgekeerd gelden ook de Gmail-regels voor witte tekst (GMAIL_CSS).
      ------------------------------------------------------------------------- */
 
   let theme = 'licht';
@@ -216,28 +218,34 @@ html { scrollbar-width: none; }
   }
   const css = ([h, s, l, a]) => `hsla(${Math.round(h)}, ${Math.round(s * 100)}%, ${Math.round(l * 100)}%, ${a})`;
 
+  // De Gmail-regels uit de mail (daar via u + #body, die de preview niet heeft): witte tekst op Inkt
+  const GMAIL_CSS = '.pm-gm-screen { background: #000; mix-blend-mode: screen; } .pm-gm-diff { background: #000; mix-blend-mode: difference; }';
+
   function applyTheme(doc) {
-    if (theme === 'omgekeerd') {
-      const style = doc.createElement('style');
-      style.textContent = 'html { filter: invert(1) hue-rotate(180deg); } img { filter: invert(1) hue-rotate(180deg); }';
-      doc.head.appendChild(style);
-      return;
-    }
-    if (theme !== 'donker') return;
+    if (theme !== 'donker' && theme !== 'omgekeerd') return;
+    const full = theme === 'omgekeerd';
+    const style = doc.createElement('style');
+    style.textContent = GMAIL_CSS;
+    doc.head.appendChild(style);
     const win = doc.defaultView;
+    const flip = ([h, s, l, a]) => [h, s, 1 - l, a];
     doc.querySelectorAll('body, body *').forEach((node) => {
       const cs = win.getComputedStyle(node);
-      // Lichte vlakken worden donker (wit bijna zwart, lichtgrijs iets lichter), kleur blijft herkenbaar
-      const bg = hsl(cs.backgroundColor);
-      if (bg && bg[2] > 0.6) node.style.setProperty('background-color', css([bg[0], bg[1] * 0.5, 0.07 + (1 - bg[2]) * 0.6, bg[3]]), 'important');
-      // Donkere tekst wordt licht
+      // Vlakken: omgekeerd draait elke kleur om, donker alleen de lichte (wit bijna zwart). Een
+      // achtergrondafbeelding (ook een linear-gradient) blijft altijd staan, net als in Gmail
+      const bg = cs.backgroundImage === 'none' ? hsl(cs.backgroundColor) : null;
+      if (bg && full) node.style.setProperty('background-color', css(flip(bg)), 'important');
+      else if (bg && bg[2] > 0.6) node.style.setProperty('background-color', css([bg[0], bg[1] * 0.5, 0.07 + (1 - bg[2]) * 0.6, bg[3]]), 'important');
+      // Tekst: omgekeerd draait om, donker maakt alleen donkere tekst licht
       const fg = hsl(cs.color);
-      if (fg && fg[2] < 0.45) node.style.setProperty('color', css([fg[0], fg[1] * 0.5, Math.min(0.9, 1.02 - fg[2]), fg[3]]), 'important');
+      if (fg && full) node.style.setProperty('color', css(flip(fg)), 'important');
+      else if (fg && fg[2] < 0.45) node.style.setProperty('color', css([fg[0], fg[1] * 0.5, Math.min(0.9, 1.02 - fg[2]), fg[3]]), 'important');
       // Lijnen: donker wordt licht, licht wordt donker
       for (const side of ['top', 'right', 'bottom', 'left']) {
         if (!parseFloat(cs[`border-${side}-width`])) continue;
         const bc = hsl(cs[`border-${side}-color`]);
-        if (bc && bc[2] < 0.45) node.style.setProperty(`border-${side}-color`, css([bc[0], bc[1] * 0.5, 1.02 - bc[2], bc[3]]), 'important');
+        if (bc && full) node.style.setProperty(`border-${side}-color`, css(flip(bc)), 'important');
+        else if (bc && bc[2] < 0.45) node.style.setProperty(`border-${side}-color`, css([bc[0], bc[1] * 0.5, 1.02 - bc[2], bc[3]]), 'important');
         else if (bc && bc[2] > 0.6) node.style.setProperty(`border-${side}-color`, css([bc[0], bc[1] * 0.5, 0.07 + (1 - bc[2]) * 0.9, bc[3]]), 'important');
       }
     });
