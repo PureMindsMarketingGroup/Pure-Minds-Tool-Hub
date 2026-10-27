@@ -1245,6 +1245,10 @@ alleen tekst, foto's, iconen en links aan. De HTML komt uit
   (`email/img/logo-inkt-vlak.png`: wit gevuld, `logo-wit-vlak.png`: inkt gevuld)
   en staat de Emerce-badge op een inktvlak (`emerce-100-vlak.png`). De oude
   doorzichtige `logo-inkt.png` blijft voor de mails van het inloggen.
+- **Preview:** *computer* of *telefoon*, en *licht*, *donker* of *omgekeerd*.
+  Donker doet Gmail op Android en Outlook na (lichte vlakken donker, donkere
+  tekst en lijnen licht), omgekeerd Gmail op de iPhone (alles omgedraaid);
+  plaatjes blijven zoals ze zijn. Alleen in de preview, niet in de HTML.
 - **Typografie:** één schaal (`PMEmail.TYPE`). H1 36/42 ExtraBold alleen in de
   opening, H2 24/30 Bold boven elk blok, H3 18/24 Bold per punt, p 16/26 voor
   alle lopende tekst, labels 13 px in hoofdletters. Echte `h1`–`h3`- en

@@ -125,6 +125,10 @@
     },
 
     // Podium
+    'weergave': {
+      title: 'Licht, donker of omgekeerd',
+      text: 'Licht: zo tonen Apple Mail en de iPhone je mail, ook in donkere modus. Donker: ongeveer Gmail op Android en Outlook. Omgekeerd: Gmail op de iPhone, die alles omdraait. Een nabootsing: stuur ook een testmail.',
+    },
     'preview': {
       title: 'Preview',
       text: 'Zo ziet je mail eruit. Klik op een blok of op de kop om hem aan te passen. Met telefoon zie je de mail op een smal scherm. De voet staat vast, met de afmeldlink die Brevo verplicht.',

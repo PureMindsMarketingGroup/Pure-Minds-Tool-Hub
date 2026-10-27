@@ -199,7 +199,14 @@
 /* --- Podium: de mail in een iframe, zoals in een mailprogramma --- */
 
 .nb-device { min-width: 13rem; }
-.nb-device .ri { width: 1rem; height: 1rem; fill: currentColor; }
+.nb-device .ri, .nb-theme .ri { width: 1rem; height: 1rem; fill: currentColor; }
+/* Weergave: licht, donker of omgekeerd (nabootsing van donkere modus in mailapps); smal alleen de iconen */
+.nb-theme { min-width: 17rem; }
+@media (max-width: 1199px) {
+  .nb-theme { min-width: 0; }
+  .nb-theme label { font-size: 0; gap: 0; }
+  .nb-theme label .ri { width: 1.15rem; height: 1.15rem; }
+}
 .nb-frame {
   width: 100%; max-width: 680px; margin: 0 auto; background: #edf3f7;
   box-shadow: 0 0 0 1px var(--pm-line), 0 24px 48px -32px rgba(16, 40, 60, .45);

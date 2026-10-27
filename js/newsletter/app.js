@@ -180,6 +180,7 @@ html { scrollbar-width: none; }
     doc.open();
     doc.write(html);
     doc.close();
+    applyTheme(doc);
     markSelected();
     bindPreview(doc);
     fitFrame();
@@ -187,6 +188,66 @@ html { scrollbar-width: none; }
     doc.addEventListener('load', fitFrame, true);
     setTimeout(fitFrame, 400);
   }
+
+  /* ---------------------------------------------------------------------------
+     Weergave: licht, donker of omgekeerd. Een nabootsing van wat mailapps in
+     donkere modus doen; plaatjes blijven altijd zoals ze zijn.
+       licht      gewoon scherm, en Apple Mail en iPhone (de mail zegt "alleen licht")
+       donker     Gmail op Android, Outlook: lichte vlakken worden donker, donkere tekst en lijnen licht
+       omgekeerd  Gmail op de iPhone: alle kleuren omgedraaid, ook donkere vlakken worden licht
+     ------------------------------------------------------------------------- */
+
+  let theme = 'licht';
+
+  // "rgb(48, 48, 48)" of "rgba(…)" -> [h, s, l, a] (0..1), of null als hij doorzichtig is
+  function hsl(color) {
+    const m = /rgba?\(([^)]+)\)/.exec(color || '');
+    if (!m) return null;
+    const [r, g, b, a = 1] = m[1].split(/[\s,/]+/).filter(Boolean).map(Number);
+    if (!a) return null;
+    const [R, G, B] = [r, g, b].map((v) => v / 255);
+    const max = Math.max(R, G, B);
+    const min = Math.min(R, G, B);
+    const l = (max + min) / 2;
+    const d = max - min;
+    let h = 0;
+    if (d) h = max === R ? ((G - B) / d) % 6 : max === G ? (B - R) / d + 2 : (R - G) / d + 4;
+    return [(h * 60 + 360) % 360, d ? d / (1 - Math.abs(2 * l - 1)) : 0, l, a];
+  }
+  const css = ([h, s, l, a]) => `hsla(${Math.round(h)}, ${Math.round(s * 100)}%, ${Math.round(l * 100)}%, ${a})`;
+
+  function applyTheme(doc) {
+    if (theme === 'omgekeerd') {
+      const style = doc.createElement('style');
+      style.textContent = 'html { filter: invert(1) hue-rotate(180deg); } img { filter: invert(1) hue-rotate(180deg); }';
+      doc.head.appendChild(style);
+      return;
+    }
+    if (theme !== 'donker') return;
+    const win = doc.defaultView;
+    doc.querySelectorAll('body, body *').forEach((node) => {
+      const cs = win.getComputedStyle(node);
+      // Lichte vlakken worden donker (wit bijna zwart, lichtgrijs iets lichter), kleur blijft herkenbaar
+      const bg = hsl(cs.backgroundColor);
+      if (bg && bg[2] > 0.6) node.style.setProperty('background-color', css([bg[0], bg[1] * 0.5, 0.07 + (1 - bg[2]) * 0.6, bg[3]]), 'important');
+      // Donkere tekst wordt licht
+      const fg = hsl(cs.color);
+      if (fg && fg[2] < 0.45) node.style.setProperty('color', css([fg[0], fg[1] * 0.5, Math.min(0.9, 1.02 - fg[2]), fg[3]]), 'important');
+      // Lijnen: donker wordt licht, licht wordt donker
+      for (const side of ['top', 'right', 'bottom', 'left']) {
+        if (!parseFloat(cs[`border-${side}-width`])) continue;
+        const bc = hsl(cs[`border-${side}-color`]);
+        if (bc && bc[2] < 0.45) node.style.setProperty(`border-${side}-color`, css([bc[0], bc[1] * 0.5, 1.02 - bc[2], bc[3]]), 'important');
+        else if (bc && bc[2] > 0.6) node.style.setProperty(`border-${side}-color`, css([bc[0], bc[1] * 0.5, 0.07 + (1 - bc[2]) * 0.9, bc[3]]), 'important');
+      }
+    });
+  }
+
+  $$('input[name="theme"]').forEach((r) => r.addEventListener('change', () => {
+    if (!r.checked) return;
+    theme = r.value;
+    writePreview();
+  }));
 
   function fitFrame() {
     const doc = el.frame.contentDocument;
