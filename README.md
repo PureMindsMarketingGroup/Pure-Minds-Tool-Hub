@@ -1260,7 +1260,9 @@ alleen tekst, foto's, iconen en links aan. De HTML komt uit
   (Unsplash, zoekwoorden uit de kop van het blok) en de foto's van Pure Minds.
   Een foto van Unsplash snijdt Unsplash zelf bij in de gekozen vorm.
 - **Tekst:** `**vet**`, `{voornaam}` (Brevo: `{{ contact.FIRSTNAME }}`, anders
-  "daar"), `[tekst](link)` en een witregel voor een nieuwe alinea. Koppen
+  "beste lezer"; een begroeting vooraan zoals "Hoi {voornaam}" wordt een
+  als-dan-regel van Brevo: met naam "Hoi Jelger", zonder naam "Beste lezer"),
+  `[tekst](link)` en een witregel voor een nieuwe alinea. Koppen
   krijgen vanzelf de cyaan punt, tekstlinks een pijl.
 - **Links:** alleen https, mailto en tel; `www.…`, een e-mailadres of een
   telefoonnummer wordt vanzelf goed. Een link die niet klopt krijgt een oranje
@@ -1303,7 +1305,7 @@ uit `assets/styleguide/photos/`.
 - **Huisstijl:** Inkt voor tekst, cyaan alleen als accent (op wit nooit als
   tekst), één magenta knop per mail. Pure Minds Sans waar de mailapp dat kan
   (Apple Mail, iPhone), anders Open Sans, anders Arial.
-- **Brevo-codes:** `{{ contact.FIRSTNAME }}` (voornaam, met "daar" als hij
+- **Brevo-codes:** `{{ contact.FIRSTNAME }}` (voornaam, met "Beste lezer" als hij
   ontbreekt), `{{ mirror }}` (bekijk online), `{{ unsubscribe }}` (afmelden,
   verplicht) en `{{ update_profile }}`.
 - **Eigen foto's:** 1200 px breed (scherp op retina), in Brevo uploaden of op

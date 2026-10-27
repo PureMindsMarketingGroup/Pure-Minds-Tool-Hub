@@ -36,7 +36,7 @@ test('de HTML heeft alles wat Brevo nodig heeft: afmelden, gegevens wijzigen, on
   assert.ok(html.includes('href="{{ unsubscribe }}"'), 'afmelden (verplicht)');
   assert.ok(html.includes('href="{{ update_profile }}"'));
   assert.ok(html.includes('href="{{ mirror }}"'));
-  assert.ok(html.includes('{{ contact.FIRSTNAME | default : "daar" }}'), '{voornaam} wordt de Brevo-code');
+  assert.ok(html.includes('{% if contact.FIRSTNAME %}Hoi {{ contact.FIRSTNAME }}{% else %}Beste lezer{% endif %},'), '"Hoi {voornaam}" wordt de als-dan-regel van Brevo');
   assert.ok(!/\{voornaam\}/i.test(html));
   assert.ok(html.trim().endsWith('</html>'));
 });
@@ -130,12 +130,26 @@ test('opmaak in de tekst: **vet**, {voornaam}, [link](url), witregel = nieuwe al
   const s = E.starter('kort');
   s.blocks[1].body = 'Hoi {voornaam}, dit is **vet**.\nNieuwe regel.\n\nTweede alinea met [cases](pureminds.nl/cases).';
   const html = E.build(s);
-  assert.ok(html.includes('Hoi {{ contact.FIRSTNAME | default : "daar" }}, dit is <strong style="font-weight:700;">vet</strong>.<br>Nieuwe regel.'));
+  assert.ok(html.includes('{% if contact.FIRSTNAME %}Hoi {{ contact.FIRSTNAME }}{% else %}Beste lezer{% endif %}, dit is <strong style="font-weight:700;">vet</strong>.<br>Nieuwe regel.'));
   assert.ok(html.includes('Tweede alinea met <a href="https://pureminds.nl/cases" target="_blank" style="color:#303030;text-decoration:none;border-bottom:2px solid #1AB9E2;">cases</a>.'));
   // In de preview is {voornaam} een blokje, geen Brevo-code
   const preview = E.build(s, { preview: true });
   assert.ok(!preview.includes('contact.FIRSTNAME'));
   assert.match(preview, /<span[^>]*>voornaam<\/span>/);
+});
+
+test('{voornaam} zonder naam: "Hoi {voornaam}" vooraan wordt "Beste lezer", elders "beste lezer"', () => {
+  const o = { preview: false };
+  const IF = (w) => `{% if contact.FIRSTNAME %}${w} {{ contact.FIRSTNAME }}{% else %}Beste lezer{% endif %}`;
+  assert.equal(E.inline('Hoi {voornaam}, welkom.', o), `${IF('Hoi')}, welkom.`);
+  assert.equal(E.inline('Beste {voornaam},', o), `${IF('Beste')},`, 'geen "Beste beste lezer"');
+  assert.equal(E.inline('Eerste regel\nhallo {voornaam}!', o), `Eerste regel<br>${IF('hallo')}!`, 'ook vooraan een nieuwe regel');
+  const mid = 'Fijne dag {voornaam}, tot snel.';
+  assert.equal(E.inline(mid, o), 'Fijne dag {{ contact.FIRSTNAME | default : "beste lezer" }}, tot snel.', 'midden in een zin: geen begroeting');
+  assert.ok(!E.inline('[Lees](https://pureminds.nl) hoi {voornaam}', o).includes('{% if'), 'na een link is het geen begroeting');
+  assert.ok(!E.build(real()).includes('"daar"'));
+  // In de preview gewoon het blokje "voornaam"
+  assert.match(E.inline('Hoi {voornaam}', { preview: true }), /^Hoi <span[^>]*>voornaam<\/span>$/);
 });
 
 test('koppen krijgen de cyaan punt, behalve na een vraagteken; links een pijl', () => {

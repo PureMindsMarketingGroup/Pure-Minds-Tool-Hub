@@ -33,7 +33,8 @@
    Tekst in de velden:
      **woord**            vet
      [tekst](link)        een link in de lopende tekst
-     {voornaam}           voornaam van de ontvanger (Brevo vult hem in; anders "daar")
+     {voornaam}           voornaam van de ontvanger (Brevo vult hem in; anders "beste lezer").
+                          "Hoi {voornaam}" vooraan een regel: zonder naam "Beste lezer"
      een witregel         nieuwe alinea
    Een kop krijgt vanzelf de cyaan punt (niet na ? of !). Een tekstlink krijgt
    vanzelf een pijl.
@@ -49,7 +50,12 @@
   const IMG = `${SITE}email/img/`;
   const PHOTOS = `${SITE}assets/styleguide/photos/`;
   const FONT = "'Pure Minds Sans','Open Sans',Arial,sans-serif";
-  const FIRSTNAME = '{{ contact.FIRSTNAME | default : "daar" }}';
+  // {voornaam}: zonder naam in Brevo staat er "beste lezer". Een begroeting vooraan ("Hoi {voornaam}")
+  // wordt een als-dan-regel van Brevo: met naam "Hoi Jelger", zonder naam "Beste lezer"
+  const FALLBACK = 'beste lezer';
+  const FIRSTNAME = `{{ contact.FIRSTNAME | default : "${FALLBACK}" }}`;
+  const GREETINGS = 'hoi|hallo|hey|hé|hee|dag|beste|lieve|goedemorgen|goedemiddag|goedenavond';
+  const greeting = (word) => `{% if contact.FIRSTNAME %}${word} {{ contact.FIRSTNAME }}{% else %}${FALLBACK[0].toUpperCase()}${FALLBACK.slice(1)}{% endif %}`;
   const MAX_BLOCKS = 30;
 
   // Foto's van Pure Minds die al online staan (de fotobank in de maker)
@@ -291,21 +297,24 @@
     let last = 0;
     let m;
     while ((m = re.exec(text))) {
-      parts.push(plain(text.slice(last, m.index), o));
+      parts.push(plain(text.slice(last, m.index), o, { lineStart: last === 0 }));
       const href = safeUrl(m[2]);
-      parts.push(href ? `<a href="${esc(href)}" target="_blank" style="${linkStyle}">${plain(m[1], o)}</a>` : plain(m[1], o));
+      const label = plain(m[1], o, { lineStart: false });
+      parts.push(href ? `<a href="${esc(href)}" target="_blank" style="${linkStyle}">${label}</a>` : label);
       last = m.index + m[0].length;
     }
-    parts.push(plain(text.slice(last), o));
+    parts.push(plain(text.slice(last), o, { lineStart: last === 0 }));
     return parts.join('');
   }
 
-  function plain(raw, o) {
+  // lineStart: de tekst begint aan het begin van een regel (dan kan "Hoi {voornaam}" een begroeting zijn)
+  function plain(raw, o, { lineStart = true } = {}) {
     let s = esc(raw);
     s = s.replace(/\*\*([^*\n][^*]*?)\*\*/g, '<strong style="font-weight:700;">$1</strong>').replace(/\*\*/g, '');
-    s = s.replace(/\{voornaam\}/gi, o.preview
-      ? '<span style="background-color:#E3F6FC;color:#303030;padding:0 4px;border-radius:3px;">voornaam</span>'
-      : FIRSTNAME);
+    const chip = '<span style="background-color:#E3F6FC;color:#303030;padding:0 4px;border-radius:3px;">voornaam</span>';
+    // Begroeting vooraan een regel: in de export de als-dan-regel van Brevo
+    s = s.replace(new RegExp(`(${lineStart ? '^|' : ''}\\n)([ \\t]*)(${GREETINGS})[ \\t]+\\{voornaam\\}`, 'gi'), (all, before, space, word) => `${before}${space}${o.preview ? `${word} ${chip}` : greeting(word)}`);
+    s = s.replace(/\{voornaam\}/gi, o.preview ? chip : FIRSTNAME);
     return s.replace(/\r?\n/g, '<br>');
   }
 

@@ -35,7 +35,7 @@
     },
     'opmaak': {
       title: 'Vet en voornaam',
-      text: 'Zet **woorden** tussen twee sterretjes voor vet, of gebruik de werkbalk. {voornaam} wordt de voornaam van de lezer (Brevo vult hem in; zonder naam staat er “daar”). Een witregel begint een nieuwe alinea.',
+      text: 'Zet **woorden** tussen twee sterretjes voor vet, of gebruik de werkbalk. {voornaam} wordt de voornaam van de lezer. Zonder naam staat er “beste lezer”, en “Hoi {voornaam}” wordt dan “Beste lezer”. Een witregel begint een nieuwe alinea.',
     },
     'tekstlink': {
       title: 'Link in de tekst',

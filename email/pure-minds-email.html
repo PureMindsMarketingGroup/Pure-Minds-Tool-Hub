@@ -118,7 +118,7 @@
               </tr>
               <tr>
                 <td style="font-family:'Pure Minds Sans','Open Sans',Arial,sans-serif;font-size:17px;line-height:28px;color:#e4e7ea;padding:0 0 30px 0;">
-                  Hoi {{ contact.FIRSTNAME | default : "daar" }}, in één of twee zinnen waar deze e-mail over gaat en waarom de lezer verder wil lezen.
+                  {% if contact.FIRSTNAME %}Hoi {{ contact.FIRSTNAME }}{% else %}Beste lezer{% endif %}, in één of twee zinnen waar deze e-mail over gaat en waarom de lezer verder wil lezen.
                 </td>
               </tr>
               <tr>
