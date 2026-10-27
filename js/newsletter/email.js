@@ -568,7 +568,8 @@ ${cols.join('\n')}
   function header(s, o) {
     const mast = String(s.masthead || '').trim();
     const edition = String(s.edition || '').trim();
-    const logo = (w, h) => `<a href="https://www.pureminds.nl/" target="_blank"><img src="${IMG}logo-inkt.png" width="${w}" height="${h}" alt="Pure Minds marketing group" style="display:block;width:${w}px;height:${h}px;"></a>`;
+    // Logo met een wit gevulde zeshoek: blijft zichtbaar als een mailapp in donkere modus het wit donker maakt
+    const logo = (w, h) => `<a href="https://www.pureminds.nl/" target="_blank"><img src="${IMG}logo-inkt-vlak.png" width="${w}" height="${h}" alt="Pure Minds marketing group" style="display:block;width:${w}px;height:${h}px;"></a>`;
     const bar = '<tr><td style="height:6px;line-height:6px;font-size:6px;background-color:#1AB9E2;">&nbsp;</td></tr>';
     if (!mast) return `${bar}\n<tr>\n<td class="pm-px" style="padding:28px 40px 24px 40px;">${logo(80, 92)}</td>\n</tr>`;
     return `${bar}
@@ -593,11 +594,15 @@ ${td(`font-size:14px;line-height:24px;color:#ffffff;padding:0 0 ${last ? 0 : 12}
 </tr>`;
   const social = (name, label, href, last) => `<td valign="middle" style="padding:0${last ? '' : ' 10px 0 0'};"><a href="${href}" target="_blank"><img src="${IMG}icoon-${name}.png" width="28" height="32" alt="${label}" style="display:block;width:28px;height:32px;"></a></td>`;
 
+  // Het adres opent Google Maps
+  const MAPS = 'https://maps.app.goo.gl/U2DL24yAZRJD6MTHA';
+
+  // Logo en Emerce-badge op een inktvlak: zo blijven ze zichtbaar als een mailapp de voet licht maakt
   const FOOTER = `<tr>
 <td class="pm-px" style="padding:40px 40px 36px 40px;background-color:#303030;">${table(`<tr>
-<td valign="top" width="80" class="pm-hide-sm" style="width:80px;padding:0 32px 0 0;"><img src="${IMG}logo-wit.png" width="80" height="92" alt="Pure Minds marketing group" style="display:block;width:80px;height:92px;"></td>
+<td valign="top" width="80" class="pm-hide-sm" style="width:80px;padding:0 32px 0 0;"><img src="${IMG}logo-wit-vlak.png" width="80" height="92" alt="Pure Minds marketing group" style="display:block;width:80px;height:92px;"></td>
 <td valign="top">${table(`
-${contactRow('adres', 'Pure Minds Marketing Group<br>Spekhofstraat 2, 6466 LZ Kerkrade')}
+${contactRow('adres', `<a href="${MAPS}" target="_blank" style="color:#ffffff;text-decoration:none;">Pure Minds Marketing Group<br>Spekhofstraat 2, 6466 LZ Kerkrade</a>`)}
 ${contactRow('telefoon', '<a href="tel:+31453690530" style="color:#ffffff;text-decoration:none;">045 369 0530</a>')}
 ${contactRow('mail', '<a href="mailto:info@pureminds.nl" style="color:#ffffff;text-decoration:none;">info@pureminds.nl</a>')}
 ${contactRow('web', '<a href="https://www.pureminds.nl/" target="_blank" style="color:#ffffff;text-decoration:none;">pureminds.nl</a>', true)}
@@ -608,7 +613,7 @@ ${social('linkedin', 'LinkedIn', 'https://www.linkedin.com/company/puremindsmark
 ${social('instagram', 'Instagram', 'https://www.instagram.com/puremindsmarketinggroup/')}
 ${social('facebook', 'Facebook', 'https://www.facebook.com/puremindsmarketinggroup/', true)}
 </tr></table></td>
-<td valign="middle" align="right"><img src="${IMG}emerce-100-wit.png" width="88" height="33" alt="Emerce 100 2026" style="display:block;width:88px;height:33px;"></td>
+<td valign="middle" align="right"><img src="${IMG}emerce-100-vlak.png" width="88" height="33" alt="Emerce 100 2026" style="display:block;width:88px;height:33px;"></td>
 </tr>`)}</td>
 </tr>`)}</td>
 </tr>
@@ -627,6 +632,9 @@ ${social('facebook', 'Facebook', 'https://www.facebook.com/puremindsmarketinggro
 @font-face { font-family: "Pure Minds Sans"; font-weight: 400; font-style: normal; src: url("${SITE}assets/fonts/PureMindsSans-Regular.ttf") format("truetype"); }
 @font-face { font-family: "Pure Minds Sans"; font-weight: 700; font-style: normal; src: url("${SITE}assets/fonts/PureMindsSans-Bold.ttf") format("truetype"); }
 @font-face { font-family: "Pure Minds Sans"; font-weight: 800; font-style: normal; src: url("${SITE}assets/fonts/PureMindsSans-ExtraBold.ttf") format("truetype"); }
+/* Donkere modus: Apple Mail en iOS laten de mail licht (light only). Gmail en Outlook maken lichte vlakken zelf
+   donker en laten plaatjes zoals ze zijn; daarom hebben de logo's een gevulde zeshoek (logo-*-vlak.png) */
+:root { color-scheme: light only; supported-color-schemes: light only; }
 body { margin: 0 !important; padding: 0 !important; width: 100% !important; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
 table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse; }
 img { border: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; display: block; }
@@ -685,8 +693,8 @@ u + #body a { color: inherit; text-decoration: none; font-size: inherit; font-fa
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="x-apple-disable-message-reformatting">
 <meta name="format-detection" content="telephone=no, date=no, address=no, email=no">
-<meta name="color-scheme" content="light">
-<meta name="supported-color-schemes" content="light">
+<meta name="color-scheme" content="light only">
+<meta name="supported-color-schemes" content="light only">
 <title>${title}</title>
 <!-- Pure Minds e-mail. In Brevo: Create campaign > Email > Design: Start from scratch > HTML custom code, alles plakken. Afmelden ({{ unsubscribe }}) staat in de voet. -->
 ${HEAD_STYLE}

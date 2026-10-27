@@ -1237,7 +1237,14 @@ alleen tekst, foto's, iconen en links aan. De HTML komt uit
   alleen het logo). Aanpassen bij *Mail*, of klik op de kop in de preview.
   "Bekijk deze e-mail online" staat klein boven de mail.
 - **Voet (vast):** logo, contact (adres, telefoon, mail, site) met de socials
-  eronder in dezelfde kolom, Emerce 100 en afmelden.
+  eronder in dezelfde kolom, Emerce 100 en afmelden. Het adres opent Google
+  Maps.
+- **Donkere modus:** Apple Mail en iOS houden de mail licht (`color-scheme:
+  light only`). Gmail en Outlook maken lichte vlakken zelf donker (of keren alles
+  om) maar laten plaatjes staan; daarom hebben de logo's een gevulde zeshoek
+  (`email/img/logo-inkt-vlak.png`: wit gevuld, `logo-wit-vlak.png`: inkt gevuld)
+  en staat de Emerce-badge op een inktvlak (`emerce-100-vlak.png`). De oude
+  doorzichtige `logo-inkt.png` blijft voor de mails van het inloggen.
 - **Typografie:** één schaal (`PMEmail.TYPE`). H1 36/42 ExtraBold alleen in de
   opening, H2 24/30 Bold boven elk blok, H3 18/24 Bold per punt, p 16/26 voor
   alle lopende tekst, labels 13 px in hoofdletters. Echte `h1`–`h3`- en

@@ -251,13 +251,33 @@ test('punten naast elkaar (kolommen, vier = twee rijen van twee) of onder elkaar
 
 test('voet: de socials staan in de kolom van het contact, onder het adres, de telefoon en de mail', () => {
   const html = E.build(E.starter('kort'));
-  const foot = html.slice(html.indexOf('logo-wit.png'));
+  const foot = html.slice(html.indexOf('logo-wit-vlak.png'));
   const at = (s) => foot.indexOf(s);
   assert.ok(at('icoon-mail.png') < at('icoon-web.png') && at('icoon-web.png') < at('icoon-linkedin.png'));
   // Tussen het logo en de socials sluit geen kolom: ze zitten in dezelfde cel als het contact
   const between = foot.slice(at('icoon-adres.png'), at('icoon-linkedin.png'));
   assert.ok(!/<\/td>\s*<\/tr>\s*<tr>\s*<td colspan="2" style="padding:28px/.test(between));
   assert.ok(foot.includes('Pure Minds Marketing Group<br>Spekhofstraat 2'));
+});
+
+test('voet: het adres opent Google Maps', () => {
+  const html = E.build(E.starter('kort'));
+  assert.ok(html.includes('<a href="https://maps.app.goo.gl/U2DL24yAZRJD6MTHA" target="_blank" style="color:#ffffff;text-decoration:none;">Pure Minds Marketing Group<br>Spekhofstraat 2, 6466 LZ Kerkrade</a>'));
+});
+
+test('donkere modus: logo\'s met een gevulde zeshoek (zichtbaar als een mailapp de kleuren omkeert), Apple Mail blijft licht', () => {
+  for (const s of [E.starter('nieuwsbrief'), E.starter('kort')]) {
+    const html = E.build(s);
+    assert.ok(html.includes('email/img/logo-inkt-vlak.png'), 'kop: wit gevulde zeshoek');
+    assert.ok(html.includes('email/img/logo-wit-vlak.png'), 'voet: inkt gevulde zeshoek');
+    assert.ok(html.includes('email/img/emerce-100-vlak.png'), 'badge op een inktvlak');
+    assert.ok(!/logo-(inkt|wit)\.png|emerce-100-wit\.png/.test(html), 'geen doorzichtige logo\'s meer');
+    assert.ok(html.includes('<meta name="color-scheme" content="light only">'));
+    assert.ok(html.includes(':root { color-scheme: light only;'));
+  }
+  // De losse template ook
+  const tpl = read('email/pure-minds-email.html');
+  assert.ok(tpl.includes('logo-inkt-vlak.png') && tpl.includes('logo-wit-vlak.png') && tpl.includes('maps.app.goo.gl'));
 });
 
 test('huisstijl: alleen 400, 700 en 800; magenta alleen voor de knop in de opening; cyaan nooit als tekst op wit', () => {
